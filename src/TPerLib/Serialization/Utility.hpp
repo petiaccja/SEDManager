@@ -31,6 +31,18 @@ void FromBytes(std::span<const uint8_t> bytes, Object& object) {
 }
 
 
+inline std::span<const uint8_t> BytesView(std::string_view str) {
+    const auto bytes = reinterpret_cast<const uint8_t*>(str.data());
+    return { bytes, bytes + str.size() };
+}
+
+
+inline std::string_view StringView(std::span<const uint8_t> bytes) {
+    const auto str = reinterpret_cast<const char*>(bytes.data());
+    return { str, str + bytes.size() };
+}
+
+
 template <class Object>
 std::vector<uint8_t> ToTokens(const Object& object) {
     std::stringstream buffer;

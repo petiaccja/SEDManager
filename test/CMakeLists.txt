@@ -6,6 +6,7 @@ target_sources(Test
         TestRpcArchive.cpp
         TestPackets.cpp
         TestRpcStream.cpp
+        TestMethod.cpp
 )
 
 find_package(Catch2 REQUIRED)

@@ -10,10 +10,14 @@ target_sources(TPerLib
         TrustedPeripheral.hpp
         SessionManager.cpp
         SessionManager.hpp
+        Method.cpp
+        Method.hpp
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp
         Serialization/RpcArchive.hpp
         Serialization/RpcArchive.cpp
+        Serialization/RpcDebugArchive.hpp
+        Serialization/RpcDebugArchive.cpp
         Serialization/Utility.hpp
         Serialization/RpcStream.cpp
         Serialization/RpcStream.hpp

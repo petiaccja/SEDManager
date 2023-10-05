@@ -93,6 +93,20 @@ void PrintDeviceInfo(TrustedPeripheral& tper) {
 }
 
 
+void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
+    auto sessionManager = std::make_shared<SessionManager>(tper);
+    const std::unordered_map<std::string, uint32_t> hostProperties = {
+        { "MaxPackets", 1 },
+    };
+    const auto tperPropeties = sessionManager->Properties();
+
+    std::cout << "TPer properties: " << std::endl;
+    for (const auto& [name, value] : tperPropeties) {
+        std::cout << std::format("  {} = {}", name, value) << std::endl;
+    }
+}
+
+
 int main() {
     try {
         auto device = std::make_unique<NvmeDevice>("/dev/nvme0");
@@ -102,6 +116,7 @@ int main() {
         auto tper = std::make_shared<TrustedPeripheral>(std::move(device));
 
         PrintDeviceInfo(*tper);
+        PrintDeviceProperties(tper);
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;

@@ -390,6 +390,19 @@ void SaveDispatch(Archive& ar, const RpcStream& stream) {
 
 
 template <class Archive>
+void save_strip_list(Archive& ar, const RpcStream& stream) {
+    if (stream.IsList()) {
+        for (const auto& item : stream.AsList()) {
+            SaveDispatch(ar, item);
+        }
+    }
+    else {
+        SaveDispatch(ar, stream);
+    }
+}
+
+
+template <class Archive>
 void save(Archive& ar, const RpcStream& stream) {
     SaveDispatch(ar, stream);
 }
@@ -413,7 +426,10 @@ void load(Archive& ar, RpcStream& stream) {
             break;
         }
 
-        if (token.tag == eTag::START_LIST) {
+        if (token.tag == eTag::EMPTY) {
+            continue;
+        }
+        else if (token.tag == eTag::START_LIST) {
             stack.push(RpcStream(std::vector<RpcStream>{}));
         }
         else if (token.tag == eTag::START_NAME) {
