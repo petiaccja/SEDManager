@@ -1,0 +1,2 @@
+add_subdirectory(SEDMgr)
+add_subdirectory(TPerLib)
