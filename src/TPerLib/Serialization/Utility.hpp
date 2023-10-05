@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FlatBinaryArchive.hpp"
-#include "TokenStreamArchive.hpp"
+#include "RpcArchive.hpp"
 
 #include <cstdint>
 #include <span>
@@ -34,7 +34,7 @@ void FromBytes(std::span<const uint8_t> bytes, Object& object) {
 template <class Object>
 std::vector<uint8_t> ToTokens(const Object& object) {
     std::stringstream buffer;
-    TokenStreamOutputArchive ar(buffer);
+    RpcOutputArchive ar(buffer);
     ar(object);
     const auto chars = buffer.view();
     const auto bytes = reinterpret_cast<const uint8_t*>(chars.data());
@@ -48,6 +48,6 @@ void FromTokens(std::span<const uint8_t> bytes, Object& object) {
     const auto chars = reinterpret_cast<const char*>(bytes.data());
     const auto view = std::string_view{ chars, chars + bytes.size() };
     buffer.str(std::string{ view });
-    TokenStreamInputArchive ar(buffer);
+    RpcInputArchive ar(buffer);
     ar(object);
 }

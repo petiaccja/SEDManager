@@ -5,7 +5,7 @@
 
 TEST_CASE("Save tiny atom positive", "[Token stream archive]") {
     Token token{
-        .tag = TINY_TAG,
+        .tag = eTag::TINY_ATOM,
         .isByte = false,
         .isSigned = true,
         .data = { 0b10'1010 }
@@ -18,7 +18,7 @@ TEST_CASE("Save tiny atom positive", "[Token stream archive]") {
 
 TEST_CASE("Save tiny atom negative", "[Token stream archive]") {
     Token token{
-        .tag = TINY_TAG,
+        .tag = eTag::TINY_ATOM,
         .isByte = false,
         .isSigned = true,
         .data = { 0b1111'1010 }
@@ -31,7 +31,7 @@ TEST_CASE("Save tiny atom negative", "[Token stream archive]") {
 
 TEST_CASE("Save short atom", "[Token stream archive]") {
     Token token{
-        .tag = SHORT_TAG,
+        .tag = eTag::SHORT_ATOM,
         .isByte = true,
         .isSigned = true,
         .data = { 0xEA }
@@ -44,7 +44,7 @@ TEST_CASE("Save short atom", "[Token stream archive]") {
 
 TEST_CASE("Save medium atom", "[Token stream archive]") {
     Token token{
-        .tag = MEDIUM_TAG,
+        .tag = eTag::MEDIUM_ATOM,
         .isByte = true,
         .isSigned = true,
         .data = { 0xEA }
@@ -57,7 +57,7 @@ TEST_CASE("Save medium atom", "[Token stream archive]") {
 
 TEST_CASE("Save long atom", "[Token stream archive]") {
     Token token{
-        .tag = LONG_TAG,
+        .tag = eTag::LONG_ATOM,
         .isByte = true,
         .isSigned = true,
         .data = { 0xEA }
@@ -72,7 +72,7 @@ TEST_CASE("Load tiny atom", "[Token stream archive]") {
     const std::vector<uint8_t> bytes = { 0b0110'1010 };
     Token token;
     FromTokens(bytes, token);
-    REQUIRE(token.tag == TINY_TAG);
+    REQUIRE(token.tag == eTag::TINY_ATOM);
     REQUIRE(token.isByte == false);
     REQUIRE(token.isSigned == true);
     REQUIRE(token.data == std::vector<uint8_t>{ 0b1110'1010 });
@@ -83,7 +83,7 @@ TEST_CASE("Load short atom", "[Token stream archive]") {
     const std::vector<uint8_t> bytes = { 0b1011'0001, 0xEA };
     Token token;
     FromTokens(bytes, token);
-    REQUIRE(token.tag == SHORT_TAG);
+    REQUIRE(token.tag == eTag::SHORT_ATOM);
     REQUIRE(token.isByte == true);
     REQUIRE(token.isSigned == true);
     REQUIRE(token.data == std::vector<uint8_t>{ 0xEA });
@@ -94,7 +94,7 @@ TEST_CASE("Load medium atom", "[Token stream archive]") {
     const std::vector<uint8_t> bytes = { 0b1101'1000, 0x01, 0xEA };
     Token token;
     FromTokens(bytes, token);
-    REQUIRE(token.tag == MEDIUM_TAG);
+    REQUIRE(token.tag == eTag::MEDIUM_ATOM);
     REQUIRE(token.isByte == true);
     REQUIRE(token.isSigned == true);
     REQUIRE(token.data == std::vector<uint8_t>{ 0xEA });
@@ -105,7 +105,7 @@ TEST_CASE("Load long atom", "[Token stream archive]") {
     const std::vector<uint8_t> bytes = { 0b1110'0011, 0x00, 0x00, 0x01, 0xEA };
     Token token;
     FromTokens(bytes, token);
-    REQUIRE(token.tag == LONG_TAG);
+    REQUIRE(token.tag == eTag::LONG_ATOM);
     REQUIRE(token.isByte == true);
     REQUIRE(token.isSigned == true);
     REQUIRE(token.data == std::vector<uint8_t>{ 0xEA });

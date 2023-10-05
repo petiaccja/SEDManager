@@ -12,14 +12,16 @@ target_sources(TPerLib
         SessionManager.hpp
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp
-        Serialization/TokenStreamArchive.hpp
-        Serialization/TokenStreamArchive.cpp
+        Serialization/RpcArchive.hpp
+        Serialization/RpcArchive.cpp
         Serialization/Utility.hpp
         Serialization/RpcStream.cpp
         Serialization/RpcStream.hpp
         Structures/CommLayer.hpp
         Structures/Discovery.hpp
         Structures/Discovery.cpp
+        Structures/Rpc.cpp
+        Structures/Rpc.hpp
 )
 
 find_package(cereal REQUIRED)

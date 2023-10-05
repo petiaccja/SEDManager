@@ -1,9 +1,7 @@
 #include <TPerLib/NvmeDevice.hpp>
-#include <TPerLib/Serialization/TokenStreamArchive.hpp>
 #include <TPerLib/Serialization/Utility.hpp>
 #include <TPerLib/SessionManager.hpp>
 #include <TPerLib/Structures/Packets.hpp>
-#include <TPerLib/Structures/TokenStream.hpp>
 #include <TPerLib/TrustedPeripheral.hpp>
 
 #include <iostream>
@@ -95,109 +93,6 @@ void PrintDeviceInfo(TrustedPeripheral& tper) {
 }
 
 
-template <class... Args>
-std::vector<uint8_t> TokenizeManagementMethod(uint64_t methodId, const Args&... args) {
-    constexpr uint64_t invokingId = 0xFF;
-    std::stringstream buffer;
-    TokenStreamOutputArchive ar(buffer);
-
-    ar(Call{});
-    ar(ToBytes(invokingId));
-    ar(ToBytes(methodId));
-    ar(List<const Args&...>{ args... });
-    ar(EndOfData{});
-    ar(List{ 0x00u, 0x00u, 0x00u });
-
-    const auto ptr = reinterpret_cast<const uint8_t*>(buffer.view().data());
-    return { ptr, ptr + buffer.view().size() };
-}
-
-
-std::vector<uint8_t> MethodBytes() {
-    using namespace std::string_view_literals;
-
-    std::stringstream buffer;
-    TokenStreamOutputArchive tokenAr(buffer);
-
-    uint64_t invokingId = 0xFF;
-    uint64_t methodId = 0xFF01; // Properties
-
-    tokenAr(Call{});
-    tokenAr(ToBytes(invokingId));
-    tokenAr(ToBytes(methodId));
-    {
-        tokenAr(StartList{});
-
-        // Properties
-        tokenAr(StartName{});
-        tokenAr("HostProperties"sv);
-        {
-            tokenAr(StartList{});
-            tokenAr(StartName{});
-            tokenAr("MaxPackets"sv);
-            tokenAr(1u);
-            tokenAr(EndName{});
-            tokenAr(EndList{});
-        }
-        tokenAr(EndName{});
-
-        tokenAr(EndList{});
-    }
-    tokenAr(EndOfData{});
-    {
-        tokenAr(StartList{});
-        tokenAr(0x00u);
-        tokenAr(0x00u);
-        tokenAr(0x00u);
-        tokenAr(EndList{});
-    }
-
-    const auto ptr = reinterpret_cast<const uint8_t*>(buffer.view().data());
-    return { ptr, ptr + buffer.view().size() };
-}
-
-
-void Properties(std::shared_ptr<TrustedPeripheral> tper) {
-    auto sessionMgr = std::make_shared<SessionManager>(tper);
-
-    const std::array hostProperties{ Named{ "MaxPackets", 1u } };
-    const auto properties = sessionMgr->Properties(hostProperties);
-    std::cout << "TPer properties:" << std::endl;
-    for (auto& [name, value] : properties) {
-        std::cout << "  " << name << " = " << value << std::endl;
-    }
-
-    SubPacket subPacket;
-    subPacket.kind = static_cast<uint16_t>(eSubPacketKind::DATA);
-    subPacket.payload = MethodBytes();
-
-    Packet packet;
-    packet.tperSessionNumber = 0;
-    packet.hostSessionNumber = 0;
-    packet.sequenceNumber = 0;
-    packet.ackType = 0;
-    packet.acknowledgement = 0;
-    packet.payload.push_back(std::move(subPacket));
-
-    ComPacket comPacket;
-    comPacket.comId = tper->GetComId();
-    comPacket.comIdExtension = tper->GetComIdExtension();
-    comPacket.payload.push_back(std::move(packet));
-
-    const auto request = ToBytes(comPacket);
-
-    const auto result = tper->SendPacket(0x01, comPacket);
-
-    std::cout << "Properties response:" << std::endl;
-    std::cout << "  ComId:            " << result.comId << std::endl;
-    std::cout << "  ComId extension:  " << result.comIdExtension << std::endl;
-    std::cout << "  Min transfer:     " << result.minTransfer << std::endl;
-    std::cout << "  Outstanding data: " << result.outstandingData << std::endl;
-    std::cout << "  Payload:          " << result.payload.size() << " packets" << std::endl;
-    std::cout << "ComID state: " << GetComIdStateStr(tper->VerifyComId()) << std::endl;
-}
-
-
 int main() {
     try {
         auto device = std::make_unique<NvmeDevice>("/dev/nvme0");
@@ -207,7 +102,6 @@ int main() {
         auto tper = std::make_shared<TrustedPeripheral>(std::move(device));
 
         PrintDeviceInfo(*tper);
-        Properties(tper);
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;

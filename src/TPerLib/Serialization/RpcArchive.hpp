@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Structures/Rpc.hpp"
 #include "FlatBinaryArchive.hpp"
 
 #include <cereal/cereal.hpp>
@@ -13,37 +14,17 @@
 #include <span>
 
 
-struct Token {
-    uint8_t tag;
-    bool isByte;
-    bool isSigned;
-    std::vector<uint8_t> data;
-};
 
-
-constexpr uint8_t TINY_TAG = 0b0000'0000u;
-constexpr uint8_t TINY_MASK = 0b1000'0000u;
-constexpr uint8_t SHORT_TAG = 0b1000'0000u;
-constexpr uint8_t SHORT_MASK = 0b1100'0000u;
-constexpr uint8_t MEDIUM_TAG = 0b1100'0000u;
-constexpr uint8_t MEDIUM_MASK = 0b1110'0000u;
-constexpr uint8_t LONG_TAG = 0b1110'0000u;
-constexpr uint8_t LONG_MASK = 0b1111'1000u;
-
-
-uint8_t GetTag(size_t dataLength);
-
-
-class TokenStreamInputArchive : public cereal::InputArchive<TokenStreamInputArchive> {
+class RpcInputArchive : public cereal::InputArchive<RpcInputArchive> {
 public:
-    TokenStreamInputArchive(std::istream& stream);
-    TokenStreamInputArchive(TokenStreamInputArchive&&) = delete;
-    TokenStreamInputArchive(const TokenStreamInputArchive&) = delete;
-    TokenStreamInputArchive& operator=(TokenStreamInputArchive&&) = delete;
-    TokenStreamInputArchive& operator=(const TokenStreamInputArchive&) = delete;
+    RpcInputArchive(std::istream& stream);
+    RpcInputArchive(RpcInputArchive&&) = delete;
+    RpcInputArchive(const RpcInputArchive&) = delete;
+    RpcInputArchive& operator=(RpcInputArchive&&) = delete;
+    RpcInputArchive& operator=(const RpcInputArchive&) = delete;
 
     void Extract(Token& token);
-    uint8_t PeekTag() const;
+    eTag PeekTag() const;
 
 protected:
     template <size_t N>
@@ -74,13 +55,13 @@ private:
 };
 
 
-class TokenStreamOutputArchive : public cereal::OutputArchive<TokenStreamOutputArchive> {
+class RpcOutputArchive : public cereal::OutputArchive<RpcOutputArchive> {
 public:
-    TokenStreamOutputArchive(std::ostream& stream);
-    TokenStreamOutputArchive(TokenStreamOutputArchive&&) = delete;
-    TokenStreamOutputArchive(const TokenStreamOutputArchive&) = delete;
-    TokenStreamOutputArchive& operator=(TokenStreamOutputArchive&&) = delete;
-    TokenStreamOutputArchive& operator=(const TokenStreamOutputArchive&) = delete;
+    RpcOutputArchive(std::ostream& stream);
+    RpcOutputArchive(RpcOutputArchive&&) = delete;
+    RpcOutputArchive(const RpcOutputArchive&) = delete;
+    RpcOutputArchive& operator=(RpcOutputArchive&&) = delete;
+    RpcOutputArchive& operator=(const RpcOutputArchive&) = delete;
 
     void Insert(const Token& token);
 
@@ -98,14 +79,14 @@ private:
 };
 
 
-void CEREAL_SAVE_FUNCTION_NAME(TokenStreamOutputArchive& ar, const Token& token);
-void CEREAL_LOAD_FUNCTION_NAME(TokenStreamInputArchive& ar, Token& t);
+void CEREAL_SAVE_FUNCTION_NAME(RpcOutputArchive& ar, const Token& token);
+void CEREAL_LOAD_FUNCTION_NAME(RpcInputArchive& ar, Token& t);
 
 
 template <std::integral T>
-void CEREAL_SAVE_FUNCTION_NAME(TokenStreamOutputArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(RpcOutputArchive& ar, const T& t) {
     // Store the value as a short atom.
-    constexpr uint8_t tag = 0b1000'0000u;
+    constexpr auto tag = eTag::SHORT_ATOM;
     const uint8_t length = sizeof(T);
     constexpr uint8_t isByte = 0;
     constexpr uint8_t isSigned = std::is_signed_v<T>;
@@ -116,7 +97,7 @@ void CEREAL_SAVE_FUNCTION_NAME(TokenStreamOutputArchive& ar, const T& t) {
 
 
 template <std::integral T>
-void CEREAL_LOAD_FUNCTION_NAME(TokenStreamInputArchive& ar, T& t) {
+void CEREAL_LOAD_FUNCTION_NAME(RpcInputArchive& ar, T& t) {
     Token token;
     CEREAL_LOAD_FUNCTION_NAME(ar, token);
 
@@ -135,7 +116,7 @@ void CEREAL_LOAD_FUNCTION_NAME(TokenStreamInputArchive& ar, T& t) {
 
 
 template <std::floating_point T>
-void CEREAL_SAVE_FUNCTION_NAME(TokenStreamOutputArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(RpcOutputArchive& ar, const T& t) {
     static_assert(!std::is_floating_point<T>::value || (std::is_floating_point<T>::value && std::numeric_limits<T>::is_iec559),
                   "Portable binary only supports IEEE 754 standardized floating point");
     using UnsignedType = std::conditional<sizeof(t) == 4, uint32_t, uint64_t>;
@@ -145,7 +126,7 @@ void CEREAL_SAVE_FUNCTION_NAME(TokenStreamOutputArchive& ar, const T& t) {
 
 
 template <std::floating_point T>
-void CEREAL_LOAD_FUNCTION_NAME(TokenStreamInputArchive& ar, T& t) {
+void CEREAL_LOAD_FUNCTION_NAME(RpcInputArchive& ar, T& t) {
     static_assert(!std::is_floating_point<T>::value || (std::is_floating_point<T>::value && std::numeric_limits<T>::is_iec559),
                   "Portable binary only supports IEEE 754 standardized floating point");
     using UnsignedType = std::conditional<sizeof(T) == 4, uint32_t, uint64_t>;
