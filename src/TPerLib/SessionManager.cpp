@@ -13,12 +13,10 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 std::unordered_map<std::string, uint32_t> SessionManager::Properties(const std::optional<std::unordered_map<std::string, uint32_t>>& hostProperties) {
     constexpr uint64_t METHOD_ID = 0xFF01;
 
+    const auto toNamed = [](const auto& prop) { return Named{ { RpcStream::bytes, prop.first }, prop.second }; };
     std::vector<RpcStream> args;
     if (hostProperties) {
-        args = {
-            Named{ "HostProperties",
-                   *hostProperties | std::views::transform([](const auto& prop) { return Named{ prop.first, prop.second }; }) },
-        };
+        args = { Named{ 0, *hostProperties | std::views::transform(toNamed) } };
     }
 
     const Method result = InvokeMethod(Method{ .methodId = METHOD_ID, .args = std::move(args) });
@@ -42,7 +40,9 @@ std::unordered_map<std::string, uint32_t> SessionManager::Properties(const std::
         if (!named.value.IsInteger()) {
             throw std::runtime_error(std::format(baseError, "expected integer value as property"));
         }
-        properties.insert_or_assign(named.name, named.value.Get<uint32_t>());
+        auto name = std::string(StringView(named.name.Get<std::span<const uint8_t>>()));
+        const auto value = named.value.Get<uint32_t>();
+        properties.insert_or_assign(std::move(name), value);
     }
 
     return properties;
@@ -83,8 +83,6 @@ Method SessionManager::InvokeMethod(const Method& method) {
     try {
         const RpcStream requestStream = SerializeMethod(INVOKING_ID, method);
         RpcDebugArchive debugAr(std::cout);
-        std::cout << "--- REQUEST ---" << std::endl;
-        save_strip_list(debugAr, requestStream);
 
         std::stringstream requestSs;
         RpcOutputArchive requestAr(requestSs);
@@ -97,8 +95,6 @@ Method SessionManager::InvokeMethod(const Method& method) {
 
         RpcStream responseStream;
         FromTokens(responseTokens, responseStream);
-        std::cout << "--- RESPONSE ---" << std::endl;
-        save_strip_list(debugAr, responseStream);
 
         auto response = ParseMethod(responseStream);
         return response;

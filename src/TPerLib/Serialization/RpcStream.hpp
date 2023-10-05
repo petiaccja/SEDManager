@@ -90,6 +90,9 @@ public:
                  && std::is_trivial_v<std::ranges::range_value_t<T>>
     std::decay_t<T> Get() const;
 
+    template <std::same_as<std::string_view> T>
+    std::string_view Get() const;
+
     template <std::same_as<std::span<const RpcStream>> T>
     std::span<const RpcStream> Get() const;
 
@@ -153,7 +156,7 @@ private:
 
 
 struct Named {
-    std::string name;
+    RpcStream name;
     RpcStream value;
 };
 
@@ -262,6 +265,13 @@ std::decay_t<T> RpcStream::Get() const {
     return AsBytes<std::ranges::range_value_t<T>>();
 }
 
+template <std::same_as<std::string_view> T>
+std::string_view RpcStream::Get() const {
+    const auto bytes = AsBytes<uint8_t>();
+    const auto* ptr = reinterpret_cast<const char*>(bytes.data());
+    return std::string_view(ptr, ptr + bytes.size());
+}
+
 template <std::same_as<std::span<const RpcStream>> T>
 std::span<const RpcStream> RpcStream::Get() const {
     return AsList();
@@ -357,7 +367,7 @@ void SaveBytes(Archive& ar, const RpcStream& stream) {
 template <class Archive>
 void SaveNamed(Archive& ar, const RpcStream& stream) {
     ar(Token{ .tag = eTag::START_NAME });
-    SaveDispatch(ar, RpcStream{ RpcStream::bytes, stream.AsNamed().name });
+    SaveDispatch(ar, stream.AsNamed().name);
     SaveDispatch(ar, stream.AsNamed().value);
     ar(Token{ .tag = eTag::END_NAME });
 }

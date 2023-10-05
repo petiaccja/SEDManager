@@ -157,11 +157,7 @@ void InsertItem(RpcStream& target, RpcStream item) {
     else if (target.IsNamed()) {
         const bool doName = !target.AsNamed().value.HasValue();
         if (doName) {
-            if (!item.IsBytes()) {
-                throw std::invalid_argument("named items expect a byte sequence as the name argument");
-            }
-            const auto chars = item.Get<std::span<const char>>();
-            target.AsNamed().name = { chars.begin(), chars.end() };
+            target.AsNamed().name = item;
             target.AsNamed().value = eCommand::EMPTY;
         }
         else {

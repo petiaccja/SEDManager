@@ -85,14 +85,16 @@ TEST_CASE("List set/get fail", "[RpcStream]") {
 //------------------------------------------------------------------------------
 
 TEST_CASE("Named set/get same", "[RpcStream]") {
-    RpcStream s = Named{ "name", 1 };
+    using namespace std::string_view_literals;
+    RpcStream s = Named{ { RpcStream::bytes, "name"sv }, 1 };
     const auto& v = s.Get<Named>();
-    REQUIRE(v.name == "name");
+    REQUIRE(v.name.Get<std::string_view>() == "name");
     REQUIRE(v.value.Get<int>() == 1);
 }
 
 TEST_CASE("Named set/get fail", "[RpcStream]") {
-    RpcStream s = Named{ "name", 1 };
+    using namespace std::string_view_literals;
+    RpcStream s = Named{ { RpcStream::bytes, "name"sv }, 1 };
     REQUIRE_THROWS(s.Get<int>());
 }
 
@@ -224,9 +226,10 @@ TEMPLATE_TEST_CASE("Serialize list", "[RpcStream]", JSONArchivePair, RPCArchiveP
 }
 
 TEMPLATE_TEST_CASE("Serialize named", "[RpcStream]", JSONArchivePair, RPCArchivePair) {
-    RpcStream in = Named{ "steve", 2 };
+    using namespace std::string_view_literals;
+    RpcStream in = Named{ { RpcStream::bytes, "steve"sv }, 2 };
     RpcStream out = GetFirstInList(CycleSerialization<TestType>(in));
     const auto& r = out.Get<Named>();
-    REQUIRE(r.name == "steve");
+    REQUIRE(r.name.Get<std::string_view>() == "steve");
     REQUIRE(r.value.Get<int>() == 2);
 }

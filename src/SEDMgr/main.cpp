@@ -97,8 +97,17 @@ void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
     auto sessionManager = std::make_shared<SessionManager>(tper);
     const std::unordered_map<std::string, uint32_t> hostProperties = {
         { "MaxPackets", 1 },
+        { "MaxSubpackets", 1 },
+        { "MaxMethods", 1 },
+        { "MaxComPacketSize", 65536 },
+        { "MaxIndTokenSize", 65536 },
+        { "MaxAggTokenSize", 65536 },
+        { "ContinuedTokens", 0 },
+        { "SequenceNumbers", 0 },
+        { "AckNAK", 0 },
+        { "Asynchronous", 0 },
     };
-    const auto tperPropeties = sessionManager->Properties();
+    const auto tperPropeties = sessionManager->Properties(hostProperties);
 
     std::cout << "TPer properties: " << std::endl;
     for (const auto& [name, value] : tperPropeties) {
@@ -109,7 +118,7 @@ void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
 
 int main() {
     try {
-        auto device = std::make_unique<NvmeDevice>("/dev/nvme0");
+        auto device = std::make_unique<NvmeDevice>("/dev/nvme1");
         const auto identity = device->IdentifyController();
         std::cout << ConvertRawCharacters(identity.modelNumber) << " "
                   << ConvertRawCharacters(identity.firmwareRevision) << std::endl;
