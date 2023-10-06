@@ -20,16 +20,10 @@ public:
 
     template <size_t N>
     void Extract(std::span<uint8_t, N> bytes) {
-        size_t numExtracted = 0;
-        for (auto& byte : bytes) {
-            std::istream::char_type ch = 0;
-            m_stream.get(ch);
-            if (!m_stream.good()) {
-                throw std::invalid_argument(
-                    std::format("failed to extract {} bytes, extracted {}", bytes.size(), numExtracted));
-            }
-            byte = std::bit_cast<uint8_t>(ch);
-            numExtracted++;
+        const auto numExtracted = m_stream.rdbuf()->sgetn(reinterpret_cast<char*>(bytes.data()), bytes.size());
+        if (numExtracted != bytes.size()) {
+            throw std::invalid_argument(
+                std::format("failed to extract {} bytes, extracted {}", bytes.size(), numExtracted));
         }
     }
 
@@ -48,9 +42,7 @@ public:
 
     template <size_t N>
     void Insert(std::span<const uint8_t, N> bytes) {
-        for (auto& byte : bytes) {
-            m_stream.put(std::bit_cast<std::ostream::char_type>(byte));
-        }
+        const auto numWritten = m_stream.rdbuf()->sputn(reinterpret_cast<const char*>(bytes.data()), bytes.size());
     }
 
 private:

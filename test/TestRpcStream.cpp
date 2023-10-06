@@ -162,7 +162,10 @@ static RpcStream CycleSerialization(const RpcStream& in) {
     using OutputArchive = std::tuple_element_t<0, ArchivePair>;
     using InputArchive = std::tuple_element_t<1, ArchivePair>;
 
-    std::stringstream ss;
+    constexpr bool isBinary = !std::is_base_of_v<cereal::traits::TextArchive, OutputArchive>;
+    std::stringstream ss = isBinary
+                               ? std::stringstream(std::ios::binary | std::ios::out | std::ios::in)
+                               : std::stringstream{ std::ios::out | std::ios::in };
     {
         OutputArchive outAr(ss);
         outAr(in);

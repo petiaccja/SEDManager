@@ -33,10 +33,10 @@ enum class eMask : uint8_t {
 
 
 struct Token {
-    eTag tag;
-    bool isByte;
-    bool isSigned;
-    std::vector<uint8_t> data;
+    eTag tag = eTag::EMPTY;
+    bool isByte = false;
+    bool isSigned = false;
+    std::vector<uint8_t> data = {};
 };
 
 

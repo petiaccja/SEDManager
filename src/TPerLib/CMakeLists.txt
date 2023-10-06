@@ -12,6 +12,8 @@ target_sources(TPerLib
         SessionManager.hpp
         Method.cpp
         Method.hpp
+        MethodTypes.cpp
+        MethodTypes.hpp
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp
         Serialization/RpcArchive.hpp

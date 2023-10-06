@@ -82,3 +82,23 @@ Method ParseMethod(const RpcStream& stream) {
         throw std::invalid_argument("incorrect method format");
     }
 }
+
+namespace impl {
+
+std::vector<std::pair<intptr_t, const RpcStream&>> LabelOptionalArgs(std::span<const RpcStream> streams) {
+    using Item = std::pair<intptr_t, const RpcStream&>;
+    std::vector<Item> labels;
+    std::ranges::transform(streams, std::back_inserter(labels), [](const RpcStream& stream) {
+        if (stream.IsNamed()) {
+            const auto& named = stream.Get<Named>();
+            if (!named.name.IsInteger()) {
+                throw std::invalid_argument("expected an integer as argument label");
+            }
+            return Item{ named.name.Get<intptr_t>(), named.value };
+        }
+        return Item{ intptr_t(-1), stream };
+    });
+    return labels;
+}
+
+} // namespace impl
