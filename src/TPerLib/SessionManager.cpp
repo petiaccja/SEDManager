@@ -10,42 +10,10 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
     : m_tper(tper){};
 
 
-std::unordered_map<std::string, uint32_t> SessionManager::Properties(const std::optional<std::unordered_map<std::string, uint32_t>>& hostProperties) {
-    constexpr uint64_t METHOD_ID = 0xFF01;
-
-    const auto toNamed = [](const auto& prop) { return Named{ { RpcStream::bytes, prop.first }, prop.second }; };
-    std::vector<RpcStream> args;
-    if (hostProperties) {
-        args = { Named{ 0, *hostProperties | std::views::transform(toNamed) } };
-    }
-
-    const Method result = InvokeMethod(Method{ .methodId = METHOD_ID, .args = std::move(args) });
-    constexpr std::string_view baseError = "method call \"properties\" failed: {}";
-    if (result.status != eMethodStatus::SUCCESS) {
-        throw std::runtime_error(std::format(baseError, MethodStatusText(result.status)));
-    }
-
-    std::unordered_map<std::string, uint32_t> properties;
-    if (result.args.empty()) {
-        throw std::runtime_error(std::format(baseError, "expected at least one result"));
-    }
-    if (!result.args[0].IsList()) {
-        throw std::runtime_error(std::format(baseError, "expected a list as first result"));
-    }
-    for (const auto& prop : result.args[0].AsList()) {
-        if (!prop.IsNamed()) {
-            throw std::runtime_error(std::format(baseError, "expected named value as property"));
-        }
-        const auto& named = prop.AsNamed();
-        if (!named.value.IsInteger()) {
-            throw std::runtime_error(std::format(baseError, "expected integer value as property"));
-        }
-        auto name = std::string(StringView(named.name.Get<std::span<const uint8_t>>()));
-        const auto value = named.value.Get<uint32_t>();
-        properties.insert_or_assign(std::move(name), value);
-    }
-
-    return properties;
+auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
+    -> std::tuple<PropertyMap, std::optional<PropertyMap>> {
+    using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
+    return InvokeMethod<OutArgs>(0xFF01, hostProperties);
 }
 
 

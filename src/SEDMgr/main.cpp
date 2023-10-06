@@ -107,10 +107,10 @@ void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
         { "AckNAK", 0 },
         { "Asynchronous", 0 },
     };
-    const auto tperPropeties = sessionManager->Properties(hostProperties);
+    const auto& [tperProps, hostProps] = sessionManager->Properties(hostProperties);
 
     std::cout << "TPer properties: " << std::endl;
-    for (const auto& [name, value] : tperPropeties) {
+    for (const auto& [name, value] : tperProps) {
         std::cout << std::format("  {} = {}", name, value) << std::endl;
     }
 }

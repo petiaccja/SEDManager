@@ -9,6 +9,26 @@
 
 
 template <std::integral T>
+RpcStream SerializeArg(T arg);
+template <std::integral T>
+void ParseArg(const RpcStream& stream, T& arg);
+
+RpcStream SerializeArg(const std::string& arg);
+void ParseArg(const RpcStream& stream, std::string& arg);
+
+template <class T>
+RpcStream SerializeArg(const std::optional<T>& arg);
+template <class T>
+void ParseArg(const RpcStream& stream, std::optional<T>& arg);
+
+template <class Key, class Value>
+RpcStream SerializeArg(const std::unordered_map<Key, Value>& arg);
+template <class Key, class Value>
+void ParseArg(const RpcStream& stream, std::unordered_map<Key, Value>& arg);
+
+
+
+template <std::integral T>
 RpcStream SerializeArg(T arg) {
     return arg;
 }
@@ -20,21 +40,6 @@ void ParseArg(const RpcStream& stream, T& arg) {
         throw std::invalid_argument("expected an integer");
     }
     arg = stream.Get<T>();
-}
-
-
-template <class T>
-RpcStream SerializeArg(const std::string& arg) {
-    return { RpcStream::bytes, arg };
-}
-
-
-template <class T>
-void ParseArg(const RpcStream& stream, std::string& arg) {
-    if (!stream.IsBytes()) {
-        throw std::invalid_argument("expected bytes");
-    }
-    arg = stream.Get<std::string_view>();
 }
 
 
