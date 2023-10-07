@@ -1,8 +1,10 @@
 #include <TPerLib/NvmeDevice.hpp>
+#include <TPerLib/Serialization/Utility.hpp>
 #include <TPerLib/Session.hpp>
 #include <TPerLib/SessionManager.hpp>
 #include <TPerLib/TrustedPeripheral.hpp>
 
+#include <fstream>
 #include <iostream>
 #include <ranges>
 #include <string_view>
@@ -65,22 +67,15 @@ void PrintDeviceInfo(TrustedPeripheral& tper) {
     }
     if (!std::holds_alternative<std::monostate>(desc.sscDesc)) {
         std::cout << "  SSC:" << std::endl;
-        const auto baseComId = std::visit([](const auto& arg) -> int {
+        std::visit([](const auto& arg) {
             if constexpr (!std::is_convertible_v<decltype(arg), std::monostate>) {
-                return arg.baseComId;
+                std::cout << std::format("    Base ComID:                 {}", arg.baseComId) << std::endl;
+                std::cout << std::format("    Num ComIDs:                 {}", arg.numComIds) << std::endl;
+                std::cout << std::format("    Initial C_PIN:              {}", arg.initialCPinSidIndicator) << std::endl;
+                std::cout << std::format("    C_PIN revert behavior:      {}", arg.cPinSidRevertBehavior) << std::endl;
             }
-            return 0;
         },
-                                          desc.sscDesc);
-        const auto numComIds = std::visit([](const auto& arg) -> int {
-            if constexpr (!std::is_convertible_v<decltype(arg), std::monostate>) {
-                return arg.numComIds;
-            }
-            return 0;
-        },
-                                          desc.sscDesc);
-        std::cout << std::format("    Base ComID:                 {}", baseComId) << std::endl;
-        std::cout << std::format("    Num ComIDs:                 {}", numComIds) << std::endl;
+                   desc.sscDesc);
     }
 
     std::string_view comIdState = GetComIdStateStr(tper.VerifyComId());
@@ -122,14 +117,44 @@ void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
     }
 }
 
-void DoSession(std::shared_ptr<SessionManager> sessionManager) {
+void DoRevert(std::shared_ptr<SessionManager> sessionManager) {
+    std::ifstream file("/home/petiaccja/Programming/ssd_psid.txt");
+    std::string password = { std::istreambuf_iterator(file.rdbuf()), std::istreambuf_iterator<char>() };
     try {
-        Uid adminSpUid = 0x0000'0205'0000'0001;
+        std::cout << std::format("Starting session as PSID...\n");
+        Session session(sessionManager, opal::eSecurityProvider::Admin, std::as_bytes(std::span(password)), opal::eAuthorityId::PSID);
+        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
+        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
 
-        std::cout << std::format("Starting session...\n");
+        std::cout << "Reverting..." << std::endl;
+        session.opal.Revert(opal::eSecurityProvider::Admin);
+    }
+    catch (std::exception& ex) {
+        std::cout << "Session failed: " << ex.what() << std::endl;
+    }
+}
 
-        Session session(sessionManager, adminSpUid);
 
+void DoSession(std::shared_ptr<SessionManager> sessionManager) {
+    std::vector<std::byte> password;
+    try {
+        std::cout << std::format("Starting session as Anybody...\n");
+        Session session(sessionManager, opal::eSecurityProvider::Admin);
+        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
+        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
+
+        const auto msidPin = session.base.Get(opal::eTableRow_C_PIN::C_PIN_MSID, 3);
+        const auto passwordView = msidPin.Get<std::span<const std::byte>>();
+        password = { passwordView.begin(), passwordView.end() };
+        std::cout << "MSID PIN: " << StringView(passwordView) << std::endl;
+    }
+    catch (std::exception& ex) {
+        std::cout << "Session failed: " << ex.what() << std::endl;
+    }
+
+    try {
+        std::cout << std::format("Starting session as SID...\n");
+        Session session(sessionManager, opal::eSecurityProvider::Admin, password, eAuthorityId::SID);
         std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
         std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
     }
@@ -151,6 +176,7 @@ int main() {
 
         PrintDeviceInfo(*tper);
         PrintDeviceProperties(sessionManager);
+        //DoRevert(sessionManager);
         DoSession(sessionManager);
     }
     catch (std::exception& ex) {

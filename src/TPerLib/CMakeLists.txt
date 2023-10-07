@@ -12,6 +12,8 @@ target_sources(TPerLib
         SessionManager.hpp
         Session.cpp
         Session.hpp
+        Logging.cpp
+        Logging.hpp
 
         Rpc/Method.cpp
         Rpc/Method.hpp
@@ -26,8 +28,8 @@ target_sources(TPerLib
         Serialization/TokenDebugArchive.cpp
         Serialization/Utility.hpp
 
-        Communication/TokenStream.cpp
-        Communication/TokenStream.hpp
+        Communication/Value.cpp
+        Communication/Value.hpp
         Communication/Discovery.hpp
         Communication/Discovery.cpp
         Communication/ComIdSetup.hpp

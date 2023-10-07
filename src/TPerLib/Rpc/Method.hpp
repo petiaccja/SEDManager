@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Communication/TokenStream.hpp"
+#include "../Communication/Value.hpp"
 #include "MethodArgs.hpp"
 
 
@@ -29,21 +29,21 @@ enum class eMethodStatus : uint8_t {
 
 struct Method {
     Uid methodId;
-    std::vector<TokenStream> args;
+    std::vector<Value> args;
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
 
 struct MethodResult {
-    std::vector<TokenStream> values;
+    std::vector<Value> values;
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
 
 std::string_view MethodStatusText(eMethodStatus status);
-TokenStream SerializeMethod(Uid invokingId, const Method& method);
-Method ParseMethod(const TokenStream& stream);
-MethodResult ParseMethodResult(const TokenStream& stream);
+Value SerializeMethod(Uid invokingId, const Method& method);
+Method ParseMethod(const Value& stream);
+MethodResult ParseMethodResult(const Value& stream);
 
 
 namespace impl {
@@ -71,8 +71,8 @@ auto LabelOptionalArgs(intptr_t label, const Arg& arg, const Args&... args) {
 }
 
 
-template <size_t Element, std::same_as<intptr_t>... Labels, std::same_as<TokenStream>... Streams>
-std::vector<TokenStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<Streams...> streams) {
+template <size_t Element, std::same_as<intptr_t>... Labels, std::same_as<Value>... Streams>
+std::vector<Value> CollapseArgs(std::tuple<Labels...> labels, std::tuple<Streams...> streams) {
     if constexpr (Element >= sizeof...(Labels)) {
         return {};
     }
@@ -84,7 +84,7 @@ std::vector<TokenStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<S
         auto rest = CollapseArgs<Element + 1>(labels, std::move(streams));
 
         if (label >= 0 && stream.HasValue()) {
-            rest.emplace_back(Named(label, std::move(stream)));
+            rest.emplace_back(Named(uint32_t(label), std::move(stream)));
         }
         else {
             rest.push_back(std::move(stream));
@@ -94,11 +94,11 @@ std::vector<TokenStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<S
 }
 
 
-std::vector<std::pair<intptr_t, const TokenStream&>> LabelOptionalArgs(std::span<const TokenStream> streams);
+std::vector<std::pair<intptr_t, const Value&>> LabelOptionalArgs(std::span<const Value> streams);
 
 
 template <size_t Element, std::same_as<intptr_t>... Labels, class... Args>
-void ExpandArgs(std::vector<std::pair<intptr_t, const TokenStream&>> labeledStreams,
+void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
                 std::tuple<Labels...> labels,
                 std::tuple<Args&...> args) {
     if constexpr (Element < sizeof...(Args)) {
@@ -129,7 +129,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const TokenStream&>> labeledStre
 
 
 template <class... Args>
-std::vector<TokenStream> SerializeArgs(const Args&... args) {
+std::vector<Value> SerializeArgs(const Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
     const auto streams = std::tuple{ SerializeArg(args)... };
     auto list = impl::CollapseArgs<0>(labels, std::move(streams));
@@ -139,7 +139,7 @@ std::vector<TokenStream> SerializeArgs(const Args&... args) {
 
 
 template <class... Args>
-void ParseArgs(std::span<const TokenStream> streams, Args&... args) {
+void ParseArgs(std::span<const Value> streams, Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
     const auto labeledStreams = impl::LabelOptionalArgs(streams);
     impl::ExpandArgs<0>(labeledStreams, labels, std::tie(args...));

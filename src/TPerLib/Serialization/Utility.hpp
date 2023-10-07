@@ -43,6 +43,12 @@ inline std::string_view StringView(std::span<const uint8_t> bytes) {
 }
 
 
+inline std::string_view StringView(std::span<const std::byte> bytes) {
+    const auto str = reinterpret_cast<const char*>(bytes.data());
+    return { str, str + bytes.size() };
+}
+
+
 template <class Object>
 std::vector<uint8_t> ToTokens(const Object& object) {
     std::stringstream buffer(std::ios::binary | std::ios::out);

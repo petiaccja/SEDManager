@@ -73,7 +73,7 @@ private:
 
 template <class OutArgs, class... InArgs>
 OutArgs SessionManager::InvokeMethod(eMethodId methodId, const InArgs&... inArgs) {
-    std::vector<TokenStream> args = SerializeArgs(inArgs...);
+    std::vector<Value> args = SerializeArgs(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
     if (result.status != eMethodStatus::SUCCESS) {
         throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", uint64_t(methodId), MethodStatusText(result.status)));

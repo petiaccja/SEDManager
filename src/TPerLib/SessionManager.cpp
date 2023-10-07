@@ -1,6 +1,7 @@
 #include "SessionManager.hpp"
 
 #include "Communication/Packet.hpp"
+#include "Logging.hpp"
 #include "Serialization/TokenArchive.hpp"
 #include "Serialization/TokenDebugArchive.hpp"
 #include "Serialization/Utility.hpp"
@@ -64,9 +65,21 @@ auto SessionManager::StartSession(
 
 
 void SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
-    auto payload = ToTokens(TokenStream(eCommand::END_OF_SESSION));
+    Value request = eCommand::END_OF_SESSION;
+    Log("Close session", request);
+    auto payload = ToTokens(request);
     const auto packet = CreatePacket(std::move(payload), tperSessionNumber, hostSessionNumber);
-    m_tper->SendPacket(PROTOCOL, packet);
+    const auto result = m_tper->SendPacket(PROTOCOL, packet);
+    try {
+        const auto resultBytes = UnwrapPacket(result);
+        Value resultValue;
+        FromTokens(resultBytes, resultValue);
+        if (resultValue.HasValue()) {
+            Log("Close session: response", resultValue);
+        }
+    }
+    catch (...) {
+    }
 }
 
 
@@ -112,10 +125,9 @@ std::span<const uint8_t> SessionManager::UnwrapPacket(const ComPacket& packet) {
 
 Method SessionManager::InvokeMethod(const Method& method) {
     try {
-        const TokenStream requestStream = SerializeMethod(INVOKING_ID, method);
-        TokenDebugArchive debugAr(std::cout);
-
-        std::stringstream requestSs;
+        const Value requestStream = SerializeMethod(INVOKING_ID, method);
+        Log("Session Manager Method - Call", requestStream);
+        std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = BytesView(requestSs.view());
@@ -123,8 +135,9 @@ Method SessionManager::InvokeMethod(const Method& method) {
         const auto responsePacket = m_tper->SendPacket(PROTOCOL, requestPacket);
         const auto responseTokens = UnwrapPacket(responsePacket);
 
-        TokenStream responseStream;
+        Value responseStream;
         FromTokens(responseTokens, responseStream);
+        Log("Session Manager Method - Result", responseStream);
 
         auto response = ParseMethod(responseStream);
         return response;

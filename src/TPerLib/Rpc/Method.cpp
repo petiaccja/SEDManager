@@ -23,17 +23,17 @@ std::string_view MethodStatusText(eMethodStatus status) {
         case eMethodStatus::TRANSACTION_FAILURE: return "transaction failure";
         case eMethodStatus::RESPONSE_OVERFLOW: return "response overflow";
         case eMethodStatus::AUTHORITY_LOCKED_OUT: return "authority locked out";
-        case eMethodStatus::FAIL: return "undetermined failure";
+        case eMethodStatus::FAIL: return "unspecified failure";
         default: return "unrecognized status code";
     }
 }
 
 
-TokenStream SerializeMethod(Uid invokingId, const Method& method) {
-    TokenStream stream = {
+Value SerializeMethod(Uid invokingId, const Method& method) {
+    Value stream = {
         eCommand::CALL,
-        { TokenStream::bytes, ToBytes(uint64_t(invokingId)) },
-        { TokenStream::bytes, ToBytes(uint64_t(method.methodId)) },
+        { Value::bytes, ToBytes(uint64_t(invokingId)) },
+        { Value::bytes, ToBytes(uint64_t(method.methodId)) },
         method.args,
         eCommand::END_OF_DATA,
         { uint8_t(method.status), uint8_t(0), uint8_t(0) },
@@ -42,11 +42,11 @@ TokenStream SerializeMethod(Uid invokingId, const Method& method) {
 }
 
 
-Method ParseMethod(const TokenStream& stream) {
+Method ParseMethod(const Value& stream) {
     if (!stream.IsList()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = stream.Get<std::span<const TokenStream>>();
+    const auto content = stream.Get<std::span<const Value>>();
     if (content.size() < 6) {
         throw std::invalid_argument("method stream must contains at least CALL, invoking ID, method ID, arg list, EOD, and status list");
     }
@@ -54,9 +54,9 @@ Method ParseMethod(const TokenStream& stream) {
         const auto call = content[0].Get<eCommand>();
         const auto invokingIdBytes = content[1].Get<std::span<const uint8_t>>();
         const auto methodIdBytes = content[2].Get<std::span<const uint8_t>>();
-        const auto args = content[3].Get<std::span<const TokenStream>>();
+        const auto args = content[3].Get<std::span<const Value>>();
         const auto eod = content[4].Get<eCommand>();
-        const auto statusList = content[5].Get<std::span<const TokenStream>>();
+        const auto statusList = content[5].Get<std::span<const Value>>();
 
         if (call != eCommand::CALL) {
             throw std::invalid_argument("expected a leading call token");
@@ -84,18 +84,32 @@ Method ParseMethod(const TokenStream& stream) {
 }
 
 
-MethodResult ParseMethodResult(const TokenStream& stream) {
-    if (!stream.IsList()) {
+MethodResult ParseMethodResult(const Value& result) {
+    if (!result.IsList()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = stream.Get<std::span<const TokenStream>>();
+    const auto content = result.Get<std::span<const Value>>();
     if (content.size() < 3) {
         throw std::invalid_argument("method result stream must contains at least result list, EOD, and status list");
     }
+
+    if (content[0].IsCommand() && content[0].Get<eCommand>() == eCommand::CALL) {
+        Method method;
+        try {
+            method = ParseMethod(result);
+        }
+        catch (std::exception& ex) {
+            throw std::invalid_argument(std::format("failed to parse results (result was a call): {}", ex.what()));
+        }
+        if (uint64_t(method.methodId) == 0xFF06) {
+            throw std::runtime_error(std::format("session terminated by TPer: {}", MethodStatusText(method.status)));
+        }
+    }
+
     try {
-        const auto results = content[0].Get<std::span<const TokenStream>>();
+        const auto results = content[0].Get<std::span<const Value>>();
         const auto eod = content[1].Get<eCommand>();
-        const auto statusList = content[2].Get<std::span<const TokenStream>>();
+        const auto statusList = content[2].Get<std::span<const Value>>();
 
         if (eod != eCommand::END_OF_DATA) {
             throw std::invalid_argument("expected an end of data token after result list");
@@ -111,18 +125,18 @@ MethodResult ParseMethodResult(const TokenStream& stream) {
         };
         return methodResult;
     }
-    catch (std::exception&) {
-        throw std::invalid_argument("incorrect method result format");
+    catch (std::exception& ex) {
+        throw std::invalid_argument(std::format("failed to parse results: {}", ex.what()));
     }
 }
 
 
 namespace impl {
 
-std::vector<std::pair<intptr_t, const TokenStream&>> LabelOptionalArgs(std::span<const TokenStream> streams) {
-    using Item = std::pair<intptr_t, const TokenStream&>;
+std::vector<std::pair<intptr_t, const Value&>> LabelOptionalArgs(std::span<const Value> streams) {
+    using Item = std::pair<intptr_t, const Value&>;
     std::vector<Item> labels;
-    std::ranges::transform(streams, std::back_inserter(labels), [](const TokenStream& stream) {
+    std::ranges::transform(streams, std::back_inserter(labels), [](const Value& stream) {
         if (stream.IsNamed()) {
             const auto& named = stream.Get<Named>();
             if (!named.name.IsInteger()) {

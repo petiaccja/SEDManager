@@ -5,7 +5,7 @@ target_sources(Test
         main.cpp
         TestTokenArchive.cpp
         TestPackets.cpp
-        TestTokenStream.cpp
+        TestValue.cpp
         TestMethod.cpp
 )
 

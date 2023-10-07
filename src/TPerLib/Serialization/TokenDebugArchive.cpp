@@ -43,11 +43,11 @@ void TokenDebugArchive::Insert(const Token& token) {
         std::string dataType;
         if (token.isByte) {
             dataRep += "[ ";
-            const size_t maxSize = name ? 60 : 16;
+            const size_t maxSize = name ? 60 : 32;
             for (size_t idx = 0; idx < std::min(maxSize, token.data.size()); ++idx) {
                 name
                     ? dataRep += std::bit_cast<char>(token.data[idx])
-                    : dataRep += std::format("{:#04x} ", token.data[idx]);
+                    : dataRep += std::format("{:02X} ", token.data[idx]);
             }
             if (token.data.size() > maxSize) {
                 dataRep += "... ";

@@ -44,38 +44,38 @@ template <class T>
 struct is_const_std_span<std::span<const T>> : std::bool_constant<true> {};
 
 
-class TokenStream {
+class Value {
     struct AsBytesType {};
 
 public:
     static constexpr auto bytes = AsBytesType{};
-    using ListType = std::vector<TokenStream>;
+    using ListType = std::vector<Value>;
     using BytesType = std::vector<uint8_t>;
     using IntTypes = std::tuple<bool, char, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t>;
 
 public:
-    TokenStream() = default;
+    Value() = default;
 
     //----------------------------------
     // Construction
     //----------------------------------
 
     // Integers.
-    TokenStream(std::integral auto value);
+    Value(std::integral auto value);
     // Lists.
-    TokenStream(std::initializer_list<TokenStream> values);
+    Value(std::initializer_list<Value> values);
     template <std::ranges::range R>
-        requires std::convertible_to<std::ranges::range_value_t<R>, TokenStream>
-    TokenStream(R&& values);
+        requires std::convertible_to<std::ranges::range_value_t<R>, Value>
+    Value(R&& values);
     // Bytes.
     template <std::ranges::range R>
         requires std::is_trivial_v<std::ranges::range_value_t<R>>
-    TokenStream(AsBytesType, R&& values);
+    Value(AsBytesType, R&& values);
     // Named.
-    TokenStream(std::string_view name, TokenStream value);
-    TokenStream(Named value);
+    Value(std::string_view name, Value value);
+    Value(Named value);
     // Commands.
-    TokenStream(eCommand command);
+    Value(eCommand command);
 
 
     //----------------------------------
@@ -93,8 +93,8 @@ public:
     template <std::same_as<std::string_view> T>
     std::string_view Get() const;
 
-    template <std::same_as<std::span<const TokenStream>> T>
-    std::span<const TokenStream> Get() const;
+    template <std::same_as<std::span<const Value>> T>
+    std::span<const Value> Get() const;
 
     template <std::same_as<Named> T>
     const Named& Get() const;
@@ -102,14 +102,14 @@ public:
     template <std::same_as<eCommand> T>
     eCommand Get() const;
 
-    template <std::same_as<std::vector<TokenStream>> T>
-    std::vector<TokenStream>& Get();
+    template <std::same_as<std::vector<Value>> T>
+    std::vector<Value>& Get();
 
     template <std::same_as<std::vector<uint8_t>> T>
     std::vector<uint8_t>& Get();
 
-    template <std::same_as<std::span<TokenStream>> T>
-    std::span<TokenStream> Get();
+    template <std::same_as<std::span<Value>> T>
+    std::span<Value> Get();
 
     template <std::same_as<std::span<uint8_t>> T>
     std::span<uint8_t> Get();
@@ -125,8 +125,8 @@ public:
     template <std::integral T>
     T AsInt() const;
     // Lists.
-    std::span<const TokenStream> AsList() const;
-    std::vector<TokenStream>& AsList();
+    std::span<const Value> AsList() const;
+    std::vector<Value>& AsList();
     // Bytes.
     template <class T>
         requires std::is_trivial_v<T>
@@ -156,8 +156,8 @@ private:
 
 
 struct Named {
-    TokenStream name;
-    TokenStream value;
+    Value name;
+    Value value;
 };
 
 //------------------------------------------------------------------------------
@@ -200,21 +200,21 @@ decltype(auto) ForEachType(Func func) {
 //------------------------------------------------------------------------------
 
 // Integers.
-TokenStream::TokenStream(std::integral auto value)
+Value::Value(std::integral auto value)
     : m_value(value) {}
 
 
 // Lists.
 template <std::ranges::range R>
-    requires std::convertible_to<std::ranges::range_value_t<R>, TokenStream>
-TokenStream::TokenStream(R&& values)
+    requires std::convertible_to<std::ranges::range_value_t<R>, Value>
+Value::Value(R&& values)
     : m_value(ListType(std::ranges::begin(values), std::ranges::end(values))) {}
 
 
 // Bytes.
 template <std::ranges::range R>
     requires std::is_trivial_v<std::ranges::range_value_t<R>>
-TokenStream::TokenStream(AsBytesType, R&& values) {
+Value::Value(AsBytesType, R&& values) {
     BytesType bytes;
     for (const auto& v : values) {
         const std::span itemBytes{ reinterpret_cast<const uint8_t*>(&v), sizeof(v) };
@@ -230,7 +230,7 @@ TokenStream::TokenStream(AsBytesType, R&& values) {
 
 // Integers.
 template <std::integral T>
-T TokenStream::AsInt() const {
+T Value::AsInt() const {
     const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<T> {
         using Q = std::decay_t<decltype(*ptr)>;
         if (m_value.type() == typeid(Q)) {
@@ -247,69 +247,69 @@ T TokenStream::AsInt() const {
 // Bytes.
 template <class T>
     requires std::is_trivial_v<T>
-std::span<const T> TokenStream::AsBytes() const {
+std::span<const T> Value::AsBytes() const {
     const auto& bytes = std::any_cast<const BytesType&>(m_value);
     std::span<const T> objects{ reinterpret_cast<const T*>(bytes.data()), bytes.size() / sizeof(T) };
     return objects;
 }
 
 template <std::integral T>
-T TokenStream::Get() const {
+T Value::Get() const {
     return AsInt<T>();
 }
 
 template <class T>
     requires is_const_std_span<std::decay_t<T>>::value
              && std::is_trivial_v<std::ranges::range_value_t<T>>
-std::decay_t<T> TokenStream::Get() const {
+std::decay_t<T> Value::Get() const {
     return AsBytes<std::ranges::range_value_t<T>>();
 }
 
 template <std::same_as<std::string_view> T>
-std::string_view TokenStream::Get() const {
+std::string_view Value::Get() const {
     const auto bytes = AsBytes<uint8_t>();
     const auto* ptr = reinterpret_cast<const char*>(bytes.data());
     return std::string_view(ptr, ptr + bytes.size());
 }
 
-template <std::same_as<std::span<const TokenStream>> T>
-std::span<const TokenStream> TokenStream::Get() const {
+template <std::same_as<std::span<const Value>> T>
+std::span<const Value> Value::Get() const {
     return AsList();
 }
 
 template <std::same_as<Named> T>
-const Named& TokenStream::Get() const {
+const Named& Value::Get() const {
     return AsNamed();
 }
 
 template <std::same_as<eCommand> T>
-eCommand TokenStream::Get() const {
+eCommand Value::Get() const {
     return AsCommand();
 }
 
-template <std::same_as<std::vector<TokenStream>> T>
-std::vector<TokenStream>& TokenStream::Get() {
+template <std::same_as<std::vector<Value>> T>
+std::vector<Value>& Value::Get() {
     return AsList();
 }
 
 template <std::same_as<std::vector<uint8_t>> T>
-std::vector<uint8_t>& TokenStream::Get() {
+std::vector<uint8_t>& Value::Get() {
     return AsBytes();
 }
 
-template <std::same_as<std::span<TokenStream>> T>
-std::span<TokenStream> TokenStream::Get() {
+template <std::same_as<std::span<Value>> T>
+std::span<Value> Value::Get() {
     return AsList();
 }
 
 template <std::same_as<std::span<uint8_t>> T>
-std::span<uint8_t> TokenStream::Get() {
+std::span<uint8_t> Value::Get() {
     return AsBytes();
 }
 
 
 template <std::same_as<Named> T>
-Named& TokenStream::Get() {
+Named& Value::Get() {
     return AsNamed();
 }
 
@@ -319,8 +319,8 @@ Named& TokenStream::Get() {
 //------------------------------------------------------------------------------
 
 template <class Archive>
-void SaveInteger(Archive& ar, const TokenStream& stream) {
-    std::optional<bool> r = ForEachType<TokenStream::IntTypes>([&]<class T>(T* ptr) -> std::optional<bool> {
+void SaveInteger(Archive& ar, const Value& stream) {
+    std::optional<bool> r = ForEachType<Value::IntTypes>([&]<class T>(T* ptr) -> std::optional<bool> {
         if (stream.Type() == typeid(T)) {
             const auto bytes = ToFlatBinary(stream.Get<T>());
             const Token token{
@@ -341,7 +341,7 @@ void SaveInteger(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void SaveList(Archive& ar, const TokenStream& stream) {
+void SaveList(Archive& ar, const Value& stream) {
     ar(Token{ .tag = eTag::START_LIST });
     size_t idx = 0;
     for (const auto& item : stream.AsList()) {
@@ -352,7 +352,7 @@ void SaveList(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void SaveBytes(Archive& ar, const TokenStream& stream) {
+void SaveBytes(Archive& ar, const Value& stream) {
     const auto bytes = stream.AsBytes<uint8_t>();
     Token token{
         .tag = GetTagForData(bytes.size_bytes()),
@@ -365,7 +365,7 @@ void SaveBytes(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void SaveNamed(Archive& ar, const TokenStream& stream) {
+void SaveNamed(Archive& ar, const Value& stream) {
     ar(Token{ .tag = eTag::START_NAME });
     SaveDispatch(ar, stream.AsNamed().name);
     SaveDispatch(ar, stream.AsNamed().value);
@@ -374,13 +374,13 @@ void SaveNamed(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void SaveCommand(Archive& ar, const TokenStream& stream) {
+void SaveCommand(Archive& ar, const Value& stream) {
     ar(Token{ .tag = static_cast<eTag>(stream.AsCommand()) });
 }
 
 
 template <class Archive>
-void SaveDispatch(Archive& ar, const TokenStream& stream) {
+void SaveDispatch(Archive& ar, const Value& stream) {
     if (stream.IsInteger()) {
         SaveInteger(ar, stream);
     }
@@ -400,7 +400,7 @@ void SaveDispatch(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void save_strip_list(Archive& ar, const TokenStream& stream) {
+void save_strip_list(Archive& ar, const Value& stream) {
     if (stream.IsList()) {
         for (const auto& item : stream.AsList()) {
             SaveDispatch(ar, item);
@@ -413,20 +413,20 @@ void save_strip_list(Archive& ar, const TokenStream& stream) {
 
 
 template <class Archive>
-void save(Archive& ar, const TokenStream& stream) {
+void save(Archive& ar, const Value& stream) {
     SaveDispatch(ar, stream);
 }
 
 
-TokenStream ConvertToData(const Token& token);
+Value ConvertToData(const Token& token);
 
-void InsertItem(TokenStream& target, TokenStream item);
+void InsertItem(Value& target, Value item);
 
 
 template <class Archive>
-void load(Archive& ar, TokenStream& stream) {
-    std::stack<TokenStream> stack;
-    stack.push(TokenStream(std::vector<TokenStream>{}));
+void load(Archive& ar, Value& stream) {
+    std::stack<Value> stack;
+    stack.push(Value(std::vector<Value>{}));
     do {
         Token token;
         try {
@@ -440,10 +440,10 @@ void load(Archive& ar, TokenStream& stream) {
             continue;
         }
         else if (token.tag == eTag::START_LIST) {
-            stack.push(TokenStream(std::vector<TokenStream>{}));
+            stack.push(Value(std::vector<Value>{}));
         }
         else if (token.tag == eTag::START_NAME) {
-            stack.push(TokenStream(Named{}));
+            stack.push(Value(Named{}));
         }
         else if (token.tag == eTag::END_LIST) {
             auto item = std::move(stack.top());

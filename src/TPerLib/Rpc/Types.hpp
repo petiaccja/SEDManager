@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Communication/Value.hpp"
+
 #include <compare>
 #include <concepts>
 #include <cstddef>
@@ -33,5 +35,8 @@ struct Uid {
 
 
 struct CellBlock {
-
+    Value startRow;
+    Value endRow;
+    std::optional<uint32_t> startColumn;
+    std::optional<uint32_t> endColumn;
 };

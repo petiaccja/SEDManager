@@ -72,7 +72,7 @@ void SendCommand(int file, nvme_admin_cmd command) {
     const auto err = ioctl(file, NVME_IOCTL_ADMIN_CMD, &command);
     if (err < 0) {
         throw std::runtime_error{
-            std::format("error communicating with NVMe device: {}", strerror(err))
+            std::format("error communicating with NVMe device: {}", strerror(errno))
         };
     }
     if (err != 0) {
