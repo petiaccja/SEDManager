@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Serialization/RpcStream.hpp"
+#include "../Communication/TokenStream.hpp"
 
 #include <concepts>
 #include <optional>
@@ -17,43 +17,43 @@ constexpr std::byte operator""_b(unsigned long long value) {
 
 // Integers
 template <std::integral T>
-RpcStream SerializeArg(T arg);
+TokenStream SerializeArg(T arg);
 template <std::integral T>
-void ParseArg(const RpcStream& stream, T& arg);
+void ParseArg(const TokenStream& stream, T& arg);
 
 // String (bytes)
-RpcStream SerializeArg(const std::string& arg);
-RpcStream SerializeArg(std::string_view arg);
-void ParseArg(const RpcStream& stream, std::string& arg);
+TokenStream SerializeArg(const std::string& arg);
+TokenStream SerializeArg(std::string_view arg);
+void ParseArg(const TokenStream& stream, std::string& arg);
 
 // Range of std::byte (bytes)
 template <class Range>
     requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
-RpcStream SerializeArg(const Range& arg);
-void ParseArg(const RpcStream& stream, std::vector<std::byte>& arg);
+TokenStream SerializeArg(const Range& arg);
+void ParseArg(const TokenStream& stream, std::vector<std::byte>& arg);
 
 // Optional (optional parameters)
 template <class T>
-RpcStream SerializeArg(const std::optional<T>& arg);
+TokenStream SerializeArg(const std::optional<T>& arg);
 template <class T>
-void ParseArg(const RpcStream& stream, std::optional<T>& arg);
+void ParseArg(const TokenStream& stream, std::optional<T>& arg);
 
 // Unordered map (list of named values)
 template <class Key, class Value>
-RpcStream SerializeArg(const std::unordered_map<Key, Value>& arg);
+TokenStream SerializeArg(const std::unordered_map<Key, Value>& arg);
 template <class Key, class Value>
-void ParseArg(const RpcStream& stream, std::unordered_map<Key, Value>& arg);
+void ParseArg(const TokenStream& stream, std::unordered_map<Key, Value>& arg);
 
 
 
 template <std::integral T>
-RpcStream SerializeArg(T arg) {
+TokenStream SerializeArg(T arg) {
     return arg;
 }
 
 
 template <std::integral T>
-void ParseArg(const RpcStream& stream, T& arg) {
+void ParseArg(const TokenStream& stream, T& arg) {
     if (!stream.IsInteger()) {
         throw std::invalid_argument("expected an integer");
     }
@@ -63,13 +63,13 @@ void ParseArg(const RpcStream& stream, T& arg) {
 
 template <class Range>
     requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
-RpcStream SerializeArg(const Range& arg) {
-    return { RpcStream::bytes, arg };
+TokenStream SerializeArg(const Range& arg) {
+    return { TokenStream::bytes, arg };
 }
 
 
 template <class T>
-RpcStream SerializeArg(const std::optional<T>& arg) {
+TokenStream SerializeArg(const std::optional<T>& arg) {
     if (arg.has_value()) {
         return SerializeArg(arg.value());
     }
@@ -78,7 +78,7 @@ RpcStream SerializeArg(const std::optional<T>& arg) {
 
 
 template <class T>
-void ParseArg(const RpcStream& stream, std::optional<T>& arg) {
+void ParseArg(const TokenStream& stream, std::optional<T>& arg) {
     if (stream.HasValue()) {
         T value;
         ParseArg(stream, value);
@@ -88,21 +88,21 @@ void ParseArg(const RpcStream& stream, std::optional<T>& arg) {
 
 
 template <class Key, class Value>
-RpcStream SerializeArg(const std::unordered_map<Key, Value>& arg) {
-    std::vector<RpcStream> nameds;
+TokenStream SerializeArg(const std::unordered_map<Key, Value>& arg) {
+    std::vector<TokenStream> nameds;
     for (const auto& [key, value] : arg) {
         nameds.emplace_back(Named(SerializeArg(key), SerializeArg(value)));
     }
-    return RpcStream(std::move(nameds));
+    return TokenStream(std::move(nameds));
 }
 
 
 template <class Key, class Value>
-void ParseArg(const RpcStream& stream, std::unordered_map<Key, Value>& arg) {
+void ParseArg(const TokenStream& stream, std::unordered_map<Key, Value>& arg) {
     if (!stream.IsList()) {
         throw std::invalid_argument("expected a list of named values for unordered_map");
     }
-    const auto& nameds = stream.Get<std::span<const RpcStream>>();
+    const auto& nameds = stream.Get<std::span<const TokenStream>>();
     arg = {};
     for (auto& named : nameds) {
         if (!named.IsNamed()) {

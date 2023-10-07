@@ -1,8 +1,8 @@
-#include "RpcStream.hpp"
+#include "TokenStream.hpp"
 
 
 void foo() {
-    RpcStream stream = {
+    TokenStream stream = {
         1,
         2,
         { "name", 6 },
@@ -15,20 +15,20 @@ void foo() {
 //------------------------------------------------------------------------------
 
 // Lists.
-RpcStream::RpcStream(std::initializer_list<RpcStream> values)
+TokenStream::TokenStream(std::initializer_list<TokenStream> values)
     : m_value(ListType(values)) {}
 
 
 // Named.
-RpcStream::RpcStream(std::string_view name, RpcStream value)
+TokenStream::TokenStream(std::string_view name, TokenStream value)
     : m_value(Named{ std::string{ name }, value }) {}
 
-RpcStream::RpcStream(Named value)
+TokenStream::TokenStream(Named value)
     : m_value(std::move(value)) {}
 
 
 // Commands.
-RpcStream::RpcStream(eCommand command)
+TokenStream::TokenStream(eCommand command)
     : m_value(command) {}
 
 
@@ -38,30 +38,30 @@ RpcStream::RpcStream(eCommand command)
 //------------------------------------------------------------------------------
 
 // Lists.
-std::span<const RpcStream> RpcStream::AsList() const {
+std::span<const TokenStream> TokenStream::AsList() const {
     return std::any_cast<const ListType&>(m_value);
 }
 
-std::vector<RpcStream>& RpcStream::AsList() {
-    return std::any_cast<std::vector<RpcStream>&>(m_value);
+std::vector<TokenStream>& TokenStream::AsList() {
+    return std::any_cast<std::vector<TokenStream>&>(m_value);
 }
 
 // Bytes
-std::vector<uint8_t>& RpcStream::AsBytes() {
+std::vector<uint8_t>& TokenStream::AsBytes() {
     return std::any_cast<std::vector<uint8_t>&>(m_value);
 }
 
 // Named.
-const Named& RpcStream::AsNamed() const {
+const Named& TokenStream::AsNamed() const {
     return std::any_cast<const Named&>(m_value);
 }
 
-Named& RpcStream::AsNamed() {
+Named& TokenStream::AsNamed() {
     return std::any_cast<Named&>(m_value);
 }
 
 // Commands.
-eCommand RpcStream::AsCommand() const {
+eCommand TokenStream::AsCommand() const {
     return std::any_cast<eCommand>(m_value);
 }
 
@@ -71,7 +71,7 @@ eCommand RpcStream::AsCommand() const {
 // Query
 //------------------------------------------------------------------------------
 
-bool RpcStream::IsInteger() const {
+bool TokenStream::IsInteger() const {
     const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<bool> {
         if (m_value.type() == typeid(decltype(*ptr))) {
             return true;
@@ -81,23 +81,23 @@ bool RpcStream::IsInteger() const {
     return v.has_value();
 }
 
-bool RpcStream::IsBytes() const {
+bool TokenStream::IsBytes() const {
     return typeid(BytesType) == m_value.type();
 }
 
-bool RpcStream::IsList() const {
+bool TokenStream::IsList() const {
     return typeid(ListType) == m_value.type();
 }
 
-bool RpcStream::IsNamed() const {
+bool TokenStream::IsNamed() const {
     return typeid(Named) == m_value.type();
 }
 
-bool RpcStream::IsCommand() const {
+bool TokenStream::IsCommand() const {
     return typeid(eCommand) == m_value.type();
 }
 
-const std::type_info& RpcStream::Type() const {
+const std::type_info& TokenStream::Type() const {
     return m_value.type();
 }
 
@@ -106,15 +106,15 @@ const std::type_info& RpcStream::Type() const {
 // Serialization
 //------------------------------------------------------------------------------
 
-RpcStream ConvertToData(const Token& token) {
+TokenStream ConvertToData(const Token& token) {
     if (token.isByte) {
         if (token.isSigned) {
             throw std::invalid_argument("continued atoms are not supported");
         }
-        return RpcStream(RpcStream::bytes, token.data);
+        return TokenStream(TokenStream::bytes, token.data);
     }
     else if (token.data.size() == 0) {
-        return RpcStream(static_cast<eCommand>(token.tag));
+        return TokenStream(static_cast<eCommand>(token.tag));
     }
     else {
         uint64_t value = 0;
@@ -150,7 +150,7 @@ RpcStream ConvertToData(const Token& token) {
 }
 
 
-void InsertItem(RpcStream& target, RpcStream item) {
+void InsertItem(TokenStream& target, TokenStream item) {
     if (target.IsList()) {
         target.AsList().push_back(std::move(item));
     }

@@ -1,8 +1,8 @@
 #include "TrustedPeripheral.hpp"
 
 #include "Serialization/Utility.hpp"
-#include "Structures/CommLayer.hpp"
-#include "Structures/Packets.hpp"
+#include "Communication/ComIdSetup.hpp"
+#include "Communication/Packet.hpp"
 
 #include <cereal/archives/portable_binary.hpp>
 

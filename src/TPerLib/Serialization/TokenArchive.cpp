@@ -1,4 +1,4 @@
-#include "RpcArchive.hpp"
+#include "TokenArchive.hpp"
 
 
 eTag GetTagFromHeader(uint8_t header) {
@@ -20,25 +20,25 @@ eTag GetTagFromHeader(uint8_t header) {
 }
 
 
-RpcInputArchive::RpcInputArchive(std::istream& stream)
-    : cereal::InputArchive<RpcInputArchive>(this),
+TokenInputArchive::TokenInputArchive(std::istream& stream)
+    : cereal::InputArchive<TokenInputArchive>(this),
       m_stream(stream) {}
 
 
-RpcOutputArchive::RpcOutputArchive(std::ostream& stream)
-    : cereal::OutputArchive<RpcOutputArchive>(this),
+TokenOutputArchive::TokenOutputArchive(std::ostream& stream)
+    : cereal::OutputArchive<TokenOutputArchive>(this),
       m_stream(stream) {}
 
 
-void CEREAL_SAVE_FUNCTION_NAME(RpcOutputArchive& ar, const Token& token) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenOutputArchive& ar, const Token& token) {
     ar.Insert(token);
 }
 
-void CEREAL_LOAD_FUNCTION_NAME(RpcInputArchive& ar, Token& token) {
+void CEREAL_LOAD_FUNCTION_NAME(TokenInputArchive& ar, Token& token) {
     ar.Extract(token);
 }
 
-void RpcOutputArchive::Insert(const Token& token) {
+void TokenOutputArchive::Insert(const Token& token) {
     if (token.tag == eTag::TINY_ATOM) {
         if (token.data.size() != 1) {
             throw std::invalid_argument("tiny atom must have a data length of 1 byte");
@@ -88,7 +88,7 @@ void RpcOutputArchive::Insert(const Token& token) {
 }
 
 
-void RpcInputArchive::Extract(Token& token) {
+void TokenInputArchive::Extract(Token& token) {
     uint8_t header;
     Extract(std::span<uint8_t, 1>(&header, 1));
     eTag tag = GetTagFromHeader(header);
@@ -143,6 +143,6 @@ void RpcInputArchive::Extract(Token& token) {
 }
 
 
-eTag RpcInputArchive::PeekTag() const {
+eTag TokenInputArchive::PeekTag() const {
     return GetTagFromHeader(Peek());
 }

@@ -3,9 +3,9 @@ add_executable(Test)
 target_sources(Test
     PRIVATE
         main.cpp
-        TestRpcArchive.cpp
+        TestTokenArchive.cpp
         TestPackets.cpp
-        TestRpcStream.cpp
+        TestTokenStream.cpp
         TestMethod.cpp
 )
 

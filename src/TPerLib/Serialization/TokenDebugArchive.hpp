@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Structures/Rpc.hpp"
+#include "../Communication/Token.hpp"
 #include "FlatBinaryArchive.hpp"
 
 #include <cereal/cereal.hpp>
@@ -14,13 +14,13 @@
 #include <span>
 
 
-class RpcDebugArchive : public cereal::OutputArchive<RpcDebugArchive> {
+class TokenDebugArchive : public cereal::OutputArchive<TokenDebugArchive> {
 public:
-    RpcDebugArchive(std::ostream& stream);
-    RpcDebugArchive(RpcDebugArchive&&) = delete;
-    RpcDebugArchive(const RpcDebugArchive&) = delete;
-    RpcDebugArchive& operator=(RpcDebugArchive&&) = delete;
-    RpcDebugArchive& operator=(const RpcDebugArchive&) = delete;
+    TokenDebugArchive(std::ostream& stream);
+    TokenDebugArchive(TokenDebugArchive&&) = delete;
+    TokenDebugArchive(const TokenDebugArchive&) = delete;
+    TokenDebugArchive& operator=(TokenDebugArchive&&) = delete;
+    TokenDebugArchive& operator=(const TokenDebugArchive&) = delete;
 
     void Insert(const Token& token);
 
@@ -31,11 +31,11 @@ private:
 };
 
 
-void CEREAL_SAVE_FUNCTION_NAME(RpcDebugArchive& ar, const Token& token);
+void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const Token& token);
 
 
 template <std::integral T>
-void CEREAL_SAVE_FUNCTION_NAME(RpcDebugArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
     // Store the value as a short atom.
     constexpr auto tag = eTag::SHORT_ATOM;
     const uint8_t length = sizeof(T);
@@ -48,7 +48,7 @@ void CEREAL_SAVE_FUNCTION_NAME(RpcDebugArchive& ar, const T& t) {
 
 
 template <std::floating_point T>
-void CEREAL_SAVE_FUNCTION_NAME(RpcDebugArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
     static_assert(!std::is_floating_point<T>::value || (std::is_floating_point<T>::value && std::numeric_limits<T>::is_iec559),
                   "Portable binary only supports IEEE 754 standardized floating point");
     using UnsignedType = std::conditional<sizeof(t) == 4, uint32_t, uint64_t>;

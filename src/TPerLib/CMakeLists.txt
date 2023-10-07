@@ -10,24 +10,28 @@ target_sources(TPerLib
         TrustedPeripheral.hpp
         SessionManager.cpp
         SessionManager.hpp
-        Method.cpp
-        Method.hpp
-        MethodTypes.cpp
-        MethodTypes.hpp
+
+        Rpc/Method.cpp
+        Rpc/Method.hpp
+        Rpc/MethodArgs.cpp
+        Rpc/MethodArgs.hpp
+
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp
-        Serialization/RpcArchive.hpp
-        Serialization/RpcArchive.cpp
-        Serialization/RpcDebugArchive.hpp
-        Serialization/RpcDebugArchive.cpp
+        Serialization/TokenArchive.hpp
+        Serialization/TokenArchive.cpp
+        Serialization/TokenDebugArchive.hpp
+        Serialization/TokenDebugArchive.cpp
         Serialization/Utility.hpp
-        Serialization/RpcStream.cpp
-        Serialization/RpcStream.hpp
-        Structures/CommLayer.hpp
-        Structures/Discovery.hpp
-        Structures/Discovery.cpp
-        Structures/Rpc.cpp
-        Structures/Rpc.hpp
+
+        Communication/TokenStream.cpp
+        Communication/TokenStream.hpp
+        Communication/Discovery.hpp
+        Communication/Discovery.cpp
+        Communication/ComIdSetup.hpp
+        Communication/Packet.hpp
+        Communication/Token.cpp
+        Communication/Token.hpp
 )
 
 find_package(cereal REQUIRED)

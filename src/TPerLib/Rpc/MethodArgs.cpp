@@ -1,17 +1,17 @@
-#include "MethodTypes.hpp"
+#include "MethodArgs.hpp"
 
 
-RpcStream SerializeArg(const std::string& arg) {
+TokenStream SerializeArg(const std::string& arg) {
     return SerializeArg(std::string_view(arg));
 }
 
 
-RpcStream SerializeArg(std::string_view arg) {
-    return { RpcStream::bytes, arg };
+TokenStream SerializeArg(std::string_view arg) {
+    return { TokenStream::bytes, arg };
 }
 
 
-void ParseArg(const RpcStream& stream, std::string& arg) {
+void ParseArg(const TokenStream& stream, std::string& arg) {
     if (!stream.IsBytes()) {
         throw std::invalid_argument("expected bytes");
     }
@@ -19,7 +19,7 @@ void ParseArg(const RpcStream& stream, std::string& arg) {
 }
 
 
-void ParseArg(const RpcStream& stream, std::vector<std::byte>& arg) {
+void ParseArg(const TokenStream& stream, std::vector<std::byte>& arg) {
     if (!stream.IsBytes()) {
         throw std::invalid_argument("expected bytes");
     }

@@ -1,4 +1,4 @@
-#include "RpcDebugArchive.hpp"
+#include "TokenDebugArchive.hpp"
 
 
 std::string_view GetTagName(eTag tag) {
@@ -30,11 +30,11 @@ std::string MakeIndentation(intptr_t indentation) {
     }
 }
 
-RpcDebugArchive::RpcDebugArchive(std::ostream& stream)
-    : cereal::OutputArchive<RpcDebugArchive>(this), m_stream(stream) {}
+TokenDebugArchive::TokenDebugArchive(std::ostream& stream)
+    : cereal::OutputArchive<TokenDebugArchive>(this), m_stream(stream) {}
 
 
-void RpcDebugArchive::Insert(const Token& token) {
+void TokenDebugArchive::Insert(const Token& token) {
     if (token.tag == eTag::TINY_ATOM
         || token.tag == eTag::SHORT_ATOM
         || token.tag == eTag::MEDIUM_ATOM
@@ -83,6 +83,6 @@ void RpcDebugArchive::Insert(const Token& token) {
 }
 
 
-void CEREAL_SAVE_FUNCTION_NAME(RpcDebugArchive& ar, const Token& token) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const Token& token) {
     ar.Insert(token);
 }

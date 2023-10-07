@@ -1,5 +1,5 @@
 #include <TPerLib/Serialization/Utility.hpp>
-#include <TPerLib/Structures/Packets.hpp>
+#include <TPerLib/Communication/Packet.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 

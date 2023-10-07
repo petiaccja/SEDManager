@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Method.hpp"
+#include "Rpc/Method.hpp"
 #include "TrustedPeripheral.hpp"
 
 #include <vector>
@@ -72,7 +72,7 @@ template <class OutArgs, class... InArgs>
 OutArgs SessionManager::InvokeMethod(uint64_t methodId, const InArgs&... inArgs) {
     constexpr uint64_t METHOD_ID = 0xFF01;
 
-    std::vector<RpcStream> args = SerializeArgs(inArgs...);
+    std::vector<TokenStream> args = SerializeArgs(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
     if (result.status != eMethodStatus::SUCCESS) {
         throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", methodId, MethodStatusText(result.status)));

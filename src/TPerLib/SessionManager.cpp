@@ -1,9 +1,9 @@
 #include "SessionManager.hpp"
 
-#include "Serialization/RpcArchive.hpp"
-#include "Serialization/RpcDebugArchive.hpp"
+#include "Serialization/TokenArchive.hpp"
+#include "Serialization/TokenDebugArchive.hpp"
 #include "Serialization/Utility.hpp"
-#include "Structures/Packets.hpp"
+#include "Communication/Packet.hpp"
 
 
 template <class Struct, class... Args>
@@ -64,7 +64,7 @@ auto SessionManager::StartSession(
 
 
 void SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
-    auto payload = ToTokens(RpcStream(eCommand::END_OF_SESSION));
+    auto payload = ToTokens(TokenStream(eCommand::END_OF_SESSION));
     const auto packet = CreatePacket(std::move(payload), tperSessionNumber, hostSessionNumber);
     m_tper->SendPacket(PROTOCOL, packet);
 }
@@ -102,18 +102,18 @@ std::span<const uint8_t> SessionManager::UnwrapPacket(const ComPacket& packet) {
 
 Method SessionManager::InvokeMethod(const Method& method) {
     try {
-        const RpcStream requestStream = SerializeMethod(INVOKING_ID, method);
-        RpcDebugArchive debugAr(std::cout);
+        const TokenStream requestStream = SerializeMethod(INVOKING_ID, method);
+        TokenDebugArchive debugAr(std::cout);
 
         std::stringstream requestSs;
-        RpcOutputArchive requestAr(requestSs);
+        TokenOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = BytesView(requestSs.view());
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
         const auto responsePacket = m_tper->SendPacket(PROTOCOL, requestPacket);
         const auto responseTokens = UnwrapPacket(responsePacket);
 
-        RpcStream responseStream;
+        TokenStream responseStream;
         FromTokens(responseTokens, responseStream);
 
         auto response = ParseMethod(responseStream);

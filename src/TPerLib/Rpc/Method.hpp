@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MethodTypes.hpp"
-#include "Serialization/RpcStream.hpp"
+#include "MethodArgs.hpp"
+#include "../Communication/TokenStream.hpp"
 
 
 enum class eMethodStatus : uint8_t {
@@ -29,14 +29,14 @@ enum class eMethodStatus : uint8_t {
 
 struct Method {
     uint64_t methodId;
-    std::vector<RpcStream> args;
+    std::vector<TokenStream> args;
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
 
 std::string_view MethodStatusText(eMethodStatus status);
-RpcStream SerializeMethod(uint64_t invokingId, const Method& method);
-Method ParseMethod(const RpcStream& stream);
+TokenStream SerializeMethod(uint64_t invokingId, const Method& method);
+Method ParseMethod(const TokenStream& stream);
 
 
 namespace impl {
@@ -64,8 +64,8 @@ auto LabelOptionalArgs(intptr_t label, const Arg& arg, const Args&... args) {
 }
 
 
-template <size_t Element, std::same_as<intptr_t>... Labels, std::same_as<RpcStream>... Streams>
-std::vector<RpcStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<Streams...> streams) {
+template <size_t Element, std::same_as<intptr_t>... Labels, std::same_as<TokenStream>... Streams>
+std::vector<TokenStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<Streams...> streams) {
     if constexpr (Element >= sizeof...(Labels)) {
         return {};
     }
@@ -87,11 +87,11 @@ std::vector<RpcStream> CollapseArgs(std::tuple<Labels...> labels, std::tuple<Str
 }
 
 
-std::vector<std::pair<intptr_t, const RpcStream&>> LabelOptionalArgs(std::span<const RpcStream> streams);
+std::vector<std::pair<intptr_t, const TokenStream&>> LabelOptionalArgs(std::span<const TokenStream> streams);
 
 
 template <size_t Element, std::same_as<intptr_t>... Labels, class... Args>
-void ExpandArgs(std::vector<std::pair<intptr_t, const RpcStream&>> labeledStreams,
+void ExpandArgs(std::vector<std::pair<intptr_t, const TokenStream&>> labeledStreams,
                 std::tuple<Labels...> labels,
                 std::tuple<Args&...> args) {
     if constexpr (Element < sizeof...(Args)) {
@@ -122,7 +122,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const RpcStream&>> labeledStream
 
 
 template <class... Args>
-std::vector<RpcStream> SerializeArgs(const Args&... args) {
+std::vector<TokenStream> SerializeArgs(const Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
     const auto streams = std::tuple{ SerializeArg(args)... };
     auto list = impl::CollapseArgs<0>(labels, std::move(streams));
@@ -132,7 +132,7 @@ std::vector<RpcStream> SerializeArgs(const Args&... args) {
 
 
 template <class... Args>
-void ParseArgs(std::span<const RpcStream> streams, Args&... args) {
+void ParseArgs(std::span<const TokenStream> streams, Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
     const auto labeledStreams = impl::LabelOptionalArgs(streams);
     impl::ExpandArgs<0>(labeledStreams, labels, std::tie(args...));

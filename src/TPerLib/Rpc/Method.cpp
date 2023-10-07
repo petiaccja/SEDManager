@@ -1,6 +1,6 @@
 #include "Method.hpp"
 
-#include "Serialization/Utility.hpp"
+#include "../Serialization/Utility.hpp"
 
 
 std::string_view MethodStatusText(eMethodStatus status) {
@@ -29,11 +29,11 @@ std::string_view MethodStatusText(eMethodStatus status) {
 }
 
 
-RpcStream SerializeMethod(uint64_t invokingId, const Method& method) {
-    RpcStream stream = {
+TokenStream SerializeMethod(uint64_t invokingId, const Method& method) {
+    TokenStream stream = {
         eCommand::CALL,
-        { RpcStream::bytes, ToBytes(invokingId) },
-        { RpcStream::bytes, ToBytes(method.methodId) },
+        { TokenStream::bytes, ToBytes(invokingId) },
+        { TokenStream::bytes, ToBytes(method.methodId) },
         method.args,
         eCommand::END_OF_DATA,
         { uint8_t(method.status), uint8_t(0), uint8_t(0) },
@@ -42,11 +42,11 @@ RpcStream SerializeMethod(uint64_t invokingId, const Method& method) {
 }
 
 
-Method ParseMethod(const RpcStream& stream) {
+Method ParseMethod(const TokenStream& stream) {
     if (!stream.IsList()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = stream.Get<std::span<const RpcStream>>();
+    const auto content = stream.Get<std::span<const TokenStream>>();
     if (content.size() < 6) {
         throw std::invalid_argument("method stream must contains at least CALL, invoking ID, method ID, arg list, EOD, and status list");
     }
@@ -54,9 +54,9 @@ Method ParseMethod(const RpcStream& stream) {
         const auto call = content[0].Get<eCommand>();
         const auto invokingIdBytes = content[1].Get<std::span<const uint8_t>>();
         const auto methodIdBytes = content[2].Get<std::span<const uint8_t>>();
-        const auto args = content[3].Get<std::span<const RpcStream>>();
+        const auto args = content[3].Get<std::span<const TokenStream>>();
         const auto eod = content[4].Get<eCommand>();
-        const auto statusList = content[5].Get<std::span<const RpcStream>>();
+        const auto statusList = content[5].Get<std::span<const TokenStream>>();
 
         if (call != eCommand::CALL) {
             throw std::invalid_argument("expected a leading call token");
@@ -85,10 +85,10 @@ Method ParseMethod(const RpcStream& stream) {
 
 namespace impl {
 
-std::vector<std::pair<intptr_t, const RpcStream&>> LabelOptionalArgs(std::span<const RpcStream> streams) {
-    using Item = std::pair<intptr_t, const RpcStream&>;
+std::vector<std::pair<intptr_t, const TokenStream&>> LabelOptionalArgs(std::span<const TokenStream> streams) {
+    using Item = std::pair<intptr_t, const TokenStream&>;
     std::vector<Item> labels;
-    std::ranges::transform(streams, std::back_inserter(labels), [](const RpcStream& stream) {
+    std::ranges::transform(streams, std::back_inserter(labels), [](const TokenStream& stream) {
         if (stream.IsNamed()) {
             const auto& named = stream.Get<Named>();
             if (!named.name.IsInteger()) {
