@@ -7,7 +7,6 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <array>
-#include <iostream>
 #include <stdexcept>
 #include <thread>
 
@@ -74,7 +73,7 @@ eComIdState TrustedPeripheral::VerifyComId() {
     // Send VERIFY_COMID_VALID command.
     VerifyComIdValidRequest payload{
         .comId = m_comId,
-        .comIdExtension = m_comIdExtension
+        .comIdExtension = m_comIdExtension,
     };
     const auto payloadBytes = ToBytes(payload);
     SecuritySend(0x02, m_comId, payloadBytes);

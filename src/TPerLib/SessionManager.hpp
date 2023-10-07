@@ -3,22 +3,56 @@
 #include "Method.hpp"
 #include "TrustedPeripheral.hpp"
 
+#include <vector>
+
 
 class SessionManager {
 public:
     using PropertyMap = std::unordered_map<std::string, uint32_t>;
 
+    struct PropertiesResult {
+        PropertyMap tperProperties;
+        std::optional<PropertyMap> hostProperties;
+    };
+
+    struct StartSessionResult {
+        uint32_t hostSessionId;
+        uint32_t spSessionId;
+        std::optional<std::vector<std::byte>> spChallenge;
+        std::optional<std::vector<std::byte>> spExchangeCert;
+        std::optional<std::vector<std::byte>> spSigningCert;
+        std::optional<uint32_t> transTimeout;
+        std::optional<uint32_t> initialCredit;
+        std::optional<std::vector<std::byte>> signedHash;
+    };
+
+public:
     SessionManager(std::shared_ptr<TrustedPeripheral> tper);
     SessionManager(const SessionManager&) = delete;
     SessionManager(SessionManager&&) = delete;
     SessionManager& operator=(const SessionManager&) = delete;
     SessionManager& operator=(SessionManager&&) = delete;
 
-    auto Properties(const std::optional<PropertyMap>& hostProperties = {})
-        -> std::tuple<PropertyMap, std::optional<PropertyMap>>;
+    PropertiesResult Properties(const std::optional<PropertyMap>& hostProperties = {});
+
+    StartSessionResult StartSession(
+        uint32_t hostSessionID,
+        UID spId,
+        bool write,
+        std::optional<std::span<const std::byte>> hostChallenge = {},
+        std::optional<UID> hostExchangeAuthority = {},
+        std::optional<std::span<const std::byte>> hostExchangeCert = {},
+        std::optional<UID> hostSigningAuthority = {},
+        std::optional<std::span<const std::byte>> hostSigningCert = {},
+        std::optional<uint32_t> sessionTimeout = {},
+        std::optional<uint32_t> transTimeout = {},
+        std::optional<uint32_t> initialCredit = {},
+        std::optional<std::span<const std::byte>> signedHash = {});
+
+    void EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
 
 private:
-    ComPacket CreatePacket(std::vector<uint8_t> payload);
+    ComPacket CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber = 0, uint32_t hostSessionNumber = 0);
 
     std::span<const uint8_t> UnwrapPacket(const ComPacket& packet);
 

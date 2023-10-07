@@ -90,11 +90,11 @@ void PrintDeviceInfo(TrustedPeripheral& tper) {
     std::cout << std::format("    ComID:                      {}", tper.GetComId()) << std::endl;
     std::cout << std::format("    ComID extension:            {}", tper.GetComIdExtension()) << std::endl;
     std::cout << std::format("    ComID state:                {}", comIdState) << std::endl;
+    std::cout << std::endl;
 }
 
 
-void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
-    auto sessionManager = std::make_shared<SessionManager>(tper);
+void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
     const std::unordered_map<std::string, uint32_t> hostProperties = {
         { "MaxPackets", 1 },
         { "MaxSubpackets", 1 },
@@ -107,25 +107,54 @@ void PrintDeviceProperties(std::shared_ptr<TrustedPeripheral> tper) {
         { "AckNAK", 0 },
         { "Asynchronous", 0 },
     };
-    const auto& [tperProps, hostProps] = sessionManager->Properties(hostProperties);
 
-    std::cout << "TPer properties: " << std::endl;
-    for (const auto& [name, value] : tperProps) {
-        std::cout << std::format("  {} = {}", name, value) << std::endl;
+    try {
+        const auto& [tperProps, hostProps] = sessionManager->Properties(hostProperties);
+
+        std::cout << "TPer properties: " << std::endl;
+        for (const auto& [name, value] : tperProps) {
+            std::cout << std::format("  {} = {}", name, value) << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    catch (...) {
+        std::cout << "Failed to get TPer properties.\n"
+                  << std::endl;
+    }
+}
+
+void DoSession(std::shared_ptr<SessionManager> sessionManager) {
+    try {
+        const uint32_t hsn = 100;
+        UID adminSpUid = { 0x00_b, 0x00_b, 0x02_b, 0x05_b, 0x00_b, 0x00_b, 0x00_b, 0x01_b };
+        std::cout << std::format("Starting session: HSN = {}\n", hsn);
+        const auto result = sessionManager->StartSession(hsn, adminSpUid, true);
+        const auto tsn = result.spSessionId;
+        std::cout << std::format("  Success! TSN = {}\n", tsn);
+
+        std::cout << std::format("Ending session...\n");
+        sessionManager->EndSession(tsn, hsn);
+        std::cout << std::format("  Success!\n");
+    }
+    catch (std::exception& ex) {
+        std::cout << "Session failed: " << ex.what() << std::endl;
     }
 }
 
 
 int main() {
     try {
-        auto device = std::make_unique<NvmeDevice>("/dev/nvme1");
+        auto device = std::make_unique<NvmeDevice>("/dev/nvme0");
         const auto identity = device->IdentifyController();
         std::cout << ConvertRawCharacters(identity.modelNumber) << " "
                   << ConvertRawCharacters(identity.firmwareRevision) << std::endl;
         auto tper = std::make_shared<TrustedPeripheral>(std::move(device));
+        auto sessionManager = std::make_shared<SessionManager>(tper);
+
 
         PrintDeviceInfo(*tper);
-        PrintDeviceProperties(tper);
+        PrintDeviceProperties(sessionManager);
+        DoSession(sessionManager);
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;

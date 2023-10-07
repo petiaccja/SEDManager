@@ -8,19 +8,37 @@
 #include <unordered_map>
 
 
+using UID = std::array<std::byte, 8>;
+
+constexpr std::byte operator""_b(unsigned long long value) {
+    return std::byte(value);
+}
+
+
+// Integers
 template <std::integral T>
 RpcStream SerializeArg(T arg);
 template <std::integral T>
 void ParseArg(const RpcStream& stream, T& arg);
 
+// String (bytes)
 RpcStream SerializeArg(const std::string& arg);
+RpcStream SerializeArg(std::string_view arg);
 void ParseArg(const RpcStream& stream, std::string& arg);
 
+// Range of std::byte (bytes)
+template <class Range>
+    requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
+RpcStream SerializeArg(const Range& arg);
+void ParseArg(const RpcStream& stream, std::vector<std::byte>& arg);
+
+// Optional (optional parameters)
 template <class T>
 RpcStream SerializeArg(const std::optional<T>& arg);
 template <class T>
 void ParseArg(const RpcStream& stream, std::optional<T>& arg);
 
+// Unordered map (list of named values)
 template <class Key, class Value>
 RpcStream SerializeArg(const std::unordered_map<Key, Value>& arg);
 template <class Key, class Value>
@@ -40,6 +58,13 @@ void ParseArg(const RpcStream& stream, T& arg) {
         throw std::invalid_argument("expected an integer");
     }
     arg = stream.Get<T>();
+}
+
+
+template <class Range>
+    requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
+RpcStream SerializeArg(const Range& arg) {
+    return { RpcStream::bytes, arg };
 }
 
 

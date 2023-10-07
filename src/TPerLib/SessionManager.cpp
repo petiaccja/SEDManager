@@ -6,25 +6,78 @@
 #include "Structures/Packets.hpp"
 
 
+template <class Struct, class... Args>
+Struct FromTuple(std::tuple<Args...> args) {
+    return std::apply([]<class... T>(T&&... args) { return Struct{ std::forward<Args>(args)... }; }, std::move(args));
+}
+
+
 SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
     : m_tper(tper){};
 
 
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
-    -> std::tuple<PropertyMap, std::optional<PropertyMap>> {
+    -> PropertiesResult {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    return InvokeMethod<OutArgs>(0xFF01, hostProperties);
+    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(0xFF01, hostProperties));
 }
 
 
-ComPacket SessionManager::CreatePacket(std::vector<uint8_t> payload) {
+auto SessionManager::StartSession(
+    uint32_t hostSessionID,
+    UID spId,
+    bool write,
+    std::optional<std::span<const std::byte>> hostChallenge,
+    std::optional<UID> hostExchangeAuthority,
+    std::optional<std::span<const std::byte>> hostExchangeCert,
+    std::optional<UID> hostSigningAuthority,
+    std::optional<std::span<const std::byte>> hostSigningCert,
+    std::optional<uint32_t> sessionTimeout,
+    std::optional<uint32_t> transTimeout,
+    std::optional<uint32_t> initialCredit,
+    std::optional<std::span<const std::byte>> signedHash)
+    -> StartSessionResult {
+    using OutArgs = std::tuple<
+        uint32_t,
+        uint32_t,
+        std::optional<std::vector<std::byte>>,
+        std::optional<std::vector<std::byte>>,
+        std::optional<std::vector<std::byte>>,
+        std::optional<uint32_t>,
+        std::optional<uint32_t>,
+        std::optional<std::vector<std::byte>>>;
+    auto results = InvokeMethod<OutArgs>(0xFF02,
+                                         hostSessionID,
+                                         spId,
+                                         write,
+                                         hostChallenge,
+                                         hostExchangeAuthority,
+                                         hostExchangeCert,
+                                         hostSigningAuthority,
+                                         hostSigningCert,
+                                         sessionTimeout,
+                                         transTimeout,
+                                         initialCredit,
+                                         signedHash);
+    return FromTuple<StartSessionResult>(std::move(results));
+}
+
+
+void SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
+    auto payload = ToTokens(RpcStream(eCommand::END_OF_SESSION));
+    const auto packet = CreatePacket(std::move(payload), tperSessionNumber, hostSessionNumber);
+    m_tper->SendPacket(PROTOCOL, packet);
+}
+
+
+ComPacket SessionManager::CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     SubPacket subPacket;
     subPacket.kind = static_cast<uint16_t>(eSubPacketKind::DATA);
     subPacket.payload = std::move(payload);
 
     Packet packet;
-    packet.tperSessionNumber = 0;
-    packet.hostSessionNumber = 0;
+    packet.tperSessionNumber = tperSessionNumber;
+    packet.hostSessionNumber = hostSessionNumber;
     packet.sequenceNumber = 0;
     packet.ackType = 0;
     packet.acknowledgement = 0;
@@ -56,7 +109,6 @@ Method SessionManager::InvokeMethod(const Method& method) {
         RpcOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = BytesView(requestSs.view());
-        std::cout << std::endl;
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
         const auto responsePacket = m_tper->SendPacket(PROTOCOL, requestPacket);
         const auto responseTokens = UnwrapPacket(responsePacket);
