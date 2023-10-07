@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MethodArgs.hpp"
 #include "../Communication/TokenStream.hpp"
+#include "MethodArgs.hpp"
 
 
 enum class eMethodStatus : uint8_t {
@@ -28,14 +28,14 @@ enum class eMethodStatus : uint8_t {
 
 
 struct Method {
-    uint64_t methodId;
+    Uid methodId;
     std::vector<TokenStream> args;
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
 
 std::string_view MethodStatusText(eMethodStatus status);
-TokenStream SerializeMethod(uint64_t invokingId, const Method& method);
+TokenStream SerializeMethod(Uid invokingId, const Method& method);
 Method ParseMethod(const TokenStream& stream);
 
 

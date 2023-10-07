@@ -29,11 +29,11 @@ std::string_view MethodStatusText(eMethodStatus status) {
 }
 
 
-TokenStream SerializeMethod(uint64_t invokingId, const Method& method) {
+TokenStream SerializeMethod(Uid invokingId, const Method& method) {
     TokenStream stream = {
         eCommand::CALL,
-        { TokenStream::bytes, ToBytes(invokingId) },
-        { TokenStream::bytes, ToBytes(method.methodId) },
+        { TokenStream::bytes, ToBytes(uint64_t(invokingId)) },
+        { TokenStream::bytes, ToBytes(uint64_t(method.methodId)) },
         method.args,
         eCommand::END_OF_DATA,
         { uint8_t(method.status), uint8_t(0), uint8_t(0) },

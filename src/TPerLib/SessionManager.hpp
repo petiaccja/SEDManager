@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Uids.hpp"
 #include "Rpc/Method.hpp"
 #include "TrustedPeripheral.hpp"
 
@@ -37,12 +38,12 @@ public:
 
     StartSessionResult StartSession(
         uint32_t hostSessionID,
-        UID spId,
+        Uid spId,
         bool write,
         std::optional<std::span<const std::byte>> hostChallenge = {},
-        std::optional<UID> hostExchangeAuthority = {},
+        std::optional<Uid> hostExchangeAuthority = {},
         std::optional<std::span<const std::byte>> hostExchangeCert = {},
-        std::optional<UID> hostSigningAuthority = {},
+        std::optional<Uid> hostSigningAuthority = {},
         std::optional<std::span<const std::byte>> hostSigningCert = {},
         std::optional<uint32_t> sessionTimeout = {},
         std::optional<uint32_t> transTimeout = {},
@@ -59,23 +60,21 @@ private:
     Method InvokeMethod(const Method& method);
 
     template <class OutArgs, class... InArgs>
-    OutArgs InvokeMethod(uint64_t methodId, const InArgs&... inArgs);
+    OutArgs InvokeMethod(eMethodId methodId, const InArgs&... inArgs);
 
 private:
-    static constexpr uint64_t INVOKING_ID = 0xFF;
+    static constexpr Uid INVOKING_ID = 0xFF;
     static constexpr uint8_t PROTOCOL = 0x01;
     std::shared_ptr<TrustedPeripheral> m_tper;
 };
 
 
 template <class OutArgs, class... InArgs>
-OutArgs SessionManager::InvokeMethod(uint64_t methodId, const InArgs&... inArgs) {
-    constexpr uint64_t METHOD_ID = 0xFF01;
-
+OutArgs SessionManager::InvokeMethod(eMethodId methodId, const InArgs&... inArgs) {
     std::vector<TokenStream> args = SerializeArgs(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
     if (result.status != eMethodStatus::SUCCESS) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", methodId, MethodStatusText(result.status)));
+        throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", uint64_t(methodId), MethodStatusText(result.status)));
     }
 
     OutArgs outArgs;
@@ -83,7 +82,7 @@ OutArgs SessionManager::InvokeMethod(uint64_t methodId, const InArgs&... inArgs)
         std::apply([&result](auto&... outArgs) { ParseArgs(result.args, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", methodId, ex.what()));
+        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
     }
     return outArgs;
 }

@@ -1,9 +1,9 @@
 #include "SessionManager.hpp"
 
+#include "Communication/Packet.hpp"
 #include "Serialization/TokenArchive.hpp"
 #include "Serialization/TokenDebugArchive.hpp"
 #include "Serialization/Utility.hpp"
-#include "Communication/Packet.hpp"
 
 
 template <class Struct, class... Args>
@@ -19,18 +19,18 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
     -> PropertiesResult {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(0xFF01, hostProperties));
+    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(eMethodId::Properties, hostProperties));
 }
 
 
 auto SessionManager::StartSession(
     uint32_t hostSessionID,
-    UID spId,
+    Uid spId,
     bool write,
     std::optional<std::span<const std::byte>> hostChallenge,
-    std::optional<UID> hostExchangeAuthority,
+    std::optional<Uid> hostExchangeAuthority,
     std::optional<std::span<const std::byte>> hostExchangeCert,
-    std::optional<UID> hostSigningAuthority,
+    std::optional<Uid> hostSigningAuthority,
     std::optional<std::span<const std::byte>> hostSigningCert,
     std::optional<uint32_t> sessionTimeout,
     std::optional<uint32_t> transTimeout,
@@ -46,7 +46,7 @@ auto SessionManager::StartSession(
         std::optional<uint32_t>,
         std::optional<uint32_t>,
         std::optional<std::vector<std::byte>>>;
-    auto results = InvokeMethod<OutArgs>(0xFF02,
+    auto results = InvokeMethod<OutArgs>(eMethodId::StartSession,
                                          hostSessionID,
                                          spId,
                                          write,

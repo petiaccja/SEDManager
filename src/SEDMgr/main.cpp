@@ -124,7 +124,7 @@ void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
 void DoSession(std::shared_ptr<SessionManager> sessionManager) {
     try {
         const uint32_t hsn = 100;
-        UID adminSpUid = { 0x00_b, 0x00_b, 0x02_b, 0x05_b, 0x00_b, 0x00_b, 0x00_b, 0x01_b };
+        Uid adminSpUid = 0x0000'0205'0000'0001;
         std::cout << std::format("Starting session: HSN = {}\n", hsn);
         const auto result = sessionManager->StartSession(hsn, adminSpUid, true);
         const auto tsn = result.spSessionId;
@@ -142,7 +142,7 @@ void DoSession(std::shared_ptr<SessionManager> sessionManager) {
 
 int main() {
     try {
-        auto device = std::make_unique<NvmeDevice>("/dev/nvme0");
+        auto device = std::make_unique<NvmeDevice>("/dev/nvme1");
         const auto identity = device->IdentifyController();
         std::cout << ConvertRawCharacters(identity.modelNumber) << " "
                   << ConvertRawCharacters(identity.firmwareRevision) << std::endl;

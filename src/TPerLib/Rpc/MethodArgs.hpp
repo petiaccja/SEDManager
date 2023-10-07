@@ -1,18 +1,12 @@
 #pragma once
 
 #include "../Communication/TokenStream.hpp"
+#include "Types.hpp"
 
 #include <concepts>
 #include <optional>
 #include <string>
 #include <unordered_map>
-
-
-using UID = std::array<std::byte, 8>;
-
-constexpr std::byte operator""_b(unsigned long long value) {
-    return std::byte(value);
-}
 
 
 // Integers
@@ -25,6 +19,10 @@ void ParseArg(const TokenStream& stream, T& arg);
 TokenStream SerializeArg(const std::string& arg);
 TokenStream SerializeArg(std::string_view arg);
 void ParseArg(const TokenStream& stream, std::string& arg);
+
+// Uid (bytes)
+TokenStream SerializeArg(const Uid& arg);
+void ParseArg(const TokenStream& stream, Uid& arg);
 
 // Range of std::byte (bytes)
 template <class Range>
