@@ -83,7 +83,7 @@ Template::Template(std::shared_ptr<SessionManager> sessionManager,
 MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
     assert(m_sessionManager);
 
-    const auto request = SerializeMethod(invokingId, method);
+    const auto request = MethodToValue(invokingId, method);
     Log("Session Method - Call", request);
     std::stringstream requestSs(std::ios::binary | std::ios::out);
     TokenOutputArchive requestAr(requestSs);
@@ -96,7 +96,7 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
     FromTokens(responseBytes, response);
     Log("Session Method - Result", response);
 
-    MethodResult result = ParseMethodResult(response);
+    MethodResult result = MethodResultFromValue(response);
     if (result.status != eMethodStatus::SUCCESS) {
         throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", uint64_t(method.methodId), MethodStatusText(result.status)));
     }

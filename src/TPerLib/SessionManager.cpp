@@ -125,7 +125,7 @@ std::span<const uint8_t> SessionManager::UnwrapPacket(const ComPacket& packet) {
 
 Method SessionManager::InvokeMethod(const Method& method) {
     try {
-        const Value requestStream = SerializeMethod(INVOKING_ID, method);
+        const Value requestStream = MethodToValue(INVOKING_ID, method);
         Log("Session Manager Method - Call", requestStream);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenOutputArchive requestAr(requestSs);
@@ -139,7 +139,7 @@ Method SessionManager::InvokeMethod(const Method& method) {
         FromTokens(responseTokens, responseStream);
         Log("Session Manager Method - Result", responseStream);
 
-        auto response = ParseMethod(responseStream);
+        auto response = MethodFromValue(responseStream);
         return response;
     }
     catch (std::exception& ex) {

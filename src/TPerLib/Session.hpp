@@ -35,14 +35,14 @@ private:
 
 template <class OutArgs, class... InArgs>
 OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
-    std::vector<Value> args = SerializeArgs(inArgs...);
+    std::vector<Value> args = ArgsToValues(inArgs...);
     const Method method{ .methodId = methodId, .args = std::move(args) };
 
     const MethodResult result = InvokeMethod(invokingId, method);
 
     OutArgs outArgs;
     try {
-        std::apply([&result](auto&... outArgs) { ParseArgs(result.values, outArgs...); }, outArgs);
+        std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
         throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
@@ -113,12 +113,12 @@ namespace impl {
 
 template <class T>
 void BaseTemplate::Set(Uid table, Uid row, uint32_t column, const T& value) {
-    Set(table, row, { { column, SerializeArg(value) } });
+    Set(table, row, { { column, ToValue(value) } });
 }
 
 template <class T>
 void BaseTemplate::Set(Uid object, uint32_t column, const T& value) {
-    Set(object, {}, { { column, SerializeArg(value) } });
+    Set(object, {}, { { column, ToValue(value) } });
 }
 
 } // namespace impl

@@ -17,8 +17,8 @@ target_sources(TPerLib
 
         Rpc/Method.cpp
         Rpc/Method.hpp
-        Rpc/MethodArgs.cpp
-        Rpc/MethodArgs.hpp
+        Rpc/TypeMapping.cpp
+        Rpc/TypeMapping.hpp
 
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp

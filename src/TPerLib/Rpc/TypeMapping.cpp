@@ -1,24 +1,24 @@
-#include "MethodArgs.hpp"
+#include "TypeMapping.hpp"
 
 #include "../Serialization/Utility.hpp"
 
 
-Value SerializeArg(const std::string& arg) {
-    return SerializeArg(std::string_view(arg));
+Value ToValue(const std::string& arg) {
+    return ToValue(std::string_view(arg));
 }
 
 
-Value SerializeArg(std::string_view arg) {
+Value ToValue(std::string_view arg) {
     return { Value::bytes, arg };
 }
 
 
-Value SerializeArg(const Uid& arg) {
+Value ToValue(const Uid& arg) {
     return { Value::bytes, ToBytes(arg.value) };
 }
 
 
-void ParseArg(const Value& stream, Uid& arg) {
+void FromValue(const Value& stream, Uid& arg) {
     if (!stream.IsBytes()) {
         throw std::invalid_argument("expected bytes");
     }
@@ -32,7 +32,7 @@ void ParseArg(const Value& stream, Uid& arg) {
 }
 
 
-void ParseArg(const Value& stream, std::string& arg) {
+void FromValue(const Value& stream, std::string& arg) {
     if (!stream.IsBytes()) {
         throw std::invalid_argument("expected bytes");
     }
@@ -40,7 +40,7 @@ void ParseArg(const Value& stream, std::string& arg) {
 }
 
 
-void ParseArg(const Value& stream, std::vector<std::byte>& arg) {
+void FromValue(const Value& stream, std::vector<std::byte>& arg) {
     if (!stream.IsBytes()) {
         throw std::invalid_argument("expected bytes");
     }
@@ -49,16 +49,16 @@ void ParseArg(const Value& stream, std::vector<std::byte>& arg) {
 }
 
 
-Value SerializeArg(const Value& arg) {
+Value ToValue(const Value& arg) {
     return arg;
 }
 
-void ParseArg(const Value& value, Value& arg) {
+void FromValue(const Value& value, Value& arg) {
     arg = value;
 }
 
 
-Value SerializeArg(const CellBlock& arg) {
+Value ToValue(const CellBlock& arg) {
     std::vector<Value> fields;
     if (arg.startRow.HasValue()) {
         fields.emplace_back(Named{ 1u, arg.startRow });
@@ -75,7 +75,7 @@ Value SerializeArg(const CellBlock& arg) {
     return fields;
 }
 
-void ParseArg(const Value& value, CellBlock& arg) {
+void FromValue(const Value& value, CellBlock& arg) {
     if (!value.IsList()) {
         throw std::invalid_argument("expected a list");
     }

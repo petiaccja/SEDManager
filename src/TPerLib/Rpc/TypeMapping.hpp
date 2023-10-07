@@ -10,56 +10,56 @@
 
 
 // Value
-Value SerializeArg(const Value& arg);
-void ParseArg(const Value& value, Value& arg);
+Value ToValue(const Value& arg);
+void FromValue(const Value& value, Value& arg);
 
 // Integers
 template <std::integral T>
-Value SerializeArg(T arg);
+Value ToValue(T arg);
 template <std::integral T>
-void ParseArg(const Value& value, T& arg);
+void FromValue(const Value& value, T& arg);
 
 // String (bytes)
-Value SerializeArg(const std::string& arg);
-Value SerializeArg(std::string_view arg);
-void ParseArg(const Value& value, std::string& arg);
+Value ToValue(const std::string& arg);
+Value ToValue(std::string_view arg);
+void FromValue(const Value& value, std::string& arg);
 
 // Uid (bytes)
-Value SerializeArg(const Uid& arg);
-void ParseArg(const Value& value, Uid& arg);
+Value ToValue(const Uid& arg);
+void FromValue(const Value& value, Uid& arg);
 
 // CellBlock
-Value SerializeArg(const CellBlock& arg);
-void ParseArg(const Value& value, CellBlock& arg);
+Value ToValue(const CellBlock& arg);
+void FromValue(const Value& value, CellBlock& arg);
 
 // Range of std::byte (bytes)
 template <class Range>
     requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
-Value SerializeArg(const Range& arg);
-void ParseArg(const Value& value, std::vector<std::byte>& arg);
+Value ToValue(const Range& arg);
+void FromValue(const Value& value, std::vector<std::byte>& arg);
 
 // Optional (optional parameters)
 template <class T>
-Value SerializeArg(const std::optional<T>& arg);
+Value ToValue(const std::optional<T>& arg);
 template <class T>
-void ParseArg(const Value& value, std::optional<T>& arg);
+void FromValue(const Value& value, std::optional<T>& arg);
 
 // Unordered map (list of named values)
 template <class Key, class ValueT>
-Value SerializeArg(const std::unordered_map<Key, ValueT>& arg);
+Value ToValue(const std::unordered_map<Key, ValueT>& arg);
 template <class Key, class ValueT>
-void ParseArg(const Value& value, std::unordered_map<Key, ValueT>& arg);
+void FromValue(const Value& value, std::unordered_map<Key, ValueT>& arg);
 
 
 
 template <std::integral T>
-Value SerializeArg(T arg) {
+Value ToValue(T arg) {
     return arg;
 }
 
 
 template <std::integral T>
-void ParseArg(const Value& stream, T& arg) {
+void FromValue(const Value& stream, T& arg) {
     if (!stream.IsInteger()) {
         throw std::invalid_argument("expected an integer");
     }
@@ -69,42 +69,42 @@ void ParseArg(const Value& stream, T& arg) {
 
 template <class Range>
     requires std::same_as<std::byte, std::ranges::range_value_t<Range>>
-Value SerializeArg(const Range& arg) {
+Value ToValue(const Range& arg) {
     return { Value::bytes, arg };
 }
 
 
 template <class T>
-Value SerializeArg(const std::optional<T>& arg) {
+Value ToValue(const std::optional<T>& arg) {
     if (arg.has_value()) {
-        return SerializeArg(arg.value());
+        return ToValue(arg.value());
     }
     return {};
 }
 
 
 template <class T>
-void ParseArg(const Value& stream, std::optional<T>& arg) {
+void FromValue(const Value& stream, std::optional<T>& arg) {
     if (stream.HasValue()) {
         T value;
-        ParseArg(stream, value);
+        FromValue(stream, value);
         arg = std::move(value);
     }
 }
 
 
 template <class Key, class ValueT>
-Value SerializeArg(const std::unordered_map<Key, ValueT>& arg) {
+Value ToValue(const std::unordered_map<Key, ValueT>& arg) {
     std::vector<Value> nameds;
     for (const auto& [key, value] : arg) {
-        nameds.emplace_back(Named(SerializeArg(key), SerializeArg(value)));
+        nameds.emplace_back(Named(ToValue(key), ToValue(value)));
     }
     return Value(std::move(nameds));
 }
 
 
 template <class Key, class ValueT>
-void ParseArg(const Value& stream, std::unordered_map<Key, ValueT>& arg) {
+void FromValue(const Value& stream, std::unordered_map<Key, ValueT>& arg) {
     if (!stream.IsList()) {
         throw std::invalid_argument("expected a list of named values for unordered_map");
     }
@@ -116,8 +116,8 @@ void ParseArg(const Value& stream, std::unordered_map<Key, ValueT>& arg) {
         }
         Key key;
         ValueT value;
-        ParseArg(named.AsNamed().name, key);
-        ParseArg(named.AsNamed().value, value);
+        FromValue(named.AsNamed().name, key);
+        FromValue(named.AsNamed().value, value);
         arg.insert_or_assign(std::move(key), std::move(value));
     }
 }

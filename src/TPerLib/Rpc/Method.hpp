@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Communication/Value.hpp"
-#include "MethodArgs.hpp"
+#include "TypeMapping.hpp"
 
 
 enum class eMethodStatus : uint8_t {
@@ -41,9 +41,9 @@ struct MethodResult {
 
 
 std::string_view MethodStatusText(eMethodStatus status);
-Value SerializeMethod(Uid invokingId, const Method& method);
-Method ParseMethod(const Value& stream);
-MethodResult ParseMethodResult(const Value& stream);
+Value MethodToValue(Uid invokingId, const Method& method);
+Method MethodFromValue(const Value& stream);
+MethodResult MethodResultFromValue(const Value& stream);
 
 
 namespace impl {
@@ -108,7 +108,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
         if constexpr (IsOptional<std::decay_t<decltype(arg)>>()) {
             auto it = std::ranges::find_if(labeledStreams, [label](auto& item) { return item.first == label; });
             if (it != labeledStreams.end()) {
-                ParseArg(it->second, arg);
+                FromValue(it->second, arg);
             }
         }
         else {
@@ -119,7 +119,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
             if (dynLabel != -1) {
                 throw std::invalid_argument(std::format("expected mandatory argument for argument {}", Element));
             }
-            ParseArg(stream, arg);
+            FromValue(stream, arg);
         }
 
         ExpandArgs<Element + 1>(labeledStreams, labels, args);
@@ -129,9 +129,9 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
 
 
 template <class... Args>
-std::vector<Value> SerializeArgs(const Args&... args) {
+std::vector<Value> ArgsToValues(const Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
-    const auto streams = std::tuple{ SerializeArg(args)... };
+    const auto streams = std::tuple{ ToValue(args)... };
     auto list = impl::CollapseArgs<0>(labels, std::move(streams));
     std::ranges::reverse(list);
     return list;
@@ -139,7 +139,7 @@ std::vector<Value> SerializeArgs(const Args&... args) {
 
 
 template <class... Args>
-void ParseArgs(std::span<const Value> streams, Args&... args) {
+void ArgsFromValues(std::span<const Value> streams, Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
     const auto labeledStreams = impl::LabelOptionalArgs(streams);
     impl::ExpandArgs<0>(labeledStreams, labels, std::tie(args...));

@@ -29,7 +29,7 @@ std::string_view MethodStatusText(eMethodStatus status) {
 }
 
 
-Value SerializeMethod(Uid invokingId, const Method& method) {
+Value MethodToValue(Uid invokingId, const Method& method) {
     Value stream = {
         eCommand::CALL,
         { Value::bytes, ToBytes(uint64_t(invokingId)) },
@@ -42,7 +42,7 @@ Value SerializeMethod(Uid invokingId, const Method& method) {
 }
 
 
-Method ParseMethod(const Value& stream) {
+Method MethodFromValue(const Value& stream) {
     if (!stream.IsList()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
@@ -84,7 +84,7 @@ Method ParseMethod(const Value& stream) {
 }
 
 
-MethodResult ParseMethodResult(const Value& result) {
+MethodResult MethodResultFromValue(const Value& result) {
     if (!result.IsList()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
@@ -96,7 +96,7 @@ MethodResult ParseMethodResult(const Value& result) {
     if (content[0].IsCommand() && content[0].Get<eCommand>() == eCommand::CALL) {
         Method method;
         try {
-            method = ParseMethod(result);
+            method = MethodFromValue(result);
         }
         catch (std::exception& ex) {
             throw std::invalid_argument(std::format("failed to parse results (result was a call): {}", ex.what()));
