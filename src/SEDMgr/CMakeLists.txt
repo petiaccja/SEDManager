@@ -8,3 +8,6 @@ target_sources(SEDMgr
 )
 
 target_link_libraries(SEDMgr TPerLib)
+
+find_package(CLI11)
+target_link_libraries(SEDMgr CLI11::CLI11)

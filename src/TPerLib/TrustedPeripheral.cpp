@@ -21,7 +21,7 @@ std::pair<uint16_t, uint16_t> ExtractBaseComId(const auto& desc) {
 
 
 
-TrustedPeripheral::TrustedPeripheral(std::unique_ptr<NvmeDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
+TrustedPeripheral::TrustedPeripheral(std::shared_ptr<NvmeDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
     m_desc = Discovery();
     if (m_desc.tperDesc) {
         try {

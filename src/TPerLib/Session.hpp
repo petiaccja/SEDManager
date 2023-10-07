@@ -55,15 +55,18 @@ class BaseTemplate : public Template {
 public:
     using Template::Template;
 
-    Value Get(Uid table, Uid row, uint32_t column);
-    Value Get(Uid object, uint32_t column);
+    template <class T>
+    T Get(Uid table, Uid row, uint32_t column);
+    template <class T>
+    T Get(Uid object, uint32_t column);
     template <class T>
     void Set(Uid table, Uid row, uint32_t column, const T& value);
     template <class T>
     void Set(Uid object, uint32_t column, const T& value);
 
 private:
-    void Set(Uid objectOrTable, std::optional<Uid> row, std::optional<std::unordered_map<uint32_t, Value>> rowValues);
+    std::unordered_map<uint32_t, Value> Get(Uid objectOrTable, const CellBlock& block);
+    void Set(Uid objectOrTable, std::optional<Uid> row, std::optional<std::unordered_map<uint32_t, Value>> values);
 };
 
 
@@ -111,6 +114,38 @@ private:
 
 namespace impl {
 
+
+template <class T>
+T BaseTemplate::Get(Uid table, Uid row, uint32_t column) {
+    CellBlock block{
+        .startRow = uint64_t(row),
+        .startColumn = column,
+        .endColumn = column,
+    };
+    auto values = Get(table, block);
+    if (values.size() < 1) {
+        throw std::runtime_error("device did not return any table values");
+    }
+    T result;
+    FromValue(values.begin()->second, result);
+    return result;
+}
+
+template <class T>
+T BaseTemplate::Get(Uid object, uint32_t column) {
+    CellBlock block{
+        .startColumn = column,
+        .endColumn = column,
+    };
+    auto values = Get(object, block);
+    if (values.size() < 1) {
+        throw std::runtime_error("device did not return any table values");
+    }
+    T result;
+    FromValue(values.begin()->second, result);
+    return result;
+}
+
 template <class T>
 void BaseTemplate::Set(Uid table, Uid row, uint32_t column, const T& value) {
     Set(table, row, { { column, ToValue(value) } });
@@ -118,7 +153,7 @@ void BaseTemplate::Set(Uid table, Uid row, uint32_t column, const T& value) {
 
 template <class T>
 void BaseTemplate::Set(Uid object, uint32_t column, const T& value) {
-    Set(object, {}, { { column, ToValue(value) } });
+    Set(object, std::nullopt, std::unordered_map<uint32_t, Value>{ { column, ToValue(value) } });
 }
 
 } // namespace impl

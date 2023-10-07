@@ -12,7 +12,7 @@ struct ComPacket;
 
 class TrustedPeripheral {
 public:
-    TrustedPeripheral(std::unique_ptr<NvmeDevice> storageDevice);
+    TrustedPeripheral(std::shared_ptr<NvmeDevice> storageDevice);
     ~TrustedPeripheral();
 
     uint16_t GetComId() const;
@@ -31,7 +31,7 @@ private:
     void StackReset();
 
 private:
-    std::unique_ptr<NvmeDevice> m_storageDevice;
+    std::shared_ptr<NvmeDevice> m_storageDevice;
     uint16_t m_comId;
     uint16_t m_comIdExtension;
     TPerDesc m_desc;

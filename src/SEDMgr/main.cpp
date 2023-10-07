@@ -4,6 +4,9 @@
 #include <TPerLib/SessionManager.hpp>
 #include <TPerLib/TrustedPeripheral.hpp>
 
+#include <CLI/App.hpp>
+#include <CLI/CLI.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <ranges>
@@ -46,9 +49,7 @@ std::string_view GetComIdStateStr(eComIdState state) {
 };
 
 
-void PrintDeviceInfo(TrustedPeripheral& tper) {
-    const auto& desc = tper.GetDesc();
-
+void PrintCapabilities(const TPerDesc& desc) {
     std::cout << std::format("  {}", GetSSCName(desc.sscDesc)) << std::endl;
 
     if (desc.tperDesc) {
@@ -77,18 +78,79 @@ void PrintDeviceInfo(TrustedPeripheral& tper) {
         },
                    desc.sscDesc);
     }
+}
 
-    std::string_view comIdState = GetComIdStateStr(tper.VerifyComId());
 
-    std::cout << "  Communication:" << std::endl;
-    std::cout << std::format("    ComID:                      {}", tper.GetComId()) << std::endl;
-    std::cout << std::format("    ComID extension:            {}", tper.GetComIdExtension()) << std::endl;
-    std::cout << std::format("    ComID state:                {}", comIdState) << std::endl;
+void PrintProperies(const std::unordered_map<std::string, uint32_t>& properties) {
+    std::cout << "TPer properties: " << std::endl;
+    for (const auto& [name, value] : properties) {
+        std::cout << std::format("  {} = {}", name, value) << std::endl;
+    }
     std::cout << std::endl;
 }
 
 
-void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
+std::vector<std::byte> ReadPassword(std::string_view prompt) {
+    std::string_view password = getpass(prompt.data());
+    const auto bytes = std::as_bytes(BytesView(password));
+    return { bytes.begin(), bytes.end() };
+}
+
+
+class App {
+public:
+    App(std::string_view device);
+
+    std::vector<std::byte> GetMSID();
+    void ChangeSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword);
+    void Revert(std::span<const std::byte> psidPassword);
+    const TPerDesc& GetCapabilities() const;
+    std::unordered_map<std::string, uint32_t> GetProperties();
+
+private:
+    std::shared_ptr<NvmeDevice> m_device;
+    std::shared_ptr<TrustedPeripheral> m_tper;
+    std::shared_ptr<SessionManager> m_sessionManager;
+    TPerDesc m_capabilities;
+};
+
+
+App::App(std::string_view device) {
+    m_device = std::make_shared<NvmeDevice>(device);
+    m_tper = std::make_shared<TrustedPeripheral>(m_device);
+    m_capabilities = m_tper->GetDesc();
+    const auto comIdState = m_tper->VerifyComId();
+    if (comIdState != eComIdState::ISSUED && comIdState != eComIdState::ASSOCIATED) {
+        throw std::runtime_error("failed to acquire valid ComID");
+    }
+    m_sessionManager = std::make_shared<SessionManager>(m_tper);
+}
+
+
+std::vector<std::byte> App::GetMSID() {
+    Session session(m_sessionManager, opal::eSecurityProvider::Admin);
+    return session.base.Get<std::vector<std::byte>>(opal::eTableRow_C_PIN::C_PIN_MSID, 3);
+}
+
+
+void App::ChangeSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword) {
+    Session session(m_sessionManager, opal::eSecurityProvider::Admin, currentPassword, eAuthorityId::SID);
+    session.base.Set(opal::eTableRow_C_PIN::C_PIN_SID, 3, newPassword);
+}
+
+
+void App::Revert(std::span<const std::byte> psidPassword) {
+    Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthorityId::PSID);
+    session.opal.Revert(opal::eSecurityProvider::Admin);
+}
+
+
+const TPerDesc& App::GetCapabilities() const {
+    return m_tper->GetDesc();
+}
+
+
+std::unordered_map<std::string, uint32_t> App::GetProperties() {
     const std::unordered_map<std::string, uint32_t> hostProperties = {
         { "MaxPackets", 1 },
         { "MaxSubpackets", 1 },
@@ -102,82 +164,80 @@ void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
         { "Asynchronous", 0 },
     };
 
-    try {
-        const auto& [tperProps, hostProps] = sessionManager->Properties(hostProperties);
-
-        std::cout << "TPer properties: " << std::endl;
-        for (const auto& [name, value] : tperProps) {
-            std::cout << std::format("  {} = {}", name, value) << std::endl;
-        }
-        std::cout << std::endl;
-    }
-    catch (...) {
-        std::cout << "Failed to get TPer properties.\n"
-                  << std::endl;
-    }
-}
-
-void DoRevert(std::shared_ptr<SessionManager> sessionManager) {
-    std::ifstream file("/home/petiaccja/Programming/ssd_psid.txt");
-    std::string password = { std::istreambuf_iterator(file.rdbuf()), std::istreambuf_iterator<char>() };
-    try {
-        std::cout << std::format("Starting session as PSID...\n");
-        Session session(sessionManager, opal::eSecurityProvider::Admin, std::as_bytes(std::span(password)), opal::eAuthorityId::PSID);
-        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
-        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
-
-        std::cout << "Reverting..." << std::endl;
-        session.opal.Revert(opal::eSecurityProvider::Admin);
-    }
-    catch (std::exception& ex) {
-        std::cout << "Session failed: " << ex.what() << std::endl;
-    }
-}
-
-
-void DoSession(std::shared_ptr<SessionManager> sessionManager) {
-    std::vector<std::byte> password;
-    try {
-        std::cout << std::format("Starting session as Anybody...\n");
-        Session session(sessionManager, opal::eSecurityProvider::Admin);
-        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
-        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
-
-        const auto msidPin = session.base.Get(opal::eTableRow_C_PIN::C_PIN_MSID, 3);
-        const auto passwordView = msidPin.Get<std::span<const std::byte>>();
-        password = { passwordView.begin(), passwordView.end() };
-        std::cout << "MSID PIN: " << StringView(passwordView) << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cout << "Session failed: " << ex.what() << std::endl;
-    }
-
-    try {
-        std::cout << std::format("Starting session as SID...\n");
-        Session session(sessionManager, opal::eSecurityProvider::Admin, password, eAuthorityId::SID);
-        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
-        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
-    }
-    catch (std::exception& ex) {
-        std::cout << "Session failed: " << ex.what() << std::endl;
-    }
+    auto [tperProps, hostProps] = m_sessionManager->Properties(hostProperties);
+    return tperProps;
 }
 
 
 int main() {
     try {
-        auto device = std::make_unique<NvmeDevice>("/dev/nvme1");
-        const auto identity = device->IdentifyController();
-        std::cout << ConvertRawCharacters(identity.modelNumber) << " "
-                  << ConvertRawCharacters(identity.firmwareRevision) << std::endl;
-        auto tper = std::make_shared<TrustedPeripheral>(std::move(device));
-        auto sessionManager = std::make_shared<SessionManager>(tper);
+        App app{ "/dev/nvme1" };
 
+        CLI::App cliApp;
+        bool hasExited = false;
 
-        PrintDeviceInfo(*tper);
-        PrintDeviceProperties(sessionManager);
-        //DoRevert(sessionManager);
-        DoSession(sessionManager);
+        auto cmdHelp = cliApp.add_subcommand("help", "Print this help message.");
+        auto cmdGetMsid = cliApp.add_subcommand("get-msid", "Print the MSID password.");
+        auto cmdChangeSidPw = cliApp.add_subcommand("change-sid-pw", "Change the SID password.");
+        auto cmdRevert = cliApp.add_subcommand("revert", "Revert the device to Original Manufacturing State.");
+        auto cmdExit = cliApp.add_subcommand("exit", "Exit the application.");
+
+        cmdHelp->callback([&] {
+            std::cout << cliApp.get_formatter()->make_help(&cliApp, "", CLI::AppFormatMode::Normal) << std::endl;
+        });
+
+        cmdGetMsid->callback([&] {
+            try {
+                const auto msid = app.GetMSID();
+                std::cout << "MSID: " << std::string_view(reinterpret_cast<const char*>(msid.data()), msid.size()) << std::endl;
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdChangeSidPw->callback([&] {
+            try {
+                const auto currentPw = ReadPassword("Current SID password:");
+                const auto newPw = ReadPassword("New SID password:");
+                const auto newPwAgain = ReadPassword("New SID password again:");
+                if (newPw != newPwAgain) {
+                    std::cout << "Passwords don't match. Try again." << std::endl;
+                }
+                else {
+                    app.ChangeSIDPassword(currentPw, newPw);
+                }
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdRevert->callback([&] {
+            try {
+                const auto password = ReadPassword("PSID password: ");
+                app.Revert(password);
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdExit->callback([&] {
+            hasExited = true;
+        });
+
+        while (!hasExited) {
+            try {
+            std::cout << "sedmgr> ";
+            std::string command;
+            std::getline(std::cin, command);
+            cliApp.parse(command, false);
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        }
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;

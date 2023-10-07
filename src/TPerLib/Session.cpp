@@ -117,34 +117,14 @@ std::span<const uint8_t> Template::UnwrapPacket(const ComPacket& packet) {
 // Base template
 //------------------------------------------------------------------------------
 
-Value BaseTemplate::Get(Uid table, Uid row, uint32_t column) {
-    CellBlock block{
-        .startRow = uint64_t(row),
-        .startColumn = column,
-        .endColumn = column,
-    };
-    auto&& [values] = InvokeMethod<std::tuple<std::unordered_map<uint32_t, Value>>>(table, eMethodId::Get, block);
-    if (values.size() < 1) {
-        throw std::runtime_error("device did not return any table values");
-    }
-    return std::move(values.begin()->second);
-}
-
-Value BaseTemplate::Get(Uid object, uint32_t column) {
-    CellBlock block{
-        .startColumn = column,
-        .endColumn = column,
-    };
-    auto&& [values] = InvokeMethod<std::tuple<std::unordered_map<uint32_t, Value>>>(object, eMethodId::Get, block);
-    if (values.size() < 1) {
-        throw std::runtime_error("device did not return any table values");
-    }
-    return std::move(values.begin()->second);
+std::unordered_map<uint32_t, Value> BaseTemplate::Get(Uid objectOrTable, const CellBlock& block) {
+    auto [values] = InvokeMethod<std::tuple<std::unordered_map<uint32_t, Value>>>(objectOrTable, eMethodId::Get, block);
+    return values;
 }
 
 
 void BaseTemplate::Set(Uid objectOrTable, std::optional<Uid> row, std::optional<std::unordered_map<uint32_t, Value>> rowValues) {
-    InvokeMethod(objectOrTable, eMethodId::Set, rowValues);
+    InvokeMethod(objectOrTable, eMethodId::Set, row, rowValues);
 }
 
 
