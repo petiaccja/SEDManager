@@ -52,11 +52,13 @@ public:
 
     void EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
 
-private:
+    std::shared_ptr<TrustedPeripheral> GetTrustedPeripheral();
+    std::shared_ptr<const TrustedPeripheral> GetTrustedPeripheral() const;
+
     ComPacket CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber = 0, uint32_t hostSessionNumber = 0);
+    static std::span<const uint8_t> UnwrapPacket(const ComPacket& packet);
 
-    std::span<const uint8_t> UnwrapPacket(const ComPacket& packet);
-
+private:
     Method InvokeMethod(const Method& method);
 
     template <class OutArgs, class... InArgs>

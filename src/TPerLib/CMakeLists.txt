@@ -10,6 +10,8 @@ target_sources(TPerLib
         TrustedPeripheral.hpp
         SessionManager.cpp
         SessionManager.hpp
+        Session.cpp
+        Session.hpp
 
         Rpc/Method.cpp
         Rpc/Method.hpp

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cereal/details/helpers.hpp>
 #include <cereal/types/vector.hpp>
 
 #include <cstdint>

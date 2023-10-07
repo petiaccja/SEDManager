@@ -1,4 +1,5 @@
 #include <TPerLib/NvmeDevice.hpp>
+#include <TPerLib/Session.hpp>
 #include <TPerLib/SessionManager.hpp>
 #include <TPerLib/TrustedPeripheral.hpp>
 
@@ -123,16 +124,14 @@ void PrintDeviceProperties(std::shared_ptr<SessionManager> sessionManager) {
 
 void DoSession(std::shared_ptr<SessionManager> sessionManager) {
     try {
-        const uint32_t hsn = 100;
         Uid adminSpUid = 0x0000'0205'0000'0001;
-        std::cout << std::format("Starting session: HSN = {}\n", hsn);
-        const auto result = sessionManager->StartSession(hsn, adminSpUid, true);
-        const auto tsn = result.spSessionId;
-        std::cout << std::format("  Success! TSN = {}\n", tsn);
 
-        std::cout << std::format("Ending session...\n");
-        sessionManager->EndSession(tsn, hsn);
-        std::cout << std::format("  Success!\n");
+        std::cout << std::format("Starting session...\n");
+
+        Session session(sessionManager, adminSpUid);
+
+        std::cout << std::format("  HSN = {}", session.GetHostSessionNumber()) << std::endl;
+        std::cout << std::format("  TSN = {}", session.GetTPerSessionNumber()) << std::endl;
     }
     catch (std::exception& ex) {
         std::cout << "Session failed: " << ex.what() << std::endl;

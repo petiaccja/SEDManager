@@ -83,6 +83,40 @@ Method ParseMethod(const TokenStream& stream) {
     }
 }
 
+
+MethodResult ParseMethodResult(const TokenStream& stream) {
+    if (!stream.IsList()) {
+        throw std::invalid_argument("expected a list as top-level item");
+    }
+    const auto content = stream.Get<std::span<const TokenStream>>();
+    if (content.size() < 3) {
+        throw std::invalid_argument("method result stream must contains at least result list, EOD, and status list");
+    }
+    try {
+        const auto results = content[0].Get<std::span<const TokenStream>>();
+        const auto eod = content[1].Get<eCommand>();
+        const auto statusList = content[2].Get<std::span<const TokenStream>>();
+
+        if (eod != eCommand::END_OF_DATA) {
+            throw std::invalid_argument("expected an end of data token after result list");
+        }
+        if (statusList.size() != 3) {
+            throw std::invalid_argument("status list must have 3 elements");
+        }
+        const auto statusCode = statusList[0].Get<unsigned>();
+
+        MethodResult methodResult{
+            .values = { begin(results), end(results) },
+            .status = static_cast<eMethodStatus>(statusCode),
+        };
+        return methodResult;
+    }
+    catch (std::exception&) {
+        throw std::invalid_argument("incorrect method result format");
+    }
+}
+
+
 namespace impl {
 
 std::vector<std::pair<intptr_t, const TokenStream&>> LabelOptionalArgs(std::span<const TokenStream> streams) {

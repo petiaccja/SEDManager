@@ -34,9 +34,16 @@ struct Method {
 };
 
 
+struct MethodResult {
+    std::vector<TokenStream> values;
+    eMethodStatus status = eMethodStatus::SUCCESS;
+};
+
+
 std::string_view MethodStatusText(eMethodStatus status);
 TokenStream SerializeMethod(Uid invokingId, const Method& method);
 Method ParseMethod(const TokenStream& stream);
+MethodResult ParseMethodResult(const TokenStream& stream);
 
 
 namespace impl {

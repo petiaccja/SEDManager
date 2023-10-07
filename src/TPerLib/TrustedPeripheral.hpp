@@ -9,13 +9,6 @@
 
 struct ComPacket;
 
-class Transaction {
-};
-
-
-class Session {
-};
-
 
 class TrustedPeripheral {
 public:

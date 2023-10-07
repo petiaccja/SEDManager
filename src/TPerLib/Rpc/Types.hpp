@@ -4,6 +4,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <variant>
 
 
 struct Uid {
@@ -28,4 +29,9 @@ struct Uid {
     std::strong_ordering operator<=>(const Uid&) const noexcept = default;
 
     uint64_t value = 0;
+};
+
+
+struct CellBlock {
+
 };

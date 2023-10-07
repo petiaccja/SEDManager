@@ -70,6 +70,16 @@ void SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSession
 }
 
 
+std::shared_ptr<TrustedPeripheral> SessionManager::GetTrustedPeripheral() {
+    return m_tper;
+}
+
+
+std::shared_ptr<const TrustedPeripheral> SessionManager::GetTrustedPeripheral() const {
+    return m_tper;
+}
+
+
 ComPacket SessionManager::CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     SubPacket subPacket;
     subPacket.kind = static_cast<uint16_t>(eSubPacketKind::DATA);
