@@ -1,8 +1,29 @@
 # SED Manager
 
-Work in progress.
+## Introduction
+
+### What is SEDManager?
+
+SEDManager is a library and application to manage self-encrypting drives that comply with the Trusted Computing Group specifications, such as Opal and Pyrite.
+
+### Current state of SEDManager
+
+The application is in an early stage of development and as such is not ready for serious use.
+
+The current license is proprietary, meaning you're only allowed to look at the code. I will switch to an appropriate license once it's clear what scheme is the best choice.
+
+### Design goals
+
+- Recognize all Storage Subsystem Classes (see [Resources](#resources) below)
+- Be resilient to the differences between the many SSCs and optional features
+    - Have a clean and robust code base so that less-tested scenarios are likely to work
+    - Report errors in an informative way to the user
+    - Be easy to extend and modify to improve support
+- Have both a graphical and a command line interface
+
 
 ## TCG Resources
+<a name="resources"></a>
 
 | Document | Specification |
 |---|---|
