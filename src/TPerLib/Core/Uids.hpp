@@ -3,7 +3,7 @@
 #include <cstdint>
 
 
-enum class eMethodId : uint64_t {
+enum class eMethod : uint64_t {
     // Session manager
     Properties = 0x0000'0000'0000'FF01,
     StartSession = 0x0000'0000'0000'FF02,
@@ -77,11 +77,10 @@ enum class eMethodId : uint64_t {
     Reserved_1 = 0x0000'0006'0000'0202,
     Reserved_2 = 0x0000'0006'0000'0203,
     Reserved_3 = 0x0000'0006'0000'0803,
-    Opal_Revert = Reserved_1,
 };
 
 
-enum class eTableId : uint64_t {
+enum class eTable : uint64_t {
     // Base
     Table = 0x0000'0001'0000'0000, // Base
     SPInfo = 0x0000'0002'0000'0000, // Base
@@ -137,7 +136,7 @@ enum class eTableId : uint64_t {
 };
 
 
-enum class eTableDescriptorId : uint64_t {
+enum class eTableDescriptor : uint64_t {
     // Base
     Table = 0x0000'0001'0000'0001, // Base
     SPInfo = 0x0000'0001'0000'0002, // Base
@@ -193,7 +192,7 @@ enum class eTableDescriptorId : uint64_t {
 };
 
 
-enum class eAuthorityId : uint64_t {
+enum class eAuthority : uint64_t {
     // Base
     Anybody = 0x0000'0009'0000'0001, // Base
     Admins = 0x0000'0009'0000'0002, // Base
@@ -218,7 +217,11 @@ enum class eAuthorityId : uint64_t {
 
 namespace opal {
 
-enum class eTableRow_C_PIN : uint64_t {
+enum class eMethod : uint64_t {
+    Opal_Revert = static_cast<uint64_t>(::eMethod::Reserved_1),
+};
+
+enum class eRow_C_PIN : uint64_t {
     C_PIN_SID = 0x0000'000B'0000'0001,
     C_PIN_MSID = 0x0000'000B'0000'8402,
     C_PIN_Admin1 = 0x0000'000B'0000'0201,
@@ -229,7 +232,7 @@ enum class eSecurityProvider : uint64_t {
     Locking = 0x0000'0205'0000'0002,
 };
 
-enum class eAuthorityId : uint64_t {
+enum class eAuthority : uint64_t {
     PSID = 0x0000'0009'0001'FF01,
 };
 

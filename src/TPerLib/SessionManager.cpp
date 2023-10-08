@@ -20,7 +20,7 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
     -> PropertiesResult {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(eMethodId::Properties, hostProperties));
+    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(eMethod::Properties, hostProperties));
 }
 
 
@@ -47,7 +47,7 @@ auto SessionManager::StartSession(
         std::optional<uint32_t>,
         std::optional<uint32_t>,
         std::optional<std::vector<std::byte>>>;
-    auto results = InvokeMethod<OutArgs>(eMethodId::StartSession,
+    auto results = InvokeMethod<OutArgs>(eMethod::StartSession,
                                          hostSessionID,
                                          spId,
                                          write,

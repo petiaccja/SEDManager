@@ -102,7 +102,7 @@ public:
     App(std::string_view device);
 
     std::vector<std::byte> GetMSID();
-    void ChangeSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword);
+    void SetSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword);
     void Revert(std::span<const std::byte> psidPassword);
     const TPerDesc& GetCapabilities() const;
     std::unordered_map<std::string, uint32_t> GetProperties();
@@ -129,18 +129,18 @@ App::App(std::string_view device) {
 
 std::vector<std::byte> App::GetMSID() {
     Session session(m_sessionManager, opal::eSecurityProvider::Admin);
-    return session.base.Get<std::vector<std::byte>>(opal::eTableRow_C_PIN::C_PIN_MSID, 3);
+    return session.base.Get<std::vector<std::byte>>(opal::eRow_C_PIN::C_PIN_MSID, 3);
 }
 
 
-void App::ChangeSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, currentPassword, eAuthorityId::SID);
-    session.base.Set(opal::eTableRow_C_PIN::C_PIN_SID, 3, newPassword);
+void App::SetSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword) {
+    Session session(m_sessionManager, opal::eSecurityProvider::Admin, currentPassword, eAuthority::SID);
+    session.base.Set(opal::eRow_C_PIN::C_PIN_SID, 3, newPassword);
 }
 
 
 void App::Revert(std::span<const std::byte> psidPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthorityId::PSID);
+    Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthority::PSID);
     session.opal.Revert(opal::eSecurityProvider::Admin);
 }
 
@@ -178,7 +178,7 @@ int main() {
 
         auto cmdHelp = cliApp.add_subcommand("help", "Print this help message.");
         auto cmdGetMsid = cliApp.add_subcommand("get-msid", "Print the MSID password.");
-        auto cmdChangeSidPw = cliApp.add_subcommand("change-sid-pw", "Change the SID password.");
+        auto cmdSetSidPw = cliApp.add_subcommand("set-sid-pw", "Change the SID password.");
         auto cmdRevert = cliApp.add_subcommand("revert", "Revert the device to Original Manufacturing State.");
         auto cmdExit = cliApp.add_subcommand("exit", "Exit the application.");
 
@@ -196,7 +196,7 @@ int main() {
             }
         });
 
-        cmdChangeSidPw->callback([&] {
+        cmdSetSidPw->callback([&] {
             try {
                 const auto currentPw = ReadPassword("Current SID password:");
                 const auto newPw = ReadPassword("New SID password:");
@@ -205,7 +205,7 @@ int main() {
                     std::cout << "Passwords don't match. Try again." << std::endl;
                 }
                 else {
-                    app.ChangeSIDPassword(currentPw, newPw);
+                    app.SetSIDPassword(currentPw, newPw);
                 }
             }
             catch (std::exception& ex) {
@@ -229,10 +229,10 @@ int main() {
 
         while (!hasExited) {
             try {
-            std::cout << "sedmgr> ";
-            std::string command;
-            std::getline(std::cin, command);
-            cliApp.parse(command, false);
+                std::cout << "sedmgr> ";
+                std::string command;
+                std::getline(std::cin, command);
+                cliApp.parse(command, false);
             }
             catch (std::exception& ex) {
                 std::cout << ex.what() << std::endl;

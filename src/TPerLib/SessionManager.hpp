@@ -62,7 +62,7 @@ private:
     Method InvokeMethod(const Method& method);
 
     template <class OutArgs, class... InArgs>
-    OutArgs InvokeMethod(eMethodId methodId, const InArgs&... inArgs);
+    OutArgs InvokeMethod(eMethod methodId, const InArgs&... inArgs);
 
 private:
     static constexpr Uid INVOKING_ID = 0xFF;
@@ -72,7 +72,7 @@ private:
 
 
 template <class OutArgs, class... InArgs>
-OutArgs SessionManager::InvokeMethod(eMethodId methodId, const InArgs&... inArgs) {
+OutArgs SessionManager::InvokeMethod(eMethod methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
     if (result.status != eMethodStatus::SUCCESS) {
