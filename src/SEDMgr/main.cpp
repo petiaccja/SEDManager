@@ -1,8 +1,8 @@
-#include <TPerLib/NvmeDevice.hpp>
+
+#include "App.hpp"
+
+#include <TPerLib/Core/Tables.hpp>
 #include <TPerLib/Serialization/Utility.hpp>
-#include <TPerLib/Session.hpp>
-#include <TPerLib/SessionManager.hpp>
-#include <TPerLib/TrustedPeripheral.hpp>
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -97,75 +97,19 @@ std::vector<std::byte> ReadPassword(std::string_view prompt) {
 }
 
 
-class App {
-public:
-    App(std::string_view device);
-
-    std::vector<std::byte> GetMSID();
-    void SetSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword);
-    void Revert(std::span<const std::byte> psidPassword);
-    const TPerDesc& GetCapabilities() const;
-    std::unordered_map<std::string, uint32_t> GetProperties();
-
-private:
-    std::shared_ptr<NvmeDevice> m_device;
-    std::shared_ptr<TrustedPeripheral> m_tper;
-    std::shared_ptr<SessionManager> m_sessionManager;
-    TPerDesc m_capabilities;
-};
-
-
-App::App(std::string_view device) {
-    m_device = std::make_shared<NvmeDevice>(device);
-    m_tper = std::make_shared<TrustedPeripheral>(m_device);
-    m_capabilities = m_tper->GetDesc();
-    const auto comIdState = m_tper->VerifyComId();
-    if (comIdState != eComIdState::ISSUED && comIdState != eComIdState::ASSOCIATED) {
-        throw std::runtime_error("failed to acquire valid ComID");
+Uid GetRange(int number) {
+    switch (number) {
+        case 0: return eRows_Locking::GlobalRange;
+        case 1: return opal::eRows_Locking::Range1;
+        case 2: return opal::eRows_Locking::Range2;
+        case 3: return opal::eRows_Locking::Range3;
+        case 4: return opal::eRows_Locking::Range4;
+        case 5: return opal::eRows_Locking::Range5;
+        case 6: return opal::eRows_Locking::Range6;
+        case 7: return opal::eRows_Locking::Range7;
+        case 8: return opal::eRows_Locking::Range8;
+        default: throw std::invalid_argument("invalid locking range (allowed 0=global, 1..8)");
     }
-    m_sessionManager = std::make_shared<SessionManager>(m_tper);
-}
-
-
-std::vector<std::byte> App::GetMSID() {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin);
-    return session.base.Get<std::vector<std::byte>>(opal::eRow_C_PIN::C_PIN_MSID, 3);
-}
-
-
-void App::SetSIDPassword(std::span<const std::byte> currentPassword, std::span<const std::byte> newPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, currentPassword, eAuthority::SID);
-    session.base.Set(opal::eRow_C_PIN::C_PIN_SID, 3, newPassword);
-}
-
-
-void App::Revert(std::span<const std::byte> psidPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthority::PSID);
-    session.opal.Revert(opal::eSecurityProvider::Admin);
-}
-
-
-const TPerDesc& App::GetCapabilities() const {
-    return m_tper->GetDesc();
-}
-
-
-std::unordered_map<std::string, uint32_t> App::GetProperties() {
-    const std::unordered_map<std::string, uint32_t> hostProperties = {
-        { "MaxPackets", 1 },
-        { "MaxSubpackets", 1 },
-        { "MaxMethods", 1 },
-        { "MaxComPacketSize", 65536 },
-        { "MaxIndTokenSize", 65536 },
-        { "MaxAggTokenSize", 65536 },
-        { "ContinuedTokens", 0 },
-        { "SequenceNumbers", 0 },
-        { "AckNAK", 0 },
-        { "Asynchronous", 0 },
-    };
-
-    auto [tperProps, hostProps] = m_sessionManager->Properties(hostProperties);
-    return tperProps;
 }
 
 
@@ -176,11 +120,29 @@ int main() {
         CLI::App cliApp;
         bool hasExited = false;
 
+        int lockingRange = 0;
+        uint64_t startLba = 0;
+        uint64_t lengthLba = 0;
+        bool enabled = true;
+
         auto cmdHelp = cliApp.add_subcommand("help", "Print this help message.");
         auto cmdGetMsid = cliApp.add_subcommand("get-msid", "Print the MSID password.");
         auto cmdSetSidPw = cliApp.add_subcommand("set-sid-pw", "Change the SID password.");
-        auto cmdRevert = cliApp.add_subcommand("revert", "Revert the device to Original Manufacturing State.");
+        auto cmdActivateLocking = cliApp.add_subcommand("activate-locking", "Activate locking feature. This does not lock the drive.");
+        auto cmdConfigRange = cliApp.add_subcommand("config-range", "Configure and lock down all LBAs. All data is unrecoverably lost.");
+        auto cmdLock = cliApp.add_subcommand("lock", "Locks the specified range. Data is not modified.");
+        auto cmdUnlock = cliApp.add_subcommand("unlock", "Unlocks the specified range. Data is not modified.");
+        auto cmdRevert = cliApp.add_subcommand("revert", "Revert the device to Original Manufacturing State. All data is unrecoverably lost.");
         auto cmdExit = cliApp.add_subcommand("exit", "Exit the application.");
+
+        cmdConfigRange->add_option("--range", lockingRange, "Which range to configure.")->default_val(0);
+        cmdConfigRange->add_option("--start", startLba, "Start LBA of the range.")->default_val(0);
+        cmdConfigRange->add_option("--length", lengthLba, "Length of range in LBAs.")->default_val(0);
+        cmdConfigRange->add_option("--enabled", enabled, "1 to enable, 0 to disable locking of range.")->default_val(true);
+
+        cmdLock->add_option("--range", lockingRange, "Which range to lock.")->default_val(0);
+        cmdUnlock->add_option("--range", lockingRange, "Which range to unlock.")->default_val(0);
+
 
         cmdHelp->callback([&] {
             std::cout << cliApp.get_formatter()->make_help(&cliApp, "", CLI::AppFormatMode::Normal) << std::endl;
@@ -188,8 +150,8 @@ int main() {
 
         cmdGetMsid->callback([&] {
             try {
-                const auto msid = app.GetMSID();
-                std::cout << "MSID: " << std::string_view(reinterpret_cast<const char*>(msid.data()), msid.size()) << std::endl;
+                const auto msid = app.GetMSIDPassword();
+                std::cout << "MSID password: " << std::string_view(reinterpret_cast<const char*>(msid.data()), msid.size()) << std::endl;
             }
             catch (std::exception& ex) {
                 std::cout << ex.what() << std::endl;
@@ -207,6 +169,52 @@ int main() {
                 else {
                     app.SetSIDPassword(currentPw, newPw);
                 }
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdActivateLocking->callback([&] {
+            try {
+                const auto password = ReadPassword("SID password:");
+                bool activated = app.ActivateLocking(password);
+                std::cout << (activated ? "Locking activated." : "Locking already active.") << std::endl;
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdConfigRange->callback([&] {
+            try {
+                const auto password = ReadPassword("Admin1 password:");
+                if (lockingRange == 0) {
+                    app.ConfigureLockingRange(password, GetRange(lockingRange), enabled, enabled);
+                }
+                else {
+                    app.ConfigureLockingRange(password, GetRange(lockingRange), enabled, enabled, startLba, lengthLba);
+                }
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdLock->callback([&] {
+            try {
+                const auto password = ReadPassword("Admin1 password:");
+                app.SetLockingRange(password, GetRange(lockingRange), true, true);
+            }
+            catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
+            }
+        });
+
+        cmdUnlock->callback([&] {
+            try {
+                const auto password = ReadPassword("Admin1 password:");
+                app.SetLockingRange(password, GetRange(lockingRange), false, false);
             }
             catch (std::exception& ex) {
                 std::cout << ex.what() << std::endl;

@@ -128,12 +128,22 @@ void BaseTemplate::Set(Uid objectOrTable, std::optional<Uid> row, std::optional<
 }
 
 
+void BaseTemplate::GenKey(Uid credentialObject, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
+    InvokeMethod(credentialObject, eMethod::GenKey, publicExponent, pinLength);
+}
+
+
 //------------------------------------------------------------------------------
 // Base template
 //------------------------------------------------------------------------------
 
 void OpalTemplate::Revert(Uid securityProvider) {
-    InvokeMethod(securityProvider, opal::eMethod::Opal_Revert);
+    InvokeMethod(securityProvider, opal::eMethod::Revert);
+}
+
+
+void OpalTemplate::Activate(Uid securityProvider) {
+    InvokeMethod(securityProvider, opal::eMethod::Activate);
 }
 
 

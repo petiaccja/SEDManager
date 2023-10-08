@@ -3,83 +3,6 @@
 #include <cstdint>
 
 
-enum class eMethod : uint64_t {
-    // Session manager
-    Properties = 0x0000'0000'0000'FF01,
-    StartSession = 0x0000'0000'0000'FF02,
-    SyncSession = 0x0000'0000'0000'FF03,
-    StartTrustedSession = 0x0000'0000'0000'FF04,
-    SyncTrustedSession = 0x0000'0000'0000'FF05,
-    CloseSession = 0x0000'0000'0000'FF06,
-
-    // Base template
-    DeleteSP = 0x0000'0006'0000'0001,
-    CreateTable = 0x0000'0006'0000'0002,
-    Delete = 0x0000'0006'0000'0003,
-    CreateRow = 0x0000'0006'0000'0004,
-    DeleteRow = 0x0000'0006'0000'0005,
-    Next = 0x0000'0006'0000'0008,
-    GetFreeSpace = 0x0000'0006'0000'0009,
-    GetFreeRows = 0x0000'0006'0000'000A,
-    DeleteMethod = 0x0000'0006'0000'000B,
-    GetACL = 0x0000'0006'0000'000D,
-    AddACE = 0x0000'0006'0000'000E,
-    RemoveACE = 0x0000'0006'0000'000F,
-    GenKey = 0x0000'0006'0000'0010,
-    GetPackage = 0x0000'0006'0000'0012,
-    SetPackage = 0x0000'0006'0000'0013,
-    Get = 0x0000'0006'0000'0016,
-    Set = 0x0000'0006'0000'0017,
-    Authenticate = 0x0000'0006'0000'001C,
-    Obsolete_0 = 0x0000'0006'0000'0006,
-    Obsolete_1 = 0x0000'0006'0000'0007,
-    Obsolete_2 = 0x0000'0006'0000'000C,
-
-    // Admin template
-    IssueSP = 0x0000'0006'0000'0201,
-
-    // Clock template
-    GetClock = 0x0000'0006'0000'0401,
-    ResetClock = 0x0000'0006'0000'0402,
-    SetClockHigh = 0x0000'0006'0000'0403,
-    SetLagHigh = 0x0000'0006'0000'0404,
-    SetClockLow = 0x0000'0006'0000'0405,
-    SetLagLow = 0x0000'0006'0000'0406,
-    IncrementCounter = 0x0000'0006'0000'0407,
-
-    // Crypto template
-    Random = 0x0000'0006'0000'0601,
-    Salt = 0x0000'0006'0000'0602,
-    DecryptInit = 0x0000'0006'0000'0603,
-    Decrypt = 0x0000'0006'0000'0604,
-    DecryptFinalize = 0x0000'0006'0000'0605,
-    EncryptInit = 0x0000'0006'0000'0606,
-    Encrypt = 0x0000'0006'0000'0607,
-    EncryptFinalize = 0x0000'0006'0000'0608,
-    HMACInit = 0x0000'0006'0000'0609,
-    HMAC = 0x0000'0006'0000'060A,
-    HMACFinalize = 0x0000'0006'0000'060B,
-    HashInit = 0x0000'0006'0000'060C,
-    Hash = 0x0000'0006'0000'060D,
-    HashFinalize = 0x0000'0006'0000'060E,
-    Sign = 0x0000'0006'0000'060F,
-    Verify = 0x0000'0006'0000'0610,
-    XOR = 0x0000'0006'0000'0611,
-
-    // Log template
-    AddLog = 0x0000'0006'0000'0A01,
-    CreateLog = 0x0000'0006'0000'0A02,
-    ClearLog = 0x0000'0006'0000'0A03,
-    FlushLog = 0x0000'0006'0000'0A04,
-
-    // SSC-specific
-    Reserved_0 = 0x0000'0006'0000'0011,
-    Reserved_1 = 0x0000'0006'0000'0202,
-    Reserved_2 = 0x0000'0006'0000'0203,
-    Reserved_3 = 0x0000'0006'0000'0803,
-};
-
-
 enum class eTable : uint64_t {
     // Base
     Table = 0x0000'0001'0000'0000, // Base
@@ -191,49 +114,51 @@ enum class eTableDescriptor : uint64_t {
     K_AES_256 = 0x0000'0001'0000'0806, // Locking
 };
 
+enum class eRows_Locking : uint64_t {
+    GlobalRange = 0x0000'0802'0000'0001,
+};
 
-enum class eAuthority : uint64_t {
-    // Base
-    Anybody = 0x0000'0009'0000'0001, // Base
-    Admins = 0x0000'0009'0000'0002, // Base
-    Makers = 0x0000'0009'0000'0003, // Base
-    MakerSymK = 0x0000'0009'0000'0004, // Base
-    MakerPuK = 0x0000'0009'0000'0005, // Base
-    SID = 0x0000'0009'0000'0006, // Base
-    TPerSign = 0x0000'0009'0000'0007, // Base
-    TPerExch = 0x0000'0009'0000'0008, // Base
-    AdminExch = 0x0000'0009'0000'0009, // Base
-    // Admin
-    Issuers = 0x0000'0009'0000'0201, // Admin
-    Editors = 0x0000'0009'0000'0202, // Admin
-    Deleters = 0x0000'0009'0000'0203, // Admin
-    Servers = 0x0000'0009'0000'0204, // Admin
-    Reserve0 = 0x0000'0009'0000'0205, // Admin
-    Reserve1 = 0x0000'0009'0000'0206, // Admin
-    Reserve2 = 0x0000'0009'0000'0207, // Admin
-    Reserve3 = 0x0000'0009'0000'0208, // Admin
+enum class eColumns_Locking {
+    UID = 0x00, // uid
+    Name = 0x01, // name
+    CommonName = 0x02, // name
+    RangeStart = 0x03, // uinteger_8
+    RangeLength = 0x04, // uinteger_8
+    ReadLockEnabled = 0x05, // boolean
+    WriteLockEnabled = 0x06, // boolean
+    ReadLocked = 0x07, // boolean
+    WriteLocked = 0x08, // boolean
+    LockOnReset = 0x09, // reset_types
+    ActiveKey = 0x0A, // mediakey_object_uidref
+    NextKey = 0x0B, // mediakey_object_uidref
+    ReEncryptState = 0x0C, // reencrypt_state
+    ReEncryptRequest = 0x0D, // reencrypt_request
+    AdvKeyMode = 0x0E, // adv_key_mode
+    VerifyMode = 0x0F, // verify_mode
+    ContOnReset = 0x10, // reset_types
+    LastReEncryptLBA = 0x11, // uinteger_8
+    LastReEncStat = 0x12, // last_reenc_stat
+    GeneralStatus = 0x13, // gen_status
 };
 
 
 namespace opal {
 
-enum class eMethod : uint64_t {
-    Opal_Revert = static_cast<uint64_t>(::eMethod::Reserved_1),
-};
-
-enum class eRow_C_PIN : uint64_t {
+enum class eRows_C_PIN : uint64_t {
     C_PIN_SID = 0x0000'000B'0000'0001,
     C_PIN_MSID = 0x0000'000B'0000'8402,
     C_PIN_Admin1 = 0x0000'000B'0000'0201,
 };
 
-enum class eSecurityProvider : uint64_t {
-    Admin = 0x0000'0205'0000'0001,
-    Locking = 0x0000'0205'0000'0002,
-};
-
-enum class eAuthority : uint64_t {
-    PSID = 0x0000'0009'0001'FF01,
+enum class eRows_Locking : uint64_t {
+    Range1 = 0x0000'0802'0003'0001,
+    Range2 = 0x0000'0802'0003'0002,
+    Range3 = 0x0000'0802'0003'0003,
+    Range4 = 0x0000'0802'0003'0004,
+    Range5 = 0x0000'0802'0003'0005,
+    Range6 = 0x0000'0802'0003'0006,
+    Range7 = 0x0000'0802'0003'0007,
+    Range8 = 0x0000'0802'0003'0008,
 };
 
 } // namespace opal

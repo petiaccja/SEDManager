@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Uids.hpp"
+#include "Core/Methods.hpp"
 #include "Rpc/Method.hpp"
 #include "TrustedPeripheral.hpp"
 

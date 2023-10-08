@@ -33,24 +33,6 @@ private:
 };
 
 
-template <class OutArgs, class... InArgs>
-OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
-    std::vector<Value> args = ArgsToValues(inArgs...);
-    const Method method{ .methodId = methodId, .args = std::move(args) };
-
-    const MethodResult result = InvokeMethod(invokingId, method);
-
-    OutArgs outArgs;
-    try {
-        std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
-    }
-    catch (std::exception& ex) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
-    }
-    return outArgs;
-}
-
-
 class BaseTemplate : public Template {
 public:
     using Template::Template;
@@ -59,10 +41,13 @@ public:
     T Get(Uid table, Uid row, uint32_t column);
     template <class T>
     T Get(Uid object, uint32_t column);
+
     template <class T>
     void Set(Uid table, Uid row, uint32_t column, const T& value);
     template <class T>
     void Set(Uid object, uint32_t column, const T& value);
+
+    void GenKey(Uid credentialObject, std::optional<uint32_t> publicExponent = {}, std::optional<uint32_t> pinLength = {});
 
 private:
     std::unordered_map<uint32_t, Value> Get(Uid objectOrTable, const CellBlock& block);
@@ -75,6 +60,7 @@ public:
     using Template::Template;
 
     void Revert(Uid securityProvider);
+    void Activate(Uid securityProvider);
 };
 
 
@@ -113,6 +99,23 @@ private:
 
 
 namespace impl {
+
+template <class OutArgs, class... InArgs>
+OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
+    std::vector<Value> args = ArgsToValues(inArgs...);
+    const Method method{ .methodId = methodId, .args = std::move(args) };
+
+    const MethodResult result = InvokeMethod(invokingId, method);
+
+    OutArgs outArgs;
+    try {
+        std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
+    }
+    catch (std::exception& ex) {
+        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
+    }
+    return outArgs;
+}
 
 
 template <class T>
