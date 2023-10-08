@@ -1,2 +1,2 @@
-add_subdirectory(SEDMgr)
+add_subdirectory(SEDManager)
 add_subdirectory(TPerLib)

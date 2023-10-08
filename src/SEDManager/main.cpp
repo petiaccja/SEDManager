@@ -237,7 +237,7 @@ int main() {
 
         while (!hasExited) {
             try {
-                std::cout << "sedmgr> ";
+                std::cout << "sed-manager> ";
                 std::string command;
                 std::getline(std::cin, command);
                 cliApp.parse(command, false);
