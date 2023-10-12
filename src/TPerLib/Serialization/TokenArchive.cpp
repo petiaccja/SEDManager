@@ -43,8 +43,8 @@ void TokenOutputArchive::Insert(const Token& token) {
         if (token.data.size() != 1) {
             throw std::invalid_argument("tiny atom must have a data length of 1 byte");
         }
-        const uint8_t header = (token.isSigned << 6) | (token.data[0] & 0b0001'1111u) | ((token.data[0] & 0x80) >> 2);
-        Insert(std::span<const uint8_t, 1>{ &header, 1 });
+        const uint8_t header = (token.isSigned << 6) | (uint8_t(token.data[0]) & 0b0001'1111u) | ((uint8_t(token.data[0]) & 0x80) >> 2);
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&header), 1 });
     }
     else if (token.tag == eTag::SHORT_ATOM) {
         const size_t length = token.data.size() & 0b1111u;
@@ -52,8 +52,8 @@ void TokenOutputArchive::Insert(const Token& token) {
                                | (token.isByte << 5)
                                | (token.isSigned << 4)
                                | length;
-        Insert(std::span<const uint8_t, 1>{ &header, 1 });
-        Insert(std::span<const uint8_t>(token.data));
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&header), 1 });
+        Insert(std::span(token.data));
     }
     else if (token.tag == eTag::MEDIUM_ATOM) {
         const size_t length = token.data.size() & 0b111'1111'1111u;
@@ -62,35 +62,35 @@ void TokenOutputArchive::Insert(const Token& token) {
                                | (token.isSigned << 3)
                                | (length >> 8);
         const uint8_t lengthLsb = uint8_t(length);
-        Insert(std::span<const uint8_t, 1>{ &header, 1 });
-        Insert(std::span<const uint8_t, 1>{ &lengthLsb, 1 });
-        Insert(std::span<const uint8_t>(token.data));
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&header), 1 });
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&lengthLsb), 1 });
+        Insert(std::span(token.data));
     }
     else if (token.tag == eTag::LONG_ATOM) {
         const size_t length = token.data.size() & 0x00FF'FFFFu;
         const uint8_t header = uint8_t(token.tag)
                                | (token.isByte << 1)
                                | (token.isSigned);
-        const std::array<uint8_t, 3> lengthBytes = {
-            uint8_t((length >> 16)),
-            uint8_t((length >> 8)),
-            uint8_t(length),
+        const std::array<std::byte, 3> lengthBytes = {
+            std::byte(uint8_t(((length >> 16)))),
+            std::byte(uint8_t(((length >> 8)))),
+            std::byte(uint8_t((length))),
         };
-        Insert(std::span<const uint8_t, 1>{ &header, 1 });
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&header), 1 });
         Insert(std::span{ lengthBytes });
-        Insert(std::span<const uint8_t>(token.data));
+        Insert(std::span(token.data));
     }
     else {
         const uint8_t header = uint8_t(token.tag);
-        Insert(std::span<const uint8_t, 1>{ &header, 1 });
-        Insert(std::span<const uint8_t>(token.data));
+        Insert(std::span{ reinterpret_cast<const std::byte*>(&header), 1 });
+        Insert(std::span(token.data));
     }
 }
 
 
 void TokenInputArchive::Extract(Token& token) {
     uint8_t header;
-    Extract(std::span<uint8_t, 1>(&header, 1));
+    Extract(std::span(reinterpret_cast<std::byte*>(&header), 1));
     eTag tag = GetTagFromHeader(header);
     token.tag = tag;
 
@@ -103,7 +103,7 @@ void TokenInputArchive::Extract(Token& token) {
                                  : bits;
         token.isSigned = isSigned;
         token.isByte = false;
-        token.data = { data };
+        token.data = { std::byte(data) };
     }
     else if (tag == eTag::SHORT_ATOM) {
         const uint8_t isByte = bool((header >> 5) & 1u);
@@ -118,9 +118,9 @@ void TokenInputArchive::Extract(Token& token) {
         const uint8_t isByte = bool((header >> 4) & 1u);
         const uint8_t isSigned = bool((header >> 3) & 1u);
         const size_t lengthMsb = header & 0b0111;
-        uint8_t lengthLsb = 0;
+        std::byte lengthLsb;
         Extract(std::span{ &lengthLsb, 1 });
-        const size_t length = lengthMsb << 8 | lengthLsb;
+        const size_t length = lengthMsb << 8 | uint8_t(lengthLsb);
         token.isSigned = isSigned;
         token.isByte = isByte;
         token.data.resize(length);
@@ -129,9 +129,9 @@ void TokenInputArchive::Extract(Token& token) {
     else if (tag == eTag::LONG_ATOM) {
         const uint8_t isByte = bool((header >> 1) & 1u);
         const uint8_t isSigned = bool(header & 1u);
-        std::array<uint8_t, 3> lengthBytes;
+        std::array<std::byte, 3> lengthBytes;
         Extract(std::span{ lengthBytes });
-        const size_t length = (lengthBytes[0] << 16) | (lengthBytes[1] << 8) | lengthBytes[2];
+        const size_t length = (uint8_t(lengthBytes[0]) << 16) | (uint8_t(lengthBytes[1]) << 8) | uint8_t(lengthBytes[2]);
         token.isSigned = isSigned;
         token.isByte = isByte;
         token.data.resize(length);
@@ -144,5 +144,5 @@ void TokenInputArchive::Extract(Token& token) {
 
 
 eTag TokenInputArchive::PeekTag() const {
-    return GetTagFromHeader(Peek());
+    return GetTagFromHeader(uint8_t(Peek()));
 }

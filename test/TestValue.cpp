@@ -1,5 +1,6 @@
-#include <TPerLib/Serialization/TokenArchive.hpp>
 #include <TPerLib/Communication/Value.hpp>
+#include <TPerLib/Serialization/TokenArchive.hpp>
+#include <TPerLib/Serialization/Utility.hpp>
 
 #include <cereal/archives/json.hpp>
 
@@ -22,7 +23,7 @@ TEST_CASE("Integral set/get cast", "[Value]") {
 
 TEST_CASE("Integral set/get fail", "[Value]") {
     Value s = uint16_t(1);
-    REQUIRE_THROWS(s.Get<std::span<const uint8_t>>());
+    REQUIRE_THROWS(s.Get<std::span<const std::byte>>());
 }
 
 TEST_CASE("Bool set/get same", "[Value]") {
@@ -39,23 +40,17 @@ TEST_CASE("Char set/get same", "[Value]") {
 // Bytes
 //------------------------------------------------------------------------------
 
-TEST_CASE("Bytes span set/get same", "[Value]") {
-    std::array values{ 1, 2, 3 };
-    Value s = { Value::bytes, values };
-    REQUIRE(s.Get<std::span<const int>>()[0] == 1);
-    REQUIRE(s.Get<std::span<const int>>()[1] == 2);
-    REQUIRE(s.Get<std::span<const int>>()[2] == 3);
-}
-
-TEST_CASE("Bytes string set/get same", "[Value]") {
-    Value s = { Value::bytes, std::string_view("text") };
-    const auto chars = s.Get<std::span<const char>>();
-    REQUIRE(std::string_view(chars.begin(), chars.end()) == "text");
+TEST_CASE("Bytes set/get same", "[Value]") {
+    std::array bytes{ 1_b, 2_b, 3_b };
+    Value s = bytes;
+    REQUIRE(s.Get<std::span<const std::byte>>()[0] == 1_b);
+    REQUIRE(s.Get<std::span<const std::byte>>()[1] == 2_b);
+    REQUIRE(s.Get<std::span<const std::byte>>()[2] == 3_b);
 }
 
 TEST_CASE("Bytes set/get fail", "[Value]") {
-    std::array values{ 1, 2, 3 };
-    Value s = { Value::bytes, values };
+    std::array bytes{ 1_b, 2_b, 3_b };
+    Value s = bytes;
     REQUIRE_THROWS(s.Get<int>());
 }
 
@@ -86,15 +81,15 @@ TEST_CASE("List set/get fail", "[Value]") {
 
 TEST_CASE("Named set/get same", "[Value]") {
     using namespace std::string_view_literals;
-    Value s = Named{ { Value::bytes, "name"sv }, 1 };
+    Value s = Named{ std::as_bytes(std::span("name"sv)), 1 };
     const auto& v = s.Get<Named>();
-    REQUIRE(v.name.Get<std::string_view>() == "name");
+    REQUIRE(ToStringView(v.name.Get<std::span<const std::byte>>()) == "name");
     REQUIRE(v.value.Get<int>() == 1);
 }
 
 TEST_CASE("Named set/get fail", "[Value]") {
     using namespace std::string_view_literals;
-    Value s = Named{ { Value::bytes, "name"sv }, 1 };
+    Value s = Named{ std::as_bytes(std::span("name"sv)), 1 };
     REQUIRE_THROWS(s.Get<int>());
 }
 
@@ -125,7 +120,7 @@ TEST_CASE("Query int", "[Value]") {
 }
 
 TEST_CASE("Query bytes", "[Value]") {
-    Value y = { Value::bytes, "asd" };
+    Value y = std::array{ 1_b };
     Value n = "asd";
     REQUIRE(y.IsBytes());
     REQUIRE(!n.IsBytes());
@@ -210,17 +205,16 @@ TEMPLATE_TEST_CASE("Serialize uint32", "[Value]", JSONArchivePair, TokenArchiveP
 }
 
 TEMPLATE_TEST_CASE("Serialize bytes", "[Value]", JSONArchivePair, TokenArchivePair) {
-    const auto bytes = std::array<uint8_t, 3>{ 4, 5, 6 };
-    Value in = { Value::bytes, bytes };
+    Value in = std::array{ 4_b, 5_b, 6_b };
     Value out = GetFirstInList(CycleSerialization<TestType>(in));
-    const auto r = out.Get<std::span<uint8_t>>();
-    REQUIRE(r[0] == 4);
-    REQUIRE(r[1] == 5);
-    REQUIRE(r[2] == 6);
+    const auto r = out.Get<std::span<std::byte>>();
+    REQUIRE(r[0] == 4_b);
+    REQUIRE(r[1] == 5_b);
+    REQUIRE(r[2] == 6_b);
 }
 
 TEMPLATE_TEST_CASE("Serialize list", "[Value]", JSONArchivePair, TokenArchivePair) {
-    const auto values = std::array<uint8_t, 3>{ 4, 5 };
+    const auto values = std::array{ 4, 5 };
     Value in = values;
     Value out = GetFirstInList(CycleSerialization<TestType>(in));
     const auto& r = out.Get<std::span<Value>>();
@@ -230,9 +224,10 @@ TEMPLATE_TEST_CASE("Serialize list", "[Value]", JSONArchivePair, TokenArchivePai
 
 TEMPLATE_TEST_CASE("Serialize named", "[Value]", JSONArchivePair, TokenArchivePair) {
     using namespace std::string_view_literals;
-    Value in = Named{ { Value::bytes, "steve"sv }, 2 };
+    std::vector name{ 0_b, 1_b, 2_b };
+    Value in = Named{ name, 2 };
     Value out = GetFirstInList(CycleSerialization<TestType>(in));
-    const auto& r = out.Get<Named>();
-    REQUIRE(r.name.Get<std::string_view>() == "steve");
+    auto& r = out.Get<Named>();
+    REQUIRE(r.name.Get<std::vector<std::byte>>() == name);
     REQUIRE(r.value.Get<int>() == 2);
 }

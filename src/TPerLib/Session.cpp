@@ -58,7 +58,9 @@ uint32_t Session::NewHostSessionNumber() {
 
 void Session::End() {
     try {
-        m_sessionManager->EndSession(m_tperSessionNumber, m_hostSessionNumber);
+        if (m_sessionManager) {
+            m_sessionManager->EndSession(m_tperSessionNumber, m_hostSessionNumber);
+        }
     }
     catch (std::exception& ex) {
         std::cerr << std::format("failed to end session (tsn={}, hsn={}): {}", m_tperSessionNumber, m_hostSessionNumber, ex.what()) << std::endl;
@@ -88,7 +90,7 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
     std::stringstream requestSs(std::ios::binary | std::ios::out);
     TokenOutputArchive requestAr(requestSs);
     save_strip_list(requestAr, request);
-    const auto requestBytes = BytesView(requestSs.view());
+    const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
     const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
     const auto responsePacket = m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
     const auto responseBytes = UnwrapPacket(responsePacket);
@@ -104,12 +106,12 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
 };
 
 
-ComPacket Template::CreatePacket(std::vector<uint8_t> payload) {
+ComPacket Template::CreatePacket(std::vector<std::byte> payload) {
     return m_sessionManager->CreatePacket(std::move(payload), m_tperSessionNumber, m_hostSessionNumber);
 }
 
 
-std::span<const uint8_t> Template::UnwrapPacket(const ComPacket& packet) {
+std::span<const std::byte> Template::UnwrapPacket(const ComPacket& packet) {
     return m_sessionManager->UnwrapPacket(packet);
 }
 
@@ -117,19 +119,85 @@ std::span<const uint8_t> Template::UnwrapPacket(const ComPacket& packet) {
 // Base template
 //------------------------------------------------------------------------------
 
-std::unordered_map<uint32_t, Value> BaseTemplate::Get(Uid objectOrTable, const CellBlock& block) {
-    auto [values] = InvokeMethod<std::tuple<std::unordered_map<uint32_t, Value>>>(objectOrTable, eMethod::Get, block);
+
+std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t endColumn) {
+    CellBlock cellBlock{
+        .startColumn = startColumn,
+        .endColumn = endColumn - 1,
+    };
+    auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, eMethod::Get, cellBlock);
+    std::vector<Value> values(endColumn - startColumn);
+    for (auto& nvp : nameValuePairs) {
+        const auto idx = nvp.AsNamed().name.Get<size_t>();
+        if (size_t(idx - startColumn) > values.size()) {
+            throw std::runtime_error("device returned unexpected columns");
+        }
+        values[idx - startColumn] = nvp.AsNamed().value;
+    }
+    std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
+        return std::move(value.AsNamed().value);
+    });
     return values;
 }
 
 
-void BaseTemplate::Set(Uid objectOrTable, std::optional<Uid> row, std::optional<std::unordered_map<uint32_t, Value>> rowValues) {
-    InvokeMethod(objectOrTable, eMethod::Set, row, rowValues);
+Value BaseTemplate::Get(Uid object, uint32_t column) {
+    auto values = Get(object, column, column + 1);
+    if (values.empty()) {
+        throw std::runtime_error("device did not return any values");
+    }
+    return std::move(values[0]);
 }
 
 
-void BaseTemplate::GenKey(Uid credentialObject, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
-    InvokeMethod(credentialObject, eMethod::GenKey, publicExponent, pinLength);
+void BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
+    const std::optional<Uid> rowAddress = object;
+    std::optional<std::vector<Value>> namedValuePairs = std::vector<Value>();
+    for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
+         colIt != columns.end() && valIt != values.end();
+         ++colIt, ++valIt) {
+        namedValuePairs.value().emplace_back(Named{ *colIt, *valIt });
+    }
+    InvokeMethod(object, eMethod::Set, rowAddress, namedValuePairs);
+}
+
+
+void BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
+    Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
+}
+
+
+std::vector<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
+    auto [nexts] = InvokeMethod<std::tuple<std::vector<Uid>>>(table, eMethod::Next, row, std::optional(count));
+    return nexts;
+}
+
+
+std::optional<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
+    const auto nexts = Next(table, row, 1);
+    if (!nexts.empty()) {
+        return nexts[0];
+    }
+    return {};
+}
+
+
+void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
+    auto [result] = InvokeMethod<std::tuple<Value>>(THIS_SP, eMethod::Authenticate, authority, proof);
+    if (result.IsInteger()) {
+        const auto success = result.Get<uint8_t>();
+        if (!success) {
+            throw std::invalid_argument("authentication failed");
+        }
+    }
+    else {
+        throw std::invalid_argument("challenge protocol not implemented");
+    }
+}
+
+
+void BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
+    InvokeMethod(object, eMethod::GenKey, publicExponent, pinLength);
 }
 
 

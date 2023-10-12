@@ -36,7 +36,12 @@ struct Uid {
 
 struct CellBlock {
     Value startRow;
-    Value endRow;
+    std::optional<uint32_t> endRow;
     std::optional<uint32_t> startColumn;
     std::optional<uint32_t> endColumn;
 };
+
+
+inline std::ostream& operator<<(std::ostream& os, Uid uid) {
+    return os << std::format("{:#018X}", uint64_t(uid));
+}

@@ -39,31 +39,31 @@ NvmeIdentifyController NvmeDevice::IdentifyController() {
 }
 
 void NvmeDevice::SecuritySend(uint8_t securityProtocol,
-                              std::span<const uint8_t, 2> protocolSpecific,
-                              std::span<const uint8_t> data) {
+                              std::span<const std::byte, 2> protocolSpecific,
+                              std::span<const std::byte> data) {
     nvme_admin_cmd command;
     memset(&command, 0, sizeof(command));
     command.opcode = static_cast<uint8_t>(eNvmeOpcodes::SECURITY_SEND);
     command.addr = reinterpret_cast<size_t>(data.data());
     command.data_len = data.size();
     command.cdw10 = (securityProtocol << 24)
-                    | (protocolSpecific[1] << 16)
-                    | (protocolSpecific[0] << 8);
+                    | (uint32_t(protocolSpecific[1]) << 16)
+                    | (uint32_t(protocolSpecific[0]) << 8);
     command.cdw11 = command.data_len;
     SendCommand(m_file, command);
 }
 
 void NvmeDevice::SecurityReceive(uint8_t securityProtocol,
-                                 std::span<const uint8_t, 2> protocolSpecific,
-                                 std::span<uint8_t> data) {
+                                 std::span<const std::byte, 2> protocolSpecific,
+                                 std::span<std::byte> data) {
     nvme_admin_cmd command;
     memset(&command, 0, sizeof(command));
     command.opcode = static_cast<uint8_t>(eNvmeOpcodes::SECURITY_RECV);
     command.addr = reinterpret_cast<size_t>(data.data());
     command.data_len = data.size();
     command.cdw10 = (securityProtocol << 24)
-                    | (protocolSpecific[1] << 16)
-                    | (protocolSpecific[0] << 8);
+                    | (uint32_t(protocolSpecific[1]) << 16)
+                    | (uint32_t(protocolSpecific[0]) << 8);
     command.cdw11 = command.data_len;
     SendCommand(m_file, command);
 }

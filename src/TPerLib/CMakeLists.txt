@@ -20,6 +20,9 @@ target_sources(TPerLib
         Rpc/TypeMapping.cpp
         Rpc/TypeMapping.hpp
 
+        Core/Names.cpp
+        Core/Names.hpp
+
         Serialization/FlatBinaryArchive.hpp
         Serialization/FlatBinaryArchive.cpp
         Serialization/TokenArchive.hpp

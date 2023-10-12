@@ -93,7 +93,7 @@ std::shared_ptr<const TrustedPeripheral> SessionManager::GetTrustedPeripheral() 
 }
 
 
-ComPacket SessionManager::CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
+ComPacket SessionManager::CreatePacket(std::vector<std::byte> payload, uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     SubPacket subPacket;
     subPacket.kind = static_cast<uint16_t>(eSubPacketKind::DATA);
     subPacket.payload = std::move(payload);
@@ -115,7 +115,7 @@ ComPacket SessionManager::CreatePacket(std::vector<uint8_t> payload, uint32_t tp
 }
 
 
-std::span<const uint8_t> SessionManager::UnwrapPacket(const ComPacket& packet) {
+std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet) {
     constexpr auto errorNoResponse = "no response to packet";
     const auto& p = !packet.payload.empty() ? packet.payload[0] : throw std::runtime_error(errorNoResponse);
     const auto& s = !p.payload.empty() ? p.payload[0] : throw std::runtime_error(errorNoResponse);
@@ -130,7 +130,7 @@ Method SessionManager::InvokeMethod(const Method& method) {
         std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
-        const auto requestTokens = BytesView(requestSs.view());
+        const auto requestTokens = std::as_bytes(std::span(requestSs.view()));
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
         const auto responsePacket = m_tper->SendPacket(PROTOCOL, requestPacket);
         const auto responseTokens = UnwrapPacket(responsePacket);

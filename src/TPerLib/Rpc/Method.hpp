@@ -108,7 +108,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
         if constexpr (IsOptional<std::decay_t<decltype(arg)>>()) {
             auto it = std::ranges::find_if(labeledStreams, [label](auto& item) { return item.first == label; });
             if (it != labeledStreams.end()) {
-                FromValue(it->second, arg);
+                arg = value_cast<typename std::decay_t<decltype(arg)>::value_type>(it->second);
             }
         }
         else {
@@ -119,7 +119,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
             if (dynLabel != -1) {
                 throw std::invalid_argument(std::format("expected mandatory argument for argument {}", Element));
             }
-            FromValue(stream, arg);
+            arg = value_cast<std::decay_t<decltype(arg)>>(stream);
         }
 
         ExpandArgs<Element + 1>(labeledStreams, labels, args);
@@ -131,7 +131,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
 template <class... Args>
 std::vector<Value> ArgsToValues(const Args&... args) {
     const auto labels = impl::LabelOptionalArgs(0, args...);
-    const auto streams = std::tuple{ ToValue(args)... };
+    const auto streams = std::tuple{ value_cast(args)... };
     auto list = impl::CollapseArgs<0>(labels, std::move(streams));
     std::ranges::reverse(list);
     return list;

@@ -1,8 +1,8 @@
 #include "TrustedPeripheral.hpp"
 
-#include "Serialization/Utility.hpp"
 #include "Communication/ComIdSetup.hpp"
 #include "Communication/Packet.hpp"
+#include "Serialization/Utility.hpp"
 
 #include <cereal/archives/portable_binary.hpp>
 
@@ -81,8 +81,8 @@ eComIdState TrustedPeripheral::VerifyComId() {
     // Get VERIFY_COMID_VALID response.
     VerifyComIdValidResponse response;
     do {
-        std::array<uint8_t, 46> responseBytes;
-        std::ranges::fill(responseBytes, 0);
+        std::array<std::byte, 46> responseBytes;
+        std::ranges::fill(responseBytes, 0_b);
         SecurityReceive(0x02, m_comId, responseBytes);
         FromBytes(responseBytes, response);
 
@@ -98,14 +98,41 @@ eComIdState TrustedPeripheral::VerifyComId() {
 }
 
 
+void TrustedPeripheral::Reset() {
+    std::array payload{ std::byte(0) };
+    SecuritySend(0x02, 0x0004, payload);
+}
+
+
+template <typename Rep, typename Period>
+static void Sleep(std::chrono::duration<Rep, Period> time) {
+    using namespace std::chrono;
+
+    if (time < milliseconds(1)) {
+        const auto start = high_resolution_clock::now();
+        while (high_resolution_clock::now() - start < time) {
+            // Busy wait loop.
+        }
+    }
+    else {
+        std::this_thread::sleep_for(time);
+    }
+}
+
+
 ComPacket TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
     const auto request = ToBytes(packet);
 
     SecuritySend(protocol, GetComId(), request);
 
     bool more = true;
     ComPacket result;
-    std::vector<uint8_t> response(2048, 0);
+    std::vector<std::byte> response(2048, 0_b);
+    auto sleepTime = 50us;
+    constexpr auto maxSleepTime = 20ms;
     do {
         SecurityReceive(protocol, GetComId(), response);
         FromBytes(response, result);
@@ -116,7 +143,10 @@ ComPacket TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packe
             response.resize(result.minTransfer);
         }
         if (more) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            Sleep(sleepTime);
+            if (sleepTime * 2 < maxSleepTime) {
+                sleepTime *= 2;
+            }
         }
     } while (more);
 
@@ -124,23 +154,23 @@ ComPacket TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packe
 }
 
 
-void TrustedPeripheral::SecuritySend(uint8_t protocol, uint16_t comId, std::span<const uint8_t> payload) {
-    const std::array comIdBytes = { uint8_t(comId >> 8), uint8_t(comId & 0xFF) };
+void TrustedPeripheral::SecuritySend(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload) {
+    const std::array comIdBytes = { std::byte(comId >> 8), std::byte(comId & 0xFF) };
     const std::array comIdBytesFlip = { comIdBytes[1], comIdBytes[0] };
     m_storageDevice->SecuritySend(protocol, comIdBytesFlip, payload);
 }
 
 
-void TrustedPeripheral::SecurityReceive(uint8_t protocol, uint16_t comId, std::span<uint8_t> response) {
-    const std::array comIdBytes = { uint8_t(comId >> 8), uint8_t(comId & 0xFF) };
+void TrustedPeripheral::SecurityReceive(uint8_t protocol, uint16_t comId, std::span<std::byte> response) {
+    const std::array comIdBytes = { std::byte(comId >> 8), std::byte(comId & 0xFF) };
     const std::array comIdBytesFlip = { comIdBytes[1], comIdBytes[0] };
     m_storageDevice->SecurityReceive(protocol, comIdBytesFlip, response);
 }
 
 
 TPerDesc TrustedPeripheral::Discovery() {
-    alignas(1024) std::array<uint8_t, 2048> response;
-    std::ranges::fill(response, 0);
+    alignas(1024) std::array<std::byte, 2048> response;
+    std::ranges::fill(response, 0_b);
     SecurityReceive(0x01, 0x0001, response);
     TPerDesc desc = ParseTPerDesc(response);
     return desc;
@@ -148,8 +178,8 @@ TPerDesc TrustedPeripheral::Discovery() {
 
 
 std::pair<uint16_t, uint16_t> TrustedPeripheral::RequestComId() {
-    std::array<uint8_t, 4> response;
-    std::ranges::fill(response, 0xFF);
+    std::array<std::byte, 4> response;
+    std::ranges::fill(response, 0xFF_b);
     SecurityReceive(0x02, 0x0000, response);
     uint16_t comId = 0;
     FromBytes(response, comId);
@@ -171,8 +201,8 @@ void TrustedPeripheral::StackReset() {
     // Get STACK_RESET response.
     StackResetResponse response;
     do {
-        std::array<uint8_t, 20> responseBytes;
-        std::ranges::fill(responseBytes, 0);
+        std::array<std::byte, 20> responseBytes;
+        std::ranges::fill(responseBytes, 0_b);
         SecurityReceive(0x02, m_comId, responseBytes);
         FromBytes(responseBytes, response);
 

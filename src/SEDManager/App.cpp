@@ -1,9 +1,12 @@
 #include "App.hpp"
 
 #include <TPerLib/Core/Authorities.hpp>
+#include <TPerLib/Core/Names.hpp>
 #include <TPerLib/Core/SecurityProviders.hpp>
 #include <TPerLib/Core/Tables.hpp>
 #include <TPerLib/Session.hpp>
+
+#include <stdexcept>
 
 
 App::App(std::string_view device) {
@@ -42,60 +45,93 @@ std::unordered_map<std::string, uint32_t> App::GetProperties() {
 }
 
 
-std::vector<std::byte> App::GetMSIDPassword() {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin);
-    return session.base.Get<std::vector<std::byte>>(opal::eRows_C_PIN::C_PIN_MSID, 3);
-}
-
-
-void App::SetSIDPassword(std::span<const std::byte> sidPassword, std::span<const std::byte> newPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, sidPassword, eAuthority::SID);
-    session.base.Set(opal::eRows_C_PIN::C_PIN_SID, 3, newPassword);
-}
-
-
-bool App::ActivateLocking(std::span<const std::byte> sidPassword) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Admin, sidPassword, eAuthority::SID);
-    const auto lifeCycle = session.base.Get<int>(opal::eSecurityProvider::Locking, 6);
-    if (lifeCycle == int(opal::eSecurityProviderLifecycle::MANUFACTURED_INACTIVE)) {
-        session.opal.Activate(opal::eSecurityProvider::Locking);
-        return true;
+std::optional<std::string> App::GetNameFromTable(Uid uid, std::optional<uint32_t> column) {
+    const auto name = GetName(uid);
+    if (name) {
+        return std::string(*name);
     }
-    return false;
-}
-
-
-void App::ConfigureLockingRange(std::span<const std::byte> admin1Password,
-                                Uid range,
-                                bool readLockEnabled,
-                                bool writeLockEnabled,
-                                std::optional<uint64_t> startLba,
-                                std::optional<uint64_t> lengthLba) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Locking, admin1Password, opal::eAuthority::Admin1);
-    const auto activeKey = session.base.Get<Uid>(range, uint32_t(eColumns_Locking::ActiveKey));
-    if (startLba && lengthLba) {
-        session.base.Set(range, uint32_t(eColumns_Locking::RangeStart), startLba.value());
-        session.base.Set(range, uint32_t(eColumns_Locking::RangeLength), lengthLba.value());
+    else if (column) {
+        try {
+            auto name = value_cast<std::string>(m_session->base.Get(uid, *column));
+            return { std::move(name) };
+        }
+        catch (std::exception&) {
+            return std::nullopt;
+        }
     }
-    session.base.Set(range, uint32_t(eColumns_Locking::ReadLockEnabled), readLockEnabled);
-    session.base.Set(range, uint32_t(eColumns_Locking::WriteLockEnabled), writeLockEnabled);
-    session.base.Set(range, uint32_t(eColumns_Locking::ReadLocked), readLockEnabled);
-    session.base.Set(range, uint32_t(eColumns_Locking::WriteLocked), writeLockEnabled);
-    session.base.GenKey(activeKey);
+    return std::nullopt;
 }
 
 
-void App::SetLockingRange(std::span<const std::byte> admin1Password,
-                          Uid range,
-                          bool readLocked,
-                          bool writeLocked) {
-    Session session(m_sessionManager, opal::eSecurityProvider::Locking, admin1Password, opal::eAuthority::Admin1);
-    session.base.Set(range, uint32_t(eColumns_Locking::ReadLocked), readLocked);
-    session.base.Set(range, uint32_t(eColumns_Locking::WriteLocked), writeLocked);
+std::vector<SecurityProvider> App::GetSecurityProviders() {
+    auto get = [this](Session& session) {
+        std::vector<SecurityProvider> securityProviders;
+        auto uid = session.base.Next(eTable::SP, std::nullopt);
+        while (uid) {
+            std::optional<std::string> name = GetNameFromTable(*uid, uint32_t(eColumns_SP::Name));
+            securityProviders.emplace_back(*uid, std::move(name));
+            uid = session.base.Next(eTable::SP, *uid);
+        }
+        return securityProviders;
+    };
+
+    if (m_session) {
+        return get(*m_session);
+    }
+    else {
+        Session session(m_sessionManager, opal::eSecurityProvider::Admin);
+        return get(session);
+    }
+}
+
+
+std::vector<Authority> App::GetAuthorities() {
+    if (m_session) {
+        std::vector<Authority> authorities;
+        auto uid = m_session->base.Next(eTable::Authority, std::nullopt);
+        while (uid) {
+            std::optional<std::string> name = GetNameFromTable(*uid, uint32_t(eColumns_Authority::Name));
+            authorities.emplace_back(*uid, std::move(name));
+            uid = m_session->base.Next(eTable::Authority, *uid);
+        }
+        return authorities;
+    }
+    throw std::logic_error("start a session to query authorities");
+}
+
+
+void App::Start(Uid securityProvider) {
+    m_session = Session(m_sessionManager, securityProvider);
+}
+
+
+void App::Authenticate(Uid authority, std::optional<std::span<const std::byte>> password) {
+    if (m_session) {
+        return m_session->base.Authenticate(authority, password);
+    }
+    throw std::logic_error("start a session on an SP to authenticate");
+}
+
+
+void App::End() {
+    m_session = {};
+}
+
+
+void App::StackReset() {
+    m_tper->StackReset();
+    End();
+}
+
+
+void App::Reset() {
+    m_tper->Reset();
+    End();
 }
 
 
 void App::Revert(std::span<const std::byte> psidPassword) {
     Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthority::PSID);
     session.opal.Revert(opal::eSecurityProvider::Admin);
+    End();
 }

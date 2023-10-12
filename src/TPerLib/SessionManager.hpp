@@ -55,8 +55,8 @@ public:
     std::shared_ptr<TrustedPeripheral> GetTrustedPeripheral();
     std::shared_ptr<const TrustedPeripheral> GetTrustedPeripheral() const;
 
-    ComPacket CreatePacket(std::vector<uint8_t> payload, uint32_t tperSessionNumber = 0, uint32_t hostSessionNumber = 0);
-    static std::span<const uint8_t> UnwrapPacket(const ComPacket& packet);
+    ComPacket CreatePacket(std::vector<std::byte> payload, uint32_t tperSessionNumber = 0, uint32_t hostSessionNumber = 0);
+    static std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
 
 private:
     Method InvokeMethod(const Method& method);

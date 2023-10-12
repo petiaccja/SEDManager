@@ -35,11 +35,11 @@ public:
 
     NvmeIdentifyController IdentifyController();
     void SecuritySend(uint8_t securityProtocol,
-                      std::span<const uint8_t, 2> protocolSpecific,
-                      std::span<const uint8_t> data);
+                      std::span<const std::byte, 2> protocolSpecific,
+                      std::span<const std::byte> data);
     void SecurityReceive(uint8_t securityProtocol,
-                         std::span<const uint8_t, 2> protocolSpecific,
-                         std::span<uint8_t> data);
+                         std::span<const std::byte, 2> protocolSpecific,
+                         std::span<std::byte> data);
 
 private:
     int m_file;

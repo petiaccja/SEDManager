@@ -21,14 +21,16 @@ protected:
     OutArgs InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
 
 private:
-    ComPacket CreatePacket(std::vector<uint8_t> payload);
-    std::span<const uint8_t> UnwrapPacket(const ComPacket& packet);
+    ComPacket CreatePacket(std::vector<std::byte> payload);
+    std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
+
+protected:
+    static constexpr Uid THIS_SP = 0x0000'0000'0000'0001;
 
 private:
     std::shared_ptr<SessionManager> m_sessionManager = nullptr;
     uint32_t m_tperSessionNumber = 0;
     uint32_t m_hostSessionNumber = 0;
-    static constexpr Uid THIS_SP_ID = 0x0000'0000'0000'0001;
     static constexpr uint8_t PROTOCOL = 0x01;
 };
 
@@ -37,21 +39,17 @@ class BaseTemplate : public Template {
 public:
     using Template::Template;
 
-    template <class T>
-    T Get(Uid table, Uid row, uint32_t column);
-    template <class T>
-    T Get(Uid object, uint32_t column);
 
-    template <class T>
-    void Set(Uid table, Uid row, uint32_t column, const T& value);
-    template <class T>
-    void Set(Uid object, uint32_t column, const T& value);
+    std::vector<Value> Get(Uid object, uint32_t startColumn, uint32_t endColumn);
+    Value Get(Uid object, uint32_t column);
+    void Set(Uid object, std::span<const uint32_t> column, std::span<const Value> values);
+    void Set(Uid object, uint32_t columns, const Value& value);
+    std::vector<Uid> Next(Uid table, std::optional<Uid> row, uint32_t count);
+    std::optional<Uid> Next(Uid table, std::optional<Uid> row);
 
-    void GenKey(Uid credentialObject, std::optional<uint32_t> publicExponent = {}, std::optional<uint32_t> pinLength = {});
+    void Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof);
 
-private:
-    std::unordered_map<uint32_t, Value> Get(Uid objectOrTable, const CellBlock& block);
-    void Set(Uid objectOrTable, std::optional<Uid> row, std::optional<std::unordered_map<uint32_t, Value>> values);
+    void GenKey(Uid object, std::optional<uint32_t> publicExponent = {}, std::optional<uint32_t> pinLength = {});
 };
 
 
@@ -117,46 +115,5 @@ OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... in
     return outArgs;
 }
 
-
-template <class T>
-T BaseTemplate::Get(Uid table, Uid row, uint32_t column) {
-    CellBlock block{
-        .startRow = uint64_t(row),
-        .startColumn = column,
-        .endColumn = column,
-    };
-    auto values = Get(table, block);
-    if (values.size() < 1) {
-        throw std::runtime_error("device did not return any table values");
-    }
-    T result;
-    FromValue(values.begin()->second, result);
-    return result;
-}
-
-template <class T>
-T BaseTemplate::Get(Uid object, uint32_t column) {
-    CellBlock block{
-        .startColumn = column,
-        .endColumn = column,
-    };
-    auto values = Get(object, block);
-    if (values.size() < 1) {
-        throw std::runtime_error("device did not return any table values");
-    }
-    T result;
-    FromValue(values.begin()->second, result);
-    return result;
-}
-
-template <class T>
-void BaseTemplate::Set(Uid table, Uid row, uint32_t column, const T& value) {
-    Set(table, row, { { column, ToValue(value) } });
-}
-
-template <class T>
-void BaseTemplate::Set(Uid object, uint32_t column, const T& value) {
-    Set(object, std::nullopt, std::unordered_map<uint32_t, Value>{ { column, ToValue(value) } });
-}
 
 } // namespace impl

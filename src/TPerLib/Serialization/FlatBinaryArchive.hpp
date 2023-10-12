@@ -19,7 +19,7 @@ public:
     FlatBinaryInputArchive& operator=(const FlatBinaryInputArchive&) = delete;
 
     template <size_t N>
-    void Extract(std::span<uint8_t, N> bytes) {
+    void Extract(std::span<std::byte, N> bytes) {
         const auto numExtracted = m_stream.rdbuf()->sgetn(reinterpret_cast<char*>(bytes.data()), bytes.size());
         if (numExtracted != bytes.size()) {
             throw std::invalid_argument(
@@ -41,7 +41,7 @@ public:
     FlatBinaryOutputArchive& operator=(const FlatBinaryOutputArchive&) = delete;
 
     template <size_t N>
-    void Insert(std::span<const uint8_t, N> bytes) {
+    void Insert(std::span<const std::byte, N> bytes) {
         const auto numWritten = m_stream.rdbuf()->sputn(reinterpret_cast<const char*>(bytes.data()), bytes.size());
     }
 
@@ -54,10 +54,10 @@ template <std::integral T>
 auto ToFlatBinary(const T& t) {
     using UnsignedType = std::make_unsigned_t<T>;
 
-    std::array<uint8_t, sizeof(T)> bytes;
+    std::array<std::byte, sizeof(T)> bytes;
     auto us = std::bit_cast<UnsignedType>(t);
     for (auto& byte : std::views::reverse(bytes)) {
-        byte = static_cast<uint8_t>(us);
+        byte = static_cast<std::byte>(uint8_t(us));
         constexpr auto shift = sizeof(T) > 1 ? 8 : 1; // To avoid warnings about shift being larger than type itself.
         us >>= shift;
     }
@@ -67,14 +67,14 @@ auto ToFlatBinary(const T& t) {
 
 
 template <std::integral T>
-T FromFlatBinary(std::span<uint8_t, sizeof(T)> bytes) {
+T FromFlatBinary(std::span<std::byte, sizeof(T)> bytes) {
     using UnsignedType = std::make_unsigned_t<T>;
 
     UnsignedType us = 0;
     for (auto& byte : bytes) {
         constexpr auto shift = sizeof(T) > 1 ? 8 : 1; // To avoid warnings about shift being larger than type itself.
         us <<= shift;
-        us |= byte;
+        us |= uint8_t(byte);
     }
 
     return std::bit_cast<T>(us);
@@ -83,12 +83,12 @@ T FromFlatBinary(std::span<uint8_t, sizeof(T)> bytes) {
 
 template <>
 inline auto ToFlatBinary<bool>(const bool& t) {
-    return std::array{ static_cast<uint8_t>(t) };
+    return std::array{ static_cast<std::byte>(t) };
 }
 
 
 template <>
-inline bool FromFlatBinary<bool>(std::span<uint8_t, 1> bytes) {
+inline bool FromFlatBinary<bool>(std::span<std::byte, 1> bytes) {
     return static_cast<bool>(bytes[0]);
 }
 
@@ -96,15 +96,31 @@ inline bool FromFlatBinary<bool>(std::span<uint8_t, 1> bytes) {
 template <std::integral T>
 void CEREAL_SAVE_FUNCTION_NAME(FlatBinaryOutputArchive& ar, const T& t) {
     const auto bytes = ToFlatBinary(t);
-    ar.Insert(std::span<const uint8_t, sizeof(T)>{ bytes });
+    ar.Insert(std::span<const std::byte, sizeof(T)>{ bytes });
 }
 
 
 template <std::integral T>
 void CEREAL_LOAD_FUNCTION_NAME(FlatBinaryInputArchive& ar, T& t) {
-    std::array<uint8_t, sizeof(T)> bytes;
-    ar.Extract(std::span<uint8_t, sizeof(T)>{ bytes });
+    std::array<std::byte, sizeof(T)> bytes;
+    ar.Extract(std::span<std::byte, sizeof(T)>{ bytes });
     t = FromFlatBinary<T>(bytes);
+}
+
+
+template <class T>
+    requires std::is_enum_v<T>
+void CEREAL_SAVE_FUNCTION_NAME(FlatBinaryOutputArchive& ar, const T& t) {
+    CEREAL_SAVE_FUNCTION_NAME(ar, static_cast<std::underlying_type_t<T>>(t));
+}
+
+
+template <class T>
+    requires std::is_enum_v<T>
+void CEREAL_LOAD_FUNCTION_NAME(FlatBinaryInputArchive& ar, T& t) {
+    std::underlying_type_t<T> value;
+    CEREAL_LOAD_FUNCTION_NAME(ar, value);
+    t = static_cast<T>(value);
 }
 
 

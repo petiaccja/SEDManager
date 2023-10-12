@@ -118,6 +118,42 @@ enum class eRows_Locking : uint64_t {
     GlobalRange = 0x0000'0802'0000'0001,
 };
 
+
+enum class eColumns_SP {
+    UID = 0x00, // uid
+    Name = 0x01, // Yes name
+    ORG = 0x02, // Authority_object_ref
+    EffectiveAuth = 0x03, // max_bytes_32
+    DateofIssue = 0x04, // date
+    Bytes = 0x05, // uinteger_8
+    LifeCycleState = 0x06, // life_cycle_state
+    Frozen = 0x07, // boolean_def_false
+};
+
+
+enum class eColumns_Authority {
+    UID = 0x00, // uid
+    Name = 0x01, // Yes name
+    CommonName = 0x02, // Yes name
+    IsClass = 0x03, // boolean
+    Class = 0x04, // Authority_object_ref
+    Enabled = 0x05, // boolean
+    Secure = 0x06, // messaging_type
+    HashAndSign = 0x07, // hash_protocol
+    PresentCertificate = 0x08, // boolean
+    Operation = 0x09, // auth_method
+    Credential = 0x0A, // cred_object_uidref
+    ResponseSign = 0x0B, // Authority_object_ref
+    ResponseExch = 0x0C, // Authority_object_ref
+    ClockStart = 0x0D, // date
+    ClockEnd = 0x0E, // date
+    Limit = 0x0F, // uinteger_4
+    Uses = 0x10, // uinteger_4
+    Log = 0x11, // log_select
+    LogTo = 0x12, // LogList_object_ref
+};
+
+
 enum class eColumns_Locking {
     UID = 0x00, // uid
     Name = 0x01, // name

@@ -7,7 +7,7 @@
 #include <format>
 
 
-TPerDesc ParseTPerDesc(std::span<const uint8_t> bytes) {
+TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     constexpr int headerSizeBytes = 48;
 
     if (bytes.size_bytes() < headerSizeBytes) {

@@ -47,7 +47,7 @@ void TokenDebugArchive::Insert(const Token& token) {
             for (size_t idx = 0; idx < std::min(maxSize, token.data.size()); ++idx) {
                 name
                     ? dataRep += std::bit_cast<char>(token.data[idx])
-                    : dataRep += std::format("{:02X} ", token.data[idx]);
+                    : dataRep += std::format("{:02X} ", uint8_t(token.data[idx]));
             }
             if (token.data.size() > maxSize) {
                 dataRep += "... ";
@@ -57,11 +57,10 @@ void TokenDebugArchive::Insert(const Token& token) {
         }
         else {
             uint64_t value = 0;
+            dataRep += "0x";
             for (auto byte : token.data) {
-                value <<= 8;
-                value |= byte;
+                dataRep += std::format("{:02x}", uint8_t(value));
             }
-            dataRep = std::format("{:#010x} ", value);
             dataType = std::format("{}{}", token.isSigned ? "i" : "u", token.data.size() * 8);
         }
         m_stream << MakeIndentation(indentation)

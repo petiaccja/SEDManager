@@ -29,7 +29,7 @@ public:
 
 protected:
     template <size_t N>
-    void Extract(std::span<uint8_t, N> bytes) {
+    void Extract(std::span<std::byte, N> bytes) {
         const auto numExtracted = m_stream.rdbuf()->sgetn(reinterpret_cast<char*>(bytes.data()), bytes.size());
         if (numExtracted != bytes.size()) {
             throw std::invalid_argument(
@@ -37,12 +37,12 @@ protected:
         }
     }
 
-    uint8_t Peek() const {
+    std::byte Peek() const {
         if (!m_stream.good()) {
             throw std::invalid_argument(
                 std::format("failed to extract {} bytes, extracted {}", 1, 0));
         }
-        return std::bit_cast<uint8_t>(std::istream::char_type(m_stream.rdbuf()->sgetc()));
+        return std::bit_cast<std::byte>(std::istream::char_type(m_stream.rdbuf()->sgetc()));
     }
 
 private:
@@ -63,7 +63,7 @@ public:
 
 protected:
     template <size_t N>
-    void Insert(std::span<const uint8_t, N> bytes) {
+    void Insert(std::span<const std::byte, N> bytes) {
         const auto numWritten = m_stream.rdbuf()->sputn(reinterpret_cast<const char*>(bytes.data()), bytes.size());
         assert(numWritten == bytes.size());
     }
@@ -105,7 +105,7 @@ void CEREAL_LOAD_FUNCTION_NAME(TokenInputArchive& ar, T& t) {
         throw std::invalid_argument("token does not contain the right number of bytes for integer");
     }
 
-    t = FromFlatBinary<T>(std::span<uint8_t, sizeof(T)>{ token.data });
+    t = FromFlatBinary<T>(std::span<std::byte, sizeof(T)>{ token.data });
 }
 
 

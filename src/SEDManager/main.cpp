@@ -92,7 +92,7 @@ void PrintProperies(const std::unordered_map<std::string, uint32_t>& properties)
 
 std::vector<std::byte> ReadPassword(std::string_view prompt) {
     std::string_view password = getpass(prompt.data());
-    const auto bytes = std::as_bytes(BytesView(password));
+    const auto bytes = std::as_bytes(std::span(password));
     return { bytes.begin(), bytes.end() };
 }
 
@@ -113,11 +113,119 @@ Uid GetRange(int number) {
 }
 
 
-int main() {
-    try {
-        App app{ "/dev/nvme1" };
+void AddCmdHelp(App&, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("help", "Print this help message.");
+    cmd->callback([&] {
+        std::cout << cli.get_formatter()->make_help(&cli, "", CLI::AppFormatMode::Normal) << std::endl;
+    });
+}
 
-        CLI::App cliApp;
+
+void AddCmdStackReset(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("stack-reset", "Resets the current communication stream. Does not change state.");
+    cmd->callback([&app] {
+        app.StackReset();
+    });
+}
+
+
+void AddCmdReset(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("reset", "Resets the device as if power-cycled. Does not change state.");
+    cmd->callback([&app] {
+        app.Reset();
+    });
+}
+
+
+void AddCmdStart(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("start", "Starts a session with a service provider.");
+    cmd->callback([&app] {
+        const auto securityProviders = app.GetSecurityProviders();
+        size_t index = 0;
+        for (auto& [uid, name] : securityProviders) {
+            if (name) {
+                std::cout << std::format("[{}] {}", ++index, *name) << std::endl;
+            }
+            else {
+                std::cout << std::format("[{}] {:#018x}", ++index, uint64_t(uid)) << std::endl;
+            }
+        }
+        std::cout << std::format("Select SP ({}-{}): ", 1, securityProviders.size());
+        std::string s;
+        getline(std::cin, s);
+        index = size_t(std::atoi(s.data()) - 1);
+        if (index < securityProviders.size()) {
+            const auto uid = securityProviders[index].uid;
+            app.Start(uid);
+        }
+        else {
+            std::cout << "Select a valid number." << std::endl;
+        }
+    });
+}
+
+
+void AddCmdAuth(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("auth", "Authenticates with an authority.");
+    cmd->callback([&app] {
+        const auto authorities = app.GetAuthorities();
+        size_t index = 0;
+        for (auto& [uid, name] : authorities) {
+            if (name) {
+                std::cout << std::format("[{}] {}", ++index, *name) << std::endl;
+            }
+            else {
+                std::cout << std::format("[{}] {:#018x}", ++index, uint64_t(uid)) << std::endl;
+            }
+        }
+        std::cout << std::format("Select authority ({}-{}): ", 1, authorities.size());
+        std::string s;
+        getline(std::cin, s);
+        index = size_t(std::atoi(s.data()) - 1);
+        if (index < authorities.size()) {
+            const auto uid = authorities[index].uid;
+            const auto password = ReadPassword("Password: ");
+            app.Authenticate(uid, password);
+        }
+        else {
+            std::cout << "Select a valid number." << std::endl;
+        }
+    });
+}
+
+
+void AddCmdEnd(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("end", "End session with current service provider.");
+    cmd->callback([&app] {
+        app.End();
+    });
+}
+
+
+void AddCmdRevert(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("revert", "Revert the device to Original Manufacturing State. All data is unrecoverably lost.");
+    cmd->callback([&] {
+        try {
+            const auto password = ReadPassword("PSID password: ");
+            app.Revert(password);
+        }
+        catch (std::exception& ex) {
+            std::cout << ex.what() << std::endl;
+        }
+    });
+}
+
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cout << "Usage: SEDManager <device>" << std::endl;
+        return 1;
+    }
+    std::string_view device = argv[1];
+    try {
+        App app{ device };
+
+        CLI::App cli;
         bool hasExited = false;
 
         int lockingRange = 0;
@@ -125,122 +233,24 @@ int main() {
         uint64_t lengthLba = 0;
         bool enabled = true;
 
-        auto cmdHelp = cliApp.add_subcommand("help", "Print this help message.");
-        auto cmdGetMsid = cliApp.add_subcommand("get-msid", "Print the MSID password.");
-        auto cmdSetSidPw = cliApp.add_subcommand("set-sid-pw", "Change the SID password.");
-        auto cmdActivateLocking = cliApp.add_subcommand("activate-locking", "Activate locking feature. This does not lock the drive.");
-        auto cmdConfigRange = cliApp.add_subcommand("config-range", "Configure and lock down all LBAs. All data is unrecoverably lost.");
-        auto cmdLock = cliApp.add_subcommand("lock", "Locks the specified range. Data is not modified.");
-        auto cmdUnlock = cliApp.add_subcommand("unlock", "Unlocks the specified range. Data is not modified.");
-        auto cmdRevert = cliApp.add_subcommand("revert", "Revert the device to Original Manufacturing State. All data is unrecoverably lost.");
-        auto cmdExit = cliApp.add_subcommand("exit", "Exit the application.");
-
-        cmdConfigRange->add_option("--range", lockingRange, "Which range to configure.")->default_val(0);
-        cmdConfigRange->add_option("--start", startLba, "Start LBA of the range.")->default_val(0);
-        cmdConfigRange->add_option("--length", lengthLba, "Length of range in LBAs.")->default_val(0);
-        cmdConfigRange->add_option("--enabled", enabled, "1 to enable, 0 to disable locking of range.")->default_val(true);
-
-        cmdLock->add_option("--range", lockingRange, "Which range to lock.")->default_val(0);
-        cmdUnlock->add_option("--range", lockingRange, "Which range to unlock.")->default_val(0);
-
-
-        cmdHelp->callback([&] {
-            std::cout << cliApp.get_formatter()->make_help(&cliApp, "", CLI::AppFormatMode::Normal) << std::endl;
-        });
-
-        cmdGetMsid->callback([&] {
-            try {
-                const auto msid = app.GetMSIDPassword();
-                std::cout << "MSID password: " << std::string_view(reinterpret_cast<const char*>(msid.data()), msid.size()) << std::endl;
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdSetSidPw->callback([&] {
-            try {
-                const auto currentPw = ReadPassword("Current SID password:");
-                const auto newPw = ReadPassword("New SID password:");
-                const auto newPwAgain = ReadPassword("New SID password again:");
-                if (newPw != newPwAgain) {
-                    std::cout << "Passwords don't match. Try again." << std::endl;
-                }
-                else {
-                    app.SetSIDPassword(currentPw, newPw);
-                }
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdActivateLocking->callback([&] {
-            try {
-                const auto password = ReadPassword("SID password:");
-                bool activated = app.ActivateLocking(password);
-                std::cout << (activated ? "Locking activated." : "Locking already active.") << std::endl;
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdConfigRange->callback([&] {
-            try {
-                const auto password = ReadPassword("Admin1 password:");
-                if (lockingRange == 0) {
-                    app.ConfigureLockingRange(password, GetRange(lockingRange), enabled, enabled);
-                }
-                else {
-                    app.ConfigureLockingRange(password, GetRange(lockingRange), enabled, enabled, startLba, lengthLba);
-                }
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdLock->callback([&] {
-            try {
-                const auto password = ReadPassword("Admin1 password:");
-                app.SetLockingRange(password, GetRange(lockingRange), true, true);
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdUnlock->callback([&] {
-            try {
-                const auto password = ReadPassword("Admin1 password:");
-                app.SetLockingRange(password, GetRange(lockingRange), false, false);
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
-        cmdRevert->callback([&] {
-            try {
-                const auto password = ReadPassword("PSID password: ");
-                app.Revert(password);
-            }
-            catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
-            }
-        });
-
+        AddCmdHelp(app, cli);
+        AddCmdStart(app, cli);
+        AddCmdAuth(app, cli);
+        AddCmdEnd(app, cli);
+        AddCmdStackReset(app, cli);
+        AddCmdReset(app, cli);
+        AddCmdRevert(app, cli);
+        auto cmdExit = cli.add_subcommand("exit", "Exit the application.");
         cmdExit->callback([&] {
             hasExited = true;
         });
 
-        while (!hasExited) {
+        while (!hasExited && std::cin.good()) {
             try {
                 std::cout << "sed-manager> ";
                 std::string command;
                 std::getline(std::cin, command);
-                cliApp.parse(command, false);
+                cli.parse(command, false);
             }
             catch (std::exception& ex) {
                 std::cout << ex.what() << std::endl;
@@ -249,5 +259,7 @@ int main() {
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;
+        return 1;
     }
+    return 0;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Token.hpp"
 #include "../Serialization/FlatBinaryArchive.hpp"
+#include "Token.hpp"
 
 #include <cereal/cereal.hpp>
 
@@ -50,7 +50,7 @@ class Value {
 public:
     static constexpr auto bytes = AsBytesType{};
     using ListType = std::vector<Value>;
-    using BytesType = std::vector<uint8_t>;
+    using BytesType = std::vector<std::byte>;
     using IntTypes = std::tuple<bool, char, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t>;
 
 public:
@@ -60,23 +60,21 @@ public:
     // Construction
     //----------------------------------
 
-    // Integers.
     Value(std::integral auto value);
-    // Lists.
+
+    Value(eCommand command);
+
+    Value(Named value);
+
     Value(std::initializer_list<Value> values);
+
     template <std::ranges::range R>
         requires std::convertible_to<std::ranges::range_value_t<R>, Value>
     Value(R&& values);
-    // Bytes.
-    template <std::ranges::range R>
-        requires std::is_trivial_v<std::ranges::range_value_t<R>>
-    Value(AsBytesType, R&& values);
-    // Named.
-    Value(std::string_view name, Value value);
-    Value(Named value);
-    // Commands.
-    Value(eCommand command);
 
+    template <std::ranges::range R>
+        requires std::same_as<std::ranges::range_value_t<R>, std::byte>
+    Value(R&& bytes);
 
     //----------------------------------
     // Get
@@ -85,37 +83,33 @@ public:
     template <std::integral T>
     T Get() const;
 
-    template <class T>
-        requires is_const_std_span<std::decay_t<T>>::value
-                 && std::is_trivial_v<std::ranges::range_value_t<T>>
-    std::decay_t<T> Get() const;
-
-    template <std::same_as<std::string_view> T>
-    std::string_view Get() const;
-
-    template <std::same_as<std::span<const Value>> T>
-    std::span<const Value> Get() const;
+    template <std::same_as<eCommand> T>
+    eCommand Get() const;
 
     template <std::same_as<Named> T>
     const Named& Get() const;
 
-    template <std::same_as<eCommand> T>
-    eCommand Get() const;
+    template <std::same_as<std::span<const Value>> T>
+    std::span<const Value> Get() const;
+
+    template <std::same_as<std::span<const std::byte>> T>
+    std::span<const std::byte> Get() const;
+
+
+    template <std::same_as<Named> T>
+    Named& Get();
 
     template <std::same_as<std::vector<Value>> T>
     std::vector<Value>& Get();
 
-    template <std::same_as<std::vector<uint8_t>> T>
-    std::vector<uint8_t>& Get();
-
     template <std::same_as<std::span<Value>> T>
     std::span<Value> Get();
 
-    template <std::same_as<std::span<uint8_t>> T>
-    std::span<uint8_t> Get();
+    template <std::same_as<std::vector<std::byte>> T>
+    std::vector<std::byte>& Get();
 
-    template <std::same_as<Named> T>
-    Named& Get();
+    template <std::same_as<std::span<std::byte>> T>
+    std::span<std::byte> Get();
 
     //----------------------------------
     // Get specific
@@ -124,19 +118,17 @@ public:
     // Integers.
     template <std::integral T>
     T AsInt() const;
-    // Lists.
-    std::span<const Value> AsList() const;
-    std::vector<Value>& AsList();
-    // Bytes.
-    template <class T>
-        requires std::is_trivial_v<T>
-    std::span<const T> AsBytes() const;
-    std::vector<uint8_t>& AsBytes();
-    // Named.
+
+    eCommand AsCommand() const;
+
     const Named& AsNamed() const;
     Named& AsNamed();
-    // Commands.
-    eCommand AsCommand() const;
+
+    std::span<const Value> AsList() const;
+    std::vector<Value>& AsList();
+
+    std::span<const std::byte> AsBytes() const;
+    std::vector<std::byte>& AsBytes();
 
     //----------------------------------
     // Query type
@@ -163,7 +155,6 @@ struct Named {
 //------------------------------------------------------------------------------
 // Utility
 //------------------------------------------------------------------------------
-
 
 template <class Func, class P, class... Ps>
 decltype(auto) ForEachTypeHelper(Func func, const P* ptr, const Ps*... ptrs) {
@@ -213,14 +204,9 @@ Value::Value(R&& values)
 
 // Bytes.
 template <std::ranges::range R>
-    requires std::is_trivial_v<std::ranges::range_value_t<R>>
-Value::Value(AsBytesType, R&& values) {
-    BytesType bytes;
-    for (const auto& v : values) {
-        const std::span itemBytes{ reinterpret_cast<const uint8_t*>(&v), sizeof(v) };
-        std::ranges::copy(itemBytes, std::back_inserter(bytes));
-    }
-    m_value = std::move(bytes);
+    requires std::same_as<std::ranges::range_value_t<R>, std::byte>
+Value::Value(R&& values) {
+    m_value = BytesType(std::ranges::begin(values), std::ranges::end(values));
 }
 
 //------------------------------------------------------------------------------
@@ -228,7 +214,6 @@ Value::Value(AsBytesType, R&& values) {
 //------------------------------------------------------------------------------
 
 
-// Integers.
 template <std::integral T>
 T Value::AsInt() const {
     const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<T> {
@@ -244,32 +229,25 @@ T Value::AsInt() const {
     return *v;
 }
 
-// Bytes.
-template <class T>
-    requires std::is_trivial_v<T>
-std::span<const T> Value::AsBytes() const {
-    const auto& bytes = std::any_cast<const BytesType&>(m_value);
-    std::span<const T> objects{ reinterpret_cast<const T*>(bytes.data()), bytes.size() / sizeof(T) };
-    return objects;
-}
 
 template <std::integral T>
 T Value::Get() const {
     return AsInt<T>();
 }
 
-template <class T>
-    requires is_const_std_span<std::decay_t<T>>::value
-             && std::is_trivial_v<std::ranges::range_value_t<T>>
-std::decay_t<T> Value::Get() const {
-    return AsBytes<std::ranges::range_value_t<T>>();
+template <std::same_as<std::vector<std::byte>> T>
+std::vector<std::byte>& Value::Get() {
+    return AsBytes();
 }
 
-template <std::same_as<std::string_view> T>
-std::string_view Value::Get() const {
-    const auto bytes = AsBytes<uint8_t>();
-    const auto* ptr = reinterpret_cast<const char*>(bytes.data());
-    return std::string_view(ptr, ptr + bytes.size());
+template <std::same_as<std::span<std::byte>> T>
+std::span<std::byte> Value::Get() {
+    return AsBytes();
+}
+
+template <std::same_as<std::span<const std::byte>> T>
+std::span<const std::byte> Value::Get() const {
+    return AsBytes();
 }
 
 template <std::same_as<std::span<const Value>> T>
@@ -292,21 +270,11 @@ std::vector<Value>& Value::Get() {
     return AsList();
 }
 
-template <std::same_as<std::vector<uint8_t>> T>
-std::vector<uint8_t>& Value::Get() {
-    return AsBytes();
-}
 
 template <std::same_as<std::span<Value>> T>
 std::span<Value> Value::Get() {
     return AsList();
 }
-
-template <std::same_as<std::span<uint8_t>> T>
-std::span<uint8_t> Value::Get() {
-    return AsBytes();
-}
-
 
 template <std::same_as<Named> T>
 Named& Value::Get() {
@@ -353,7 +321,7 @@ void SaveList(Archive& ar, const Value& stream) {
 
 template <class Archive>
 void SaveBytes(Archive& ar, const Value& stream) {
-    const auto bytes = stream.AsBytes<uint8_t>();
+    const auto bytes = stream.AsBytes();
     Token token{
         .tag = GetTagForData(bytes.size_bytes()),
         .isByte = true,

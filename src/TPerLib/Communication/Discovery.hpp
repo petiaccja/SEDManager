@@ -231,4 +231,4 @@ void load(Archive& ar, Pyrite2FeatureDesc& obj) {
 }
 
 
-TPerDesc ParseTPerDesc(std::span<const uint8_t> bytes);
+TPerDesc ParseTPerDesc(std::span<const std::byte> bytes);

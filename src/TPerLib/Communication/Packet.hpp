@@ -15,7 +15,7 @@ enum class eSubPacketKind {
 
 struct SubPacket {
     uint16_t kind;
-    std::vector<uint8_t> payload;
+    std::vector<std::byte> payload;
 
     static constexpr uint32_t HeaderLength() { return 12; }
     uint32_t PayloadLength() const { return uint32_t(payload.size()); }
@@ -120,7 +120,9 @@ void load(Archive& ar, SubPacket& obj) {
 
     obj.payload.resize(length);
     for (auto& byte : obj.payload) {
-        ar(byte);
+        uint8_t value;
+        ar(value);
+        byte = static_cast<std::byte>(value);
     }
 }
 
@@ -163,7 +165,7 @@ void save(Archive& ar, const SubPacket& obj) {
     ar(obj.kind);
     ar(obj.PayloadLength());
     for (auto& byte : obj.payload) {
-        ar(byte);
+        ar(uint8_t(byte));
     }
     for (size_t i = obj.PayloadLength(); i < obj.PaddedPayloadLength(); ++i) {
         ar(uint8_t(0));

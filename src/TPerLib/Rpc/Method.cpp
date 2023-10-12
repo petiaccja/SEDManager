@@ -32,8 +32,8 @@ std::string_view MethodStatusText(eMethodStatus status) {
 Value MethodToValue(Uid invokingId, const Method& method) {
     Value stream = {
         eCommand::CALL,
-        { Value::bytes, ToBytes(uint64_t(invokingId)) },
-        { Value::bytes, ToBytes(uint64_t(method.methodId)) },
+        ToBytes(uint64_t(invokingId)),
+        ToBytes(uint64_t(method.methodId)),
         method.args,
         eCommand::END_OF_DATA,
         { uint8_t(method.status), uint8_t(0), uint8_t(0) },
@@ -52,8 +52,8 @@ Method MethodFromValue(const Value& stream) {
     }
     try {
         const auto call = content[0].Get<eCommand>();
-        const auto invokingIdBytes = content[1].Get<std::span<const uint8_t>>();
-        const auto methodIdBytes = content[2].Get<std::span<const uint8_t>>();
+        const auto invokingIdBytes = content[1].Get<std::span<const std::byte>>();
+        const auto methodIdBytes = content[2].Get<std::span<const std::byte>>();
         const auto args = content[3].Get<std::span<const Value>>();
         const auto eod = content[4].Get<eCommand>();
         const auto statusList = content[5].Get<std::span<const Value>>();

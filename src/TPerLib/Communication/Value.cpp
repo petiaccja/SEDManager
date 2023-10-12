@@ -20,9 +20,6 @@ Value::Value(std::initializer_list<Value> values)
 
 
 // Named.
-Value::Value(std::string_view name, Value value)
-    : m_value(Named{ std::string{ name }, value }) {}
-
 Value::Value(Named value)
     : m_value(std::move(value)) {}
 
@@ -47,8 +44,12 @@ std::vector<Value>& Value::AsList() {
 }
 
 // Bytes
-std::vector<uint8_t>& Value::AsBytes() {
-    return std::any_cast<std::vector<uint8_t>&>(m_value);
+std::vector<std::byte>& Value::AsBytes() {
+    return std::any_cast<BytesType&>(m_value);
+}
+
+std::span<const std::byte> Value::AsBytes() const {
+    return { std::any_cast<const BytesType&>(m_value) };
 }
 
 // Named.
@@ -111,7 +112,7 @@ Value ConvertToData(const Token& token) {
         if (token.isSigned) {
             throw std::invalid_argument("continued atoms are not supported");
         }
-        return Value(Value::bytes, token.data);
+        return Value(token.data);
     }
     else if (token.data.size() == 0) {
         return Value(static_cast<eCommand>(token.tag));
@@ -120,7 +121,7 @@ Value ConvertToData(const Token& token) {
         uint64_t value = 0;
         for (auto& byte : token.data) {
             value <<= 8;
-            value |= byte;
+            value |= uint8_t(byte);
         }
         if (token.isSigned) {
             if (token.data.size() <= 1) {

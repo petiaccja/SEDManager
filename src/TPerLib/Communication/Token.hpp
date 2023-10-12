@@ -37,7 +37,7 @@ struct Token {
     eTag tag = eTag::EMPTY;
     bool isByte = false;
     bool isSigned = false;
-    std::vector<uint8_t> data = {};
+    std::vector<std::byte> data = {};
 };
 
 

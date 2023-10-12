@@ -4,11 +4,11 @@
 
 
 enum class eSecurityProviderLifecycle {
-    ISSUED,
-    DISABLED,
-    FROZEN,
-    DISABLED_FROZEN,
-    FAILED,
+    ISSUED = 0,
+    DISABLED = 1,
+    FROZEN = 2,
+    DISABLED_FROZEN = 3,
+    FAILED = 4,
 };
 
 
