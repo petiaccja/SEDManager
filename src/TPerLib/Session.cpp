@@ -1,7 +1,10 @@
 #include "Session.hpp"
 
 #include "Communication/Packet.hpp"
+#include "Core/Names.hpp"
+#include "Exception.hpp"
 #include "Logging.hpp"
+#include "Rpc/Exception.hpp"
 #include "Serialization/TokenDebugArchive.hpp"
 #include "Serialization/Utility.hpp"
 
@@ -83,26 +86,32 @@ Template::Template(std::shared_ptr<SessionManager> sessionManager,
 
 
 MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
-    assert(m_sessionManager);
+    try {
+        assert(m_sessionManager);
 
-    const auto request = MethodToValue(invokingId, method);
-    Log("Session Method - Call", request);
-    std::stringstream requestSs(std::ios::binary | std::ios::out);
-    TokenOutputArchive requestAr(requestSs);
-    save_strip_list(requestAr, request);
-    const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
-    const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
-    const auto responsePacket = m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
-    const auto responseBytes = UnwrapPacket(responsePacket);
-    Value response;
-    FromTokens(responseBytes, response);
-    Log("Session Method - Result", response);
+        const auto request = MethodToValue(invokingId, method);
+        Log("Session Method - Call", request);
+        std::stringstream requestSs(std::ios::binary | std::ios::out);
+        TokenOutputArchive requestAr(requestSs);
+        save_strip_list(requestAr, request);
+        const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
+        const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
+        const auto responsePacket = m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
+        const auto responseBytes = UnwrapPacket(responsePacket);
+        Value response;
+        FromTokens(responseBytes, response);
+        Log("Session Method - Result", response);
 
-    MethodResult result = MethodResultFromValue(response);
-    if (result.status != eMethodStatus::SUCCESS) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", uint64_t(method.methodId), MethodStatusText(result.status)));
+        MethodResult result = MethodResultFromValue(response);
+        MethodStatusToException(GetNameOrUid(method.methodId), result.status);
+        return result;
     }
-    return result;
+    catch (InvocationError&) {
+        throw;
+    }
+    catch (std::exception& ex) {
+        throw InvocationError(GetNameOrUid(method.methodId), ex.what());
+    }
 };
 
 
@@ -130,7 +139,7 @@ std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t 
     for (auto& nvp : nameValuePairs) {
         const auto idx = nvp.AsNamed().name.Get<size_t>();
         if (size_t(idx - startColumn) > values.size()) {
-            throw std::runtime_error("device returned unexpected columns");
+            throw InvalidResponseError("Get", "too many columns");
         }
         values[idx - startColumn] = nvp.AsNamed().value;
     }
@@ -144,7 +153,7 @@ std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t 
 Value BaseTemplate::Get(Uid object, uint32_t column) {
     auto values = Get(object, column, column + 1);
     if (values.empty()) {
-        throw std::runtime_error("device did not return any values");
+        throw InvalidResponseError("Get", "zero columns");
     }
     return std::move(values[0]);
 }
@@ -187,11 +196,11 @@ void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std
     if (result.IsInteger()) {
         const auto success = result.Get<uint8_t>();
         if (!success) {
-            throw std::invalid_argument("authentication failed");
+            throw PasswordError();
         }
     }
     else {
-        throw std::invalid_argument("challenge protocol not implemented");
+        throw NotImplementedError("challenge protocol for method 'Authenticate' is not implemented");
     }
 }
 

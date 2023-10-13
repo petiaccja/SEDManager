@@ -39,11 +39,10 @@ struct MethodResult {
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
-
-std::string_view MethodStatusText(eMethodStatus status);
 Value MethodToValue(Uid invokingId, const Method& method);
 Method MethodFromValue(const Value& stream);
 MethodResult MethodResultFromValue(const Value& stream);
+void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 
 namespace impl {
@@ -63,7 +62,7 @@ template <class Arg, class... Args>
 auto LabelOptionalArgs(intptr_t label, const Arg& arg, const Args&... args) {
     constexpr bool isOptional = IsOptional<Arg>();
     if (!isOptional && label != 0) {
-        throw std::invalid_argument("optional arguments must come after mandatory arguments");
+        throw std::invalid_argument("optional arguments must follow mandatory arguments");
     }
     const intptr_t currentLabel = isOptional ? label : -1;
     const intptr_t nextLabel = label + intptr_t(isOptional);
@@ -117,7 +116,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
             }
             auto&& [dynLabel, stream] = labeledStreams[Element];
             if (dynLabel != -1) {
-                throw std::invalid_argument(std::format("expected mandatory argument for argument {}", Element));
+                throw std::invalid_argument(std::format("expected mandatory argument as argument {}", Element));
             }
             arg = value_cast<std::decay_t<decltype(arg)>>(stream);
         }

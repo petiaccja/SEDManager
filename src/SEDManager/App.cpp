@@ -63,31 +63,33 @@ std::optional<std::string> App::GetNameFromTable(Uid uid, std::optional<uint32_t
 }
 
 
-std::vector<SecurityProvider> App::GetSecurityProviders() {
-    auto get = [this](Session& session) {
-        std::vector<SecurityProvider> securityProviders;
-        auto uid = session.base.Next(eTable::SP, std::nullopt);
-        while (uid) {
-            std::optional<std::string> name = GetNameFromTable(*uid, uint32_t(eColumns_SP::Name));
-            securityProviders.emplace_back(*uid, std::move(name));
-            uid = session.base.Next(eTable::SP, *uid);
+std::vector<NamedObject> App::GetSecurityProviders() {
+    auto get = [this](std::shared_ptr<Session> session) {
+        std::vector<NamedObject> securityProviders;
+
+        Table sp = Table(eTable::SP, session);
+        for (const auto& row : sp) {
+            std::optional<std::string> name = GetNameFromTable(row.Id(), uint32_t(eColumns_SP::Name));
+            const auto id = row.Id();
+            securityProviders.emplace_back(id, std::move(name));
         }
+
         return securityProviders;
     };
 
     if (m_session) {
-        return get(*m_session);
+        return get(m_session);
     }
     else {
-        Session session(m_sessionManager, opal::eSecurityProvider::Admin);
+        const auto session = std::make_shared<Session>(m_sessionManager, opal::eSecurityProvider::Admin);
         return get(session);
     }
 }
 
 
-std::vector<Authority> App::GetAuthorities() {
+std::vector<NamedObject> App::GetAuthorities() {
     if (m_session) {
-        std::vector<Authority> authorities;
+        std::vector<NamedObject> authorities;
         auto uid = m_session->base.Next(eTable::Authority, std::nullopt);
         while (uid) {
             std::optional<std::string> name = GetNameFromTable(*uid, uint32_t(eColumns_Authority::Name));
@@ -100,8 +102,16 @@ std::vector<Authority> App::GetAuthorities() {
 }
 
 
+Table App::GetTable(Uid table) {
+    if (m_session) {
+        return Table(table, m_session);
+    }
+    throw std::logic_error("start a session to query tables");
+}
+
+
 void App::Start(Uid securityProvider) {
-    m_session = Session(m_sessionManager, securityProvider);
+    m_session = std::make_shared<Session>(m_sessionManager, securityProvider);
 }
 
 
@@ -134,4 +144,19 @@ void App::Revert(std::span<const std::byte> psidPassword) {
     Session session(m_sessionManager, opal::eSecurityProvider::Admin, psidPassword, opal::eAuthority::PSID);
     session.opal.Revert(opal::eSecurityProvider::Admin);
     End();
+}
+
+
+Table::Table(Uid table, std::shared_ptr<Session> session)
+    : m_table(table), m_session(session) {
+    Uid descriptor = (1ull << 32) | (uint64_t(table) >> 32);
+    m_numColumns = m_session->base.Get(descriptor, 20).Get<size_t>();
+}
+
+
+Uid Table::First() const {
+    if (m_session) {
+        return m_session->base.Next(m_table, {}).value_or(0);
+    }
+    return 0;
 }

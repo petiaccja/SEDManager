@@ -71,6 +71,12 @@ std::optional<std::string_view> GetName(Uid uid) {
 }
 
 
+std::string GetNameOrUid(Uid uid) {
+    std::string_view properName = GetName(uid).value_or(std::string_view{});
+    return !properName.empty() ? std::string(properName) : std::format("{:#018x}", uint64_t(uid));
+}
+
+
 std::vector<Uid> GetUid(std::string_view name) {
     static const std::unordered_multimap<std::string_view, Uid> mapping = [] {
         std::unordered_multimap<std::string_view, Uid> mapping;

@@ -44,6 +44,12 @@ template <class T>
 struct is_const_std_span<std::span<const T>> : std::bool_constant<true> {};
 
 
+struct ValueConversionError : std::logic_error {
+    ValueConversionError(std::string_view expected, std::string_view actual)
+        : std::logic_error(std::format("expected a value of '{}' but got a value of '{}'", expected, actual)) {}
+};
+
+
 class Value {
     struct AsBytesType {};
 
@@ -143,6 +149,9 @@ public:
     const std::type_info& Type() const;
 
 private:
+    std::string GetTypeStr() const;
+
+private:
     std::any m_value;
 };
 
@@ -224,7 +233,9 @@ T Value::AsInt() const {
         return std::nullopt;
     });
     if (!v) {
-        throw std::logic_error("not an int");
+        const auto expected = std::format("{}int{}", std::is_signed_v<T> ? "" : "u", sizeof(T) * 8);
+        const auto actual = GetTypeStr();
+        throw ValueConversionError(expected, actual);
     }
     return *v;
 }

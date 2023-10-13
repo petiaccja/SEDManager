@@ -97,22 +97,6 @@ std::vector<std::byte> ReadPassword(std::string_view prompt) {
 }
 
 
-Uid GetRange(int number) {
-    switch (number) {
-        case 0: return eRows_Locking::GlobalRange;
-        case 1: return opal::eRows_Locking::Range1;
-        case 2: return opal::eRows_Locking::Range2;
-        case 3: return opal::eRows_Locking::Range3;
-        case 4: return opal::eRows_Locking::Range4;
-        case 5: return opal::eRows_Locking::Range5;
-        case 6: return opal::eRows_Locking::Range6;
-        case 7: return opal::eRows_Locking::Range7;
-        case 8: return opal::eRows_Locking::Range8;
-        default: throw std::invalid_argument("invalid locking range (allowed 0=global, 1..8)");
-    }
-}
-
-
 void AddCmdHelp(App&, CLI::App& cli) {
     auto cmd = cli.add_subcommand("help", "Print this help message.");
     cmd->callback([&] {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Names.hpp"
+#include "Rpc/Exception.hpp"
 #include "SessionManager.hpp"
 
 #include <memory>
@@ -110,7 +112,7 @@ OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... in
         std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
+        throw InvalidResponseError(GetNameOrUid(methodId), ex.what());
     }
     return outArgs;
 }

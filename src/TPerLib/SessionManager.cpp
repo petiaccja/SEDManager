@@ -1,7 +1,9 @@
 #include "SessionManager.hpp"
 
 #include "Communication/Packet.hpp"
+#include "Core/Names.hpp"
 #include "Logging.hpp"
+#include "Rpc/Exception.hpp"
 #include "Serialization/TokenArchive.hpp"
 #include "Serialization/TokenDebugArchive.hpp"
 #include "Serialization/Utility.hpp"
@@ -116,9 +118,9 @@ ComPacket SessionManager::CreatePacket(std::vector<std::byte> payload, uint32_t 
 
 
 std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet) {
-    constexpr auto errorNoResponse = "no response to packet";
-    const auto& p = !packet.payload.empty() ? packet.payload[0] : throw std::runtime_error(errorNoResponse);
-    const auto& s = !p.payload.empty() ? p.payload[0] : throw std::runtime_error(errorNoResponse);
+    constexpr auto errorNoResponse = "received no response to packet";
+    const auto& p = !packet.payload.empty() ? packet.payload[0] : throw NoResponseError();
+    const auto& s = !p.payload.empty() ? p.payload[0] : throw NoResponseError();
     return s.payload;
 }
 
@@ -140,9 +142,13 @@ Method SessionManager::InvokeMethod(const Method& method) {
         Log("Session Manager Method - Result", responseStream);
 
         auto response = MethodFromValue(responseStream);
+        MethodStatusToException(GetNameOrUid(method.methodId), response.status);
         return response;
     }
+    catch (InvocationError&) {
+        throw;
+    }
     catch (std::exception& ex) {
-        throw std::runtime_error(std::format("method invocation failed: {}", ex.what()));
+        throw InvocationError(GetNameOrUid(method.methodId), ex.what());
     }
 }

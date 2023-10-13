@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Core/Methods.hpp"
+#include "Core/Names.hpp"
+#include "Rpc/Exception.hpp"
 #include "Rpc/Method.hpp"
 #include "TrustedPeripheral.hpp"
 
@@ -75,16 +77,13 @@ template <class OutArgs, class... InArgs>
 OutArgs SessionManager::InvokeMethod(eMethod methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
-    if (result.status != eMethodStatus::SUCCESS) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) failed: {}", uint64_t(methodId), MethodStatusText(result.status)));
-    }
 
     OutArgs outArgs;
     try {
         std::apply([&result](auto&... outArgs) { ArgsFromValues(result.args, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
-        throw std::runtime_error(std::format("call to method (id={:#010x}) returned unexpected values: {}", uint64_t(methodId), ex.what()));
+        throw InvalidResponseError(GetNameOrUid(methodId), ex.what());
     }
     return outArgs;
 }

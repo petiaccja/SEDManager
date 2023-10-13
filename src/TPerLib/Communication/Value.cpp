@@ -36,36 +36,70 @@ Value::Value(eCommand command)
 
 // Lists.
 std::span<const Value> Value::AsList() const {
-    return std::any_cast<const ListType&>(m_value);
+    try {
+        return std::any_cast<const ListType&>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("list", GetTypeStr());
+    }
 }
 
 std::vector<Value>& Value::AsList() {
-    return std::any_cast<std::vector<Value>&>(m_value);
+    try {
+        return std::any_cast<std::vector<Value>&>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("list", GetTypeStr());
+    }
 }
 
 // Bytes
 std::vector<std::byte>& Value::AsBytes() {
-    return std::any_cast<BytesType&>(m_value);
+    try {
+        return std::any_cast<BytesType&>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("bytes", GetTypeStr());
+    }
 }
 
 std::span<const std::byte> Value::AsBytes() const {
-    return { std::any_cast<const BytesType&>(m_value) };
+    try {
+        return { std::any_cast<const BytesType&>(m_value) };
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("bytes", GetTypeStr());
+    }
 }
 
 // Named.
 const Named& Value::AsNamed() const {
-    return std::any_cast<const Named&>(m_value);
+    try {
+        return std::any_cast<const Named&>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("named", GetTypeStr());
+    }
 }
 
 Named& Value::AsNamed() {
-    return std::any_cast<Named&>(m_value);
+    try {
+        return std::any_cast<Named&>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("named", GetTypeStr());
+    }
 }
 
 // Commands.
 eCommand Value::AsCommand() const {
-    return std::any_cast<eCommand>(m_value);
+    try {
+        return std::any_cast<eCommand>(m_value);
+    }
+    catch (std::bad_any_cast&) {
+        throw ValueConversionError("command", GetTypeStr());
+    }
 }
-
 
 
 //------------------------------------------------------------------------------
@@ -102,6 +136,31 @@ const std::type_info& Value::Type() const {
     return m_value.type();
 }
 
+std::string Value::GetTypeStr() const {
+    if (IsInteger()) {
+        const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<std::pair<size_t, bool>> {
+            using Q = std::decay_t<decltype(*ptr)>;
+            if (m_value.type() == typeid(Q)) {
+                return std::pair{ sizeof(Q), std::is_signed_v<Q> };
+            }
+            return std::nullopt;
+        });
+        return std::format("{}int{}", v->second ? "" : "u", v->first * 8);
+    }
+    else if (IsCommand()) {
+        return "command";
+    }
+    else if (IsList()) {
+        return "list";
+    }
+    else if (IsNamed()) {
+        return "named";
+    }
+    else if (IsBytes()) {
+        return "bytes";
+    }
+    return "<empty>";
+}
 
 //------------------------------------------------------------------------------
 // Serialization

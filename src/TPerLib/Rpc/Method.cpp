@@ -1,32 +1,7 @@
 #include "Method.hpp"
 
 #include "../Serialization/Utility.hpp"
-
-
-std::string_view MethodStatusText(eMethodStatus status) {
-    switch (status) {
-        case eMethodStatus::SUCCESS: return "success";
-        case eMethodStatus::NOT_AUTHORIZED: return "not authorized";
-        case eMethodStatus::OBSOLETE: return "obsolete";
-        case eMethodStatus::SP_BUSY: return "security provider busy";
-        case eMethodStatus::SP_FAILED: return "security provider failed";
-        case eMethodStatus::SP_DISABLED: return "security provider disabled";
-        case eMethodStatus::SP_FROZEN: return "security provider frozen";
-        case eMethodStatus::NO_SESSIONS_AVAILABLE: return "no sessions available";
-        case eMethodStatus::UNIQUENESS_CONFLICT: return "uniqueness conflict";
-        case eMethodStatus::INSUFFICIENT_SPACE: return "insufficient space";
-        case eMethodStatus::INSUFFICIENT_ROWS: return "insufficient rows";
-        case eMethodStatus::INVALID_PARAMETER: return "invalid argument";
-        case eMethodStatus::OBSOLETE_1: return "obsolete 1";
-        case eMethodStatus::OBSOLETE_2: return "obsolete 2";
-        case eMethodStatus::TPER_MALFUNCTION: return "trusted peripheral malfunction";
-        case eMethodStatus::TRANSACTION_FAILURE: return "transaction failure";
-        case eMethodStatus::RESPONSE_OVERFLOW: return "response overflow";
-        case eMethodStatus::AUTHORITY_LOCKED_OUT: return "authority locked out";
-        case eMethodStatus::FAIL: return "unspecified failure";
-        default: return "unrecognized status code";
-    }
-}
+#include "Exception.hpp"
 
 
 Value MethodToValue(Uid invokingId, const Method& method) {
@@ -102,7 +77,7 @@ MethodResult MethodResultFromValue(const Value& result) {
             throw std::invalid_argument(std::format("failed to parse results (result was a call): {}", ex.what()));
         }
         if (uint64_t(method.methodId) == 0xFF06) {
-            throw std::runtime_error(std::format("session terminated by TPer: {}", MethodStatusText(method.status)));
+            throw InvocationError("CloseSession", "received CloseSession as response, session terminated by TPer");
         }
     }
 
@@ -128,6 +103,10 @@ MethodResult MethodResultFromValue(const Value& result) {
     catch (std::exception& ex) {
         throw std::invalid_argument(std::format("failed to parse results: {}", ex.what()));
     }
+}
+
+
+void MethodStatusToException(std::string_view methodName, eMethodStatus status) {
 }
 
 
