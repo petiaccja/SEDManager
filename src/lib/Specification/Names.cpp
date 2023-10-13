@@ -5,6 +5,7 @@
 #include "SecurityProviders.hpp"
 #include "Tables.hpp"
 
+#include <algorithm>
 #include <array>
 #include <unordered_map>
 #include <utility>

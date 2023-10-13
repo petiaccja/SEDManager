@@ -11,5 +11,6 @@ target_sources(Test
 
 find_package(Catch2 REQUIRED)
 
-target_link_libraries(Test TPerLib)
+target_link_libraries(Test Archive)
+target_link_libraries(Test RPC)
 target_link_libraries(Test Catch2::Catch2)

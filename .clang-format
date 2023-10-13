@@ -55,7 +55,7 @@ IncludeBlocks: Regroup
 IncludeCategories:
   - Regex:           '(<|")((C|c)atch.*)/'
     Priority:        5
-  - Regex:           '(<|")((TPerLib).*)/'
+  - Regex:           '(<|")((Archive|RPC|Specification|StorageDevice|TrustedPeripheral).*)/'
     Priority:        2
   - Regex:           '<([[:alnum:].]|_|/)+\..*>'
     Priority:        3

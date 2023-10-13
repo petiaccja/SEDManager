@@ -1,0 +1,5 @@
+add_subdirectory(Archive)
+add_subdirectory(RPC)
+add_subdirectory(Specification)
+add_subdirectory(StorageDevice)
+add_subdirectory(TrustedPeripheral)

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../Communication/Value.hpp"
-
 #include <compare>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <format>
+#include <iostream>
+#include <optional>
 #include <variant>
 
 
@@ -35,7 +36,7 @@ struct Uid {
 
 
 struct CellBlock {
-    Value startRow;
+    std::optional<std::variant<Uid, uint32_t>> startRow;
     std::optional<uint32_t> endRow;
     std::optional<uint32_t> startColumn;
     std::optional<uint32_t> endColumn;

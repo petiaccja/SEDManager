@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Communication/Token.hpp"
 #include "FlatBinaryArchive.hpp"
+#include "Token.hpp"
 
 #include <cereal/cereal.hpp>
 

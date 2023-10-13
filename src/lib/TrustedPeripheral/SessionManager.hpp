@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Core/Methods.hpp"
-#include "Core/Names.hpp"
-#include "Rpc/Exception.hpp"
-#include "Rpc/Method.hpp"
 #include "TrustedPeripheral.hpp"
+
+#include <RPC/Exception.hpp>
+#include <RPC/Method.hpp>
+#include <Specification/Methods.hpp>
+#include <Specification/Names.hpp>
 
 #include <vector>
 

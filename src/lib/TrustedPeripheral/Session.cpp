@@ -1,12 +1,13 @@
 #include "Session.hpp"
 
-#include "Communication/Packet.hpp"
-#include "Core/Names.hpp"
 #include "Exception.hpp"
 #include "Logging.hpp"
-#include "Rpc/Exception.hpp"
-#include "Serialization/TokenDebugArchive.hpp"
-#include "Serialization/Utility.hpp"
+
+#include <Archive/Conversion.hpp>
+#include <Archive/TokenDebugArchive.hpp>
+#include <RPC/Exception.hpp>
+#include <RPC/Packet.hpp>
+#include <Specification/Names.hpp>
 
 #include <atomic>
 

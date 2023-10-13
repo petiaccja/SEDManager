@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Communication/Packet.hpp"
-#include "Communication/Value.hpp"
+#include <RPC/Packet.hpp>
+#include <RPC/Value.hpp>
 
 #include <optional>
 

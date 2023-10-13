@@ -1,6 +1,6 @@
 #include "Logging.hpp"
 
-#include "Serialization/TokenDebugArchive.hpp"
+#include <Archive/TokenDebugArchive.hpp>
 
 #include <filesystem>
 #include <fstream>

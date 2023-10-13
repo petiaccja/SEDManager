@@ -1,9 +1,9 @@
 #pragma once
 
-#include <TPerLib/NvmeDevice.hpp>
-#include <TPerLib/Session.hpp>
-#include <TPerLib/SessionManager.hpp>
-#include <TPerLib/TrustedPeripheral.hpp>
+#include <StorageDevice/NvmeDevice.hpp>
+#include <TrustedPeripheral/Session.hpp>
+#include <TrustedPeripheral/SessionManager.hpp>
+#include <TrustedPeripheral/TrustedPeripheral.hpp>
 
 
 struct NamedObject {

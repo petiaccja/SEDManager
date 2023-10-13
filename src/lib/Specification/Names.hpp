@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Rpc/Types.hpp"
+#include "Types.hpp"
 
 #include <cstdint>
 #include <optional>

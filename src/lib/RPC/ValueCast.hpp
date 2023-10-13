@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../Communication/Value.hpp"
-#include "../Serialization/Utility.hpp"
-#include "Types.hpp"
+#include "Value.hpp"
+
+#include <Archive/Conversion.hpp>
+#include <Specification/Types.hpp>
 
 #include <concepts>
 #include <optional>
@@ -80,8 +81,9 @@ template <>
 struct ValueCast<CellBlock> {
     static Value To(const CellBlock& v) {
         std::vector<Value> fields;
-        if (v.startRow.HasValue()) {
-            fields.emplace_back(Named{ 1u, v.startRow });
+        if (v.startRow.has_value()) {
+            auto namedVal = std::visit([](const auto& v) { return value_cast(v); }, *v.startRow);
+            fields.emplace_back(Named{ 1u, std::move(namedVal) });
         }
         if (v.endRow.has_value()) {
             fields.emplace_back(Named{ 2u, v.endRow.value() });
@@ -105,7 +107,7 @@ struct ValueCast<CellBlock> {
             const auto id = named.name.Get<uint32_t>();
             switch (id) {
                 case 0: break; // Table name
-                case 1: parsed.startRow = named.value; break;
+                case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<Uid>(named.value);
                 case 2: parsed.endRow = named.value.HasValue() ? std::optional(named.value.Get<uint32_t>()) : std::optional<uint32_t>{}; break;
                 case 3: parsed.startColumn = named.value.Get<uint32_t>(); break;
                 case 4: parsed.endColumn = named.value.Get<uint32_t>(); break;

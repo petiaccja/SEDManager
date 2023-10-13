@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/Names.hpp"
-#include "Rpc/Exception.hpp"
+#include <Specification/Names.hpp>
+#include <RPC/Exception.hpp>
 #include "SessionManager.hpp"
 
 #include <memory>

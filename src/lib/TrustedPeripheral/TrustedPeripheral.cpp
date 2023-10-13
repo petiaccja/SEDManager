@@ -1,10 +1,9 @@
 #include "TrustedPeripheral.hpp"
 
-#include "Communication/ComIdSetup.hpp"
-#include "Communication/Packet.hpp"
-#include "Serialization/Utility.hpp"
+#include "Setup.hpp"
 
-#include <cereal/archives/portable_binary.hpp>
+#include <Archive/Conversion.hpp>
+#include <RPC/Packet.hpp>
 
 #include <array>
 #include <stdexcept>

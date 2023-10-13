@@ -1,4 +1,4 @@
-#include <TPerLib/Rpc/Method.hpp>
+#include <RPC/Method.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

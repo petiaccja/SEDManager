@@ -1,6 +1,6 @@
 #include "Discovery.hpp"
 
-#include "../Serialization/Utility.hpp"
+#include <Archive/Conversion.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 

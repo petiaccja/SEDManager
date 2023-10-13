@@ -9,7 +9,6 @@ target_sources(SEDManager
         App.hpp
 )
 
-target_link_libraries(SEDManager TPerLib)
-
+target_link_libraries(SEDManager TrustedPeripheral)
 find_package(CLI11)
 target_link_libraries(SEDManager CLI11::CLI11)

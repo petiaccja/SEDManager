@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Communication/ComIdSetup.hpp"
-#include "Communication/Discovery.hpp"
-#include "NvmeDevice.hpp"
+#include "Discovery.hpp"
+#include "Setup.hpp"
+
+#include <StorageDevice/NvmeDevice.hpp>
 
 #include <chrono>
 #include <memory>

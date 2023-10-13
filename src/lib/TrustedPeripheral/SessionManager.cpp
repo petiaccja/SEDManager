@@ -1,12 +1,13 @@
 #include "SessionManager.hpp"
 
-#include "Communication/Packet.hpp"
-#include "Core/Names.hpp"
 #include "Logging.hpp"
-#include "Rpc/Exception.hpp"
-#include "Serialization/TokenArchive.hpp"
-#include "Serialization/TokenDebugArchive.hpp"
-#include "Serialization/Utility.hpp"
+
+#include <Archive/Conversion.hpp>
+#include <Archive/TokenArchive.hpp>
+#include <Archive/TokenDebugArchive.hpp>
+#include <RPC/Exception.hpp>
+#include <RPC/Packet.hpp>
+#include <Specification/Names.hpp>
 
 
 template <class Struct, class... Args>

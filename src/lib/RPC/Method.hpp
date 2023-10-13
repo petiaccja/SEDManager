@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Communication/Value.hpp"
-#include "TypeMapping.hpp"
+#include "ValueCast.hpp"
+#include "Value.hpp"
 
 
 enum class eMethodStatus : uint8_t {

@@ -1,10 +1,9 @@
 #include "App.hpp"
 
-#include <TPerLib/Core/Authorities.hpp>
-#include <TPerLib/Core/Names.hpp>
-#include <TPerLib/Core/SecurityProviders.hpp>
-#include <TPerLib/Core/Tables.hpp>
-#include <TPerLib/Session.hpp>
+#include <Specification/Authorities.hpp>
+#include <Specification/Names.hpp>
+#include <Specification/SecurityProviders.hpp>
+#include <Specification/Tables.hpp>
 
 #include <stdexcept>
 
