@@ -13,6 +13,8 @@ target_sources(Archive
         TokenDebugArchive.hpp
         TokenArchive.cpp
         TokenArchive.hpp
+        TokenTextArchive.cpp
+        TokenTextArchive.hpp
 )
 
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

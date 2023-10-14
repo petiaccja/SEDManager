@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ValueCast.hpp"
 #include "Value.hpp"
+#include "ValueCast.hpp"
 
 
 enum class eMethodStatus : uint8_t {
@@ -47,10 +47,16 @@ void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 namespace impl {
 
-template <class Arg>
-constexpr bool IsOptional() {
-    return std::is_constructible_v<Arg, std::nullopt_t>;
-};
+
+template <class T>
+concept OptionalType =
+    requires(T& v) {
+        typename T::value_type;
+        {v} -> std::same_as<std::optional<typename T::value_type>&>;
+    };
+
+static_assert(OptionalType<std::optional<bool>>);
+static_assert(!OptionalType<float>);
 
 
 inline auto LabelOptionalArgs(size_t label) {
@@ -60,7 +66,7 @@ inline auto LabelOptionalArgs(size_t label) {
 
 template <class Arg, class... Args>
 auto LabelOptionalArgs(intptr_t label, const Arg& arg, const Args&... args) {
-    constexpr bool isOptional = IsOptional<Arg>();
+    constexpr bool isOptional = OptionalType<Arg>;
     if (!isOptional && label != 0) {
         throw std::invalid_argument("optional arguments must follow mandatory arguments");
     }
@@ -104,7 +110,7 @@ void ExpandArgs(std::vector<std::pair<intptr_t, const Value&>> labeledStreams,
         auto& arg = std::get<Element>(args);
         const auto label = std::get<Element>(labels);
 
-        if constexpr (IsOptional<std::decay_t<decltype(arg)>>()) {
+        if constexpr (OptionalType<std::decay_t<decltype(arg)>>) {
             auto it = std::ranges::find_if(labeledStreams, [label](auto& item) { return item.first == label; });
             if (it != labeledStreams.end()) {
                 arg = value_cast<typename std::decay_t<decltype(arg)>::value_type>(it->second);

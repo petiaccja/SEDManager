@@ -62,8 +62,6 @@ TEST_CASE("List set/get same", "[Value]") {
     std::array values{ 1, 2, 3 };
     Value s = values;
     const auto r = s.Get<std::span<const Value>>();
-    std::cout << s.Type().name() << std::endl;
-    std::cout << r[0].Type().name() << std::endl;
     REQUIRE(r[0].Get<int>() == 1);
     REQUIRE(r[1].Get<int>() == 2);
     REQUIRE(r[2].Get<int>() == 3);

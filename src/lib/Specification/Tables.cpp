@@ -1,5 +1,6 @@
 #include "Tables.hpp"
 
+#include <cassert>
 
 namespace tables {
 
@@ -214,12 +215,13 @@ std::pair<const std::unordered_map<Uid, TableEntry>&, const std::unordered_map<U
             }
             auto& tableEntry = it->second;
             Uid* last = &tableEntry.column;
-            Uid next = uint64_t(TableToDescriptor(table)) | 0x00FF'FFFF'0000'0000;
+            Uid next = uint64_t(TableToDescriptor(table)) & 0x0000'0000'FFFF'FFFFull;
             for (const ColumnEntry& columnEntry : tableColumns) {
                 *last = next;
                 const auto [columnIt, inserted] = columns.insert({ next, columnEntry });
+                assert(inserted);
                 last = &columnIt->second.next;
-                next = uint64_t(next) + 1;
+                next = uint64_t(next) + (1ull << 32);
                 tableEntry.numColumns += inserted;
             }
         };

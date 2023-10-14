@@ -1,7 +1,7 @@
 #include "TokenDebugArchive.hpp"
 
 
-std::string_view GetTagName(eTag tag) {
+static std::string_view GetTagName(eTag tag) {
     switch (tag) {
         case eTag::TINY_ATOM: return "TINY_ATOM";
         case eTag::SHORT_ATOM: return "SHORT_ATOM";
@@ -21,7 +21,7 @@ std::string_view GetTagName(eTag tag) {
 }
 
 
-std::string MakeIndentation(intptr_t indentation) {
+static std::string MakeIndentation(intptr_t indentation) {
     if (indentation >= 0) {
         return std::string(indentation, ' ');
     }

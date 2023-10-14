@@ -1,7 +1,8 @@
 
 #include "App.hpp"
 
-// #include <Specification/Tables.hpp>
+#include <Archive/TokenTextArchive.hpp>
+#include <Specification/Tables.hpp>
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -101,6 +102,11 @@ std::string FormatNamed(const NamedObject& obj) {
 }
 
 
+std::string FormatUid(const Uid& obj) {
+    return std::format("{:#018x}", uint64_t(obj));
+}
+
+
 void AddCmdHelp(App&, CLI::App& cli) {
     auto cmd = cli.add_subcommand("help", "Print this help message.");
     cmd->callback([&] {
@@ -149,7 +155,7 @@ void AddCmdAuth(App& app, CLI::App& cli) {
     cmd->callback([&app] {
         const auto maybeAuthUid = GetUidOrHex(authName);
         if (!maybeAuthUid) {
-            std::cout << "Cannot find security provider." << std::endl;
+            std::cout << "Cannot find authority." << std::endl;
             return;
         }
         const auto password = ReadPassword("Password: ");
@@ -183,6 +189,71 @@ void AddCmdList(App& app, CLI::App& cli) {
         const auto& tables = app.GetTables();
         for (const auto& v : tables) {
             std::cout << FormatNamed(v) << std::endl;
+        }
+    });
+}
+
+
+void AddCmdTable(App& app, CLI::App& cli) {
+    static std::string tableName;
+    static std::string rowName;
+    static uint32_t column = 0;
+
+    auto cmd = cli.add_subcommand("table", "Manipulate tables.");
+    auto cmdColumns = cmd->add_subcommand("columns", "List the columns of the table.");
+    auto cmdRows = cmd->add_subcommand("rows", "List the rows of the table.");
+    auto cmdGet = cmd->add_subcommand("get", "Get a cell from a table.");
+
+    cmdRows->add_option("table", tableName, "The table to list the rows of.");
+    cmdColumns->add_option("table", tableName, "The table to list the columns of.");
+    cmdGet->add_option("row", rowName, "The row to get the cells of.");
+    cmdGet->add_option("column", column, "The row to get the cells of.");
+
+    cmdRows->callback([&app] {
+        const auto maybeTableUid = GetUidOrHex(tableName);
+        if (!maybeTableUid) {
+            std::cout << "Cannot find table." << std::endl;
+            return;
+        }
+        const auto table = app.GetTable(*maybeTableUid);
+        for (const auto& row : table) {
+            std::cout << FormatUid(row.Id()) << std::endl;
+        }
+    });
+
+    cmdColumns->callback([&app] {
+        const auto maybeTableUid = GetUidOrHex(tableName);
+        if (!maybeTableUid) {
+            std::cout << "Cannot find table." << std::endl;
+            return;
+        }
+        const auto descriptorUid = TableToDescriptor(*maybeTableUid);
+        const auto tableDescIt = tables::table.find(descriptorUid);
+        if (tableDescIt != tables::table.end()) {
+            const auto& tableDesc = tableDescIt->second;
+            auto colDescUid = tableDesc.column;
+            while (uint64_t(colDescUid) != 0) {
+                const auto colDescIt = tables::column.find(colDescUid);
+                assert(colDescIt != tables::column.end());
+                std::cout << colDescIt->second.columnNumber << ": " << colDescIt->second.name << std::endl;
+                colDescUid = colDescIt->second.next;
+            }
+        }
+    });
+
+    cmdGet->callback([&app] {
+        const auto maybeRowUid = GetUidOrHex(rowName);
+        if (!maybeRowUid) {
+            std::cout << "Cannot find row." << std::endl;
+            return;
+        }
+        const Value value = app.Get(*maybeRowUid, column);
+        if (!value.HasValue()) {
+            std::cout << "<empty>" << std::endl;
+        }
+        else {
+            TokenTextArchive ar(std::cout);
+            ar(value);
         }
     });
 }
@@ -226,6 +297,7 @@ int main(int argc, char* argv[]) {
         AddCmdStart(app, cli);
         AddCmdAuth(app, cli);
         AddCmdList(app, cli);
+        AddCmdTable(app, cli);
         AddCmdEnd(app, cli);
         AddCmdStackReset(app, cli);
         AddCmdReset(app, cli);

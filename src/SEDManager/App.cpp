@@ -127,7 +127,15 @@ Object App::GetObject(Uid table, Uid object) {
         Table t(table, m_session);
         return Object(object, t.NumColumns(), m_session);
     }
-    throw std::logic_error("start a session to query tables");
+    throw std::logic_error("a session must be active");
+}
+
+
+Value App::Get(Uid object, uint32_t column) {
+    if (m_session) {
+        return m_session.get()->base.Get(object, column);
+    }
+    throw std::logic_error("a session must be active");
 }
 
 
@@ -191,7 +199,7 @@ Table::Table(Uid table, std::shared_ptr<Session> session)
 
 Uid Table::First() const {
     if (m_session) {
-        const auto descIt = tables::table.find(m_table);
+        const auto descIt = tables::table.find(TableToDescriptor(m_table));
         if (descIt != tables::table.end()) {
             if (descIt->second.singleRow) {
                 return descIt->second.singleRow.value();
@@ -205,9 +213,11 @@ Uid Table::First() const {
 
 template <bool Mutable>
 Uid Table::row_iterator<Mutable>::Next() const {
-    const auto descIt = tables::table.find(m_table);
+    const auto descIt = tables::table.find(TableToDescriptor(m_table));
     if (descIt != tables::table.end()) {
-        return 0;
+        if (descIt->second.singleRow) {
+            return 0;
+        }
     }
     return m_session->base.Next(m_table, m_row).value_or(0);
 }

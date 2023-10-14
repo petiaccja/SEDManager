@@ -77,7 +77,7 @@ enum class eTable : uint64_t {
 
 
 inline Uid TableToDescriptor(Uid table) {
-    return (uint64_t(table) >> 32) | (1ull << 31);
+    return (uint64_t(table) >> 32) | (1ull << 32);
 }
 
 

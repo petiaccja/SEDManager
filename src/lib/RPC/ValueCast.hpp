@@ -37,7 +37,7 @@ struct ValueCast<Value> {
 template <class T>
 struct ValueCast<std::optional<T>> {
     static Value To(const std::optional<T>& v) { return v.has_value() ? value_cast(v.value()) : Value{}; }
-    static std::optional<T> From(const Value& v) { return v.HasValue() ? std::optional<T>{ v.Get<T>() } : std::optional<T>{}; }
+    static std::optional<T> From(const Value& v) { return v.HasValue() ? std::optional<T>{ value_cast<T>(v) } : std::optional<T>{}; }
 };
 
 

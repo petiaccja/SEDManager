@@ -12,30 +12,30 @@
 #include <iostream>
 #include <ranges>
 #include <span>
+#include <stack>
 
 
-class TokenDebugArchive : public cereal::OutputArchive<TokenDebugArchive>, cereal::traits::TextArchive {
+class TokenTextArchive : public cereal::OutputArchive<TokenTextArchive>, cereal::traits::TextArchive {
 public:
-    TokenDebugArchive(std::ostream& stream);
-    TokenDebugArchive(TokenDebugArchive&&) = delete;
-    TokenDebugArchive(const TokenDebugArchive&) = delete;
-    TokenDebugArchive& operator=(TokenDebugArchive&&) = delete;
-    TokenDebugArchive& operator=(const TokenDebugArchive&) = delete;
+    TokenTextArchive(std::ostream& stream);
+    TokenTextArchive(TokenTextArchive&&) = delete;
+    TokenTextArchive(const TokenTextArchive&) = delete;
+    TokenTextArchive& operator=(TokenTextArchive&&) = delete;
+    TokenTextArchive& operator=(const TokenTextArchive&) = delete;
 
     void Insert(const Token& token);
 
 private:
     std::ostream& m_stream;
-    intptr_t indentation = 0;
-    bool name = false;
+    intptr_t m_indentation = 0;    
 };
 
 
-void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const Token& token);
+void CEREAL_SAVE_FUNCTION_NAME(TokenTextArchive& ar, const Token& token);
 
 
 template <std::integral T>
-void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenTextArchive& ar, const T& t) {
     // Store the value as a short atom.
     constexpr auto tag = eTag::SHORT_ATOM;
     const uint8_t length = sizeof(T);
@@ -48,7 +48,7 @@ void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
 
 
 template <std::floating_point T>
-void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenTextArchive& ar, const T& t) {
     static_assert(!std::is_floating_point<T>::value || (std::is_floating_point<T>::value && std::numeric_limits<T>::is_iec559),
                   "Portable binary only supports IEEE 754 standardized floating point");
     using UnsignedType = std::conditional<sizeof(t) == 4, uint32_t, uint64_t>;
