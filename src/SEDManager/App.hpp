@@ -7,8 +7,8 @@
 
 
 struct NamedObject {
-    Uid uid;
-    std::optional<std::string> name;
+    Uid uid = 0;
+    std::optional<std::string> name = std::nullopt;
 };
 
 
@@ -90,8 +90,8 @@ public:
     const_iterator cbegin() const { return const_iterator{ m_row, 0, m_session }; }
     const_iterator cend() const { return const_iterator{ m_row, m_numColumns, m_session }; }
 
-    cell_reference<Mutable> operator[](size_t index) { return *begin()[index]; }
-    cell_reference<false> operator[](size_t index) const { return *begin()[index]; }
+    cell_reference<Mutable> operator[](size_t index) { return begin()[index]; }
+    cell_reference<false> operator[](size_t index) const { return begin()[index]; }
 
     Uid Id() const { return m_row; }
 
@@ -100,6 +100,9 @@ private:
     size_t m_numColumns = 0;
     std::shared_ptr<Session> m_session = nullptr;
 };
+
+
+using Object = TableRow<true>;
 
 
 class Table {
@@ -116,7 +119,7 @@ public:
             : m_table(table), m_row(row), m_numColumns(numColumns), m_session(session) {}
 
         value_type operator*() const { return value_type{ m_row, m_numColumns, m_session }; }
-        row_iterator& operator++() { return m_row = m_session->base.Next(m_table, m_row).value_or(0), *this; }
+        row_iterator& operator++() { return m_row = Next(), *this; }
         row_iterator operator++(int) {
             auto copy = *this;
             ++*this;
@@ -127,6 +130,8 @@ public:
         bool operator!=(const row_iterator& rhs) const { return m_row != rhs.m_row; }
 
     private:
+        Uid Next() const;
+
         Uid m_table = 0;
         Uid m_row = 0;
         size_t m_numColumns = 0;
@@ -150,6 +155,8 @@ public:
     const_iterator cbegin() const { return const_iterator{ m_table, First(), m_numColumns, m_session }; }
     const_iterator cend() const { return const_iterator{ m_table, 0, m_numColumns, m_session }; }
 
+    uint32_t NumColumns() const { return m_numColumns; }
+
 private:
     Uid First() const;
 
@@ -171,6 +178,7 @@ public:
     std::vector<NamedObject> GetAuthorities();
     std::vector<NamedObject> GetTables();
     Table GetTable(Uid table);
+    Object GetObject(Uid table, Uid object);
 
     void Start(Uid securityProvider);
     void Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
@@ -182,6 +190,7 @@ public:
 
 private:
     std::optional<std::string> GetNameFromTable(Uid uid, std::optional<uint32_t> column = {});
+    std::vector<NamedObject> GetNamedRows(Session& session, const Table& table, uint32_t nameColumn);
 
 private:
     std::shared_ptr<NvmeDevice> m_device;

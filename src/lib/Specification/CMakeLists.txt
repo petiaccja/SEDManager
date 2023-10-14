@@ -9,6 +9,7 @@ target_sources(Specification
         Names.cpp
         Names.hpp
         SecurityProviders.hpp
+        Tables.cpp
         Tables.hpp
         Types.hpp
 )

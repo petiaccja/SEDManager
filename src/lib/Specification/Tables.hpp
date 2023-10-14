@@ -1,6 +1,23 @@
 #pragma once
 
+#include "Types.hpp"
+
 #include <cstdint>
+#include <unordered_map>
+
+
+enum class eTableKind {
+    OBJECT,
+    BYTE,
+};
+
+
+enum class eTableSingleRowObject : uint64_t {
+    SPInfo = 0x0000'0002'0000'0001,
+    TPerInfo = 0x0000'0201'0000'0001,
+    LockingInfo = 0x0000'0801'0000'0001,
+    MBRControl = 0x0000'0803'0000'0001,
+};
 
 
 enum class eTable : uint64_t {
@@ -59,60 +76,15 @@ enum class eTable : uint64_t {
 };
 
 
-enum class eTableDescriptor : uint64_t {
-    // Base
-    Table = 0x0000'0001'0000'0001, // Base
-    SPInfo = 0x0000'0001'0000'0002, // Base
-    SPTemplates = 0x0000'0001'0000'0003, // Base
-    Column = 0x0000'0001'0000'0004, // Base
-    Type = 0x0000'0001'0000'0005, // Base
-    MethodID = 0x0000'0001'0000'0006, // Base
-    AccessControl = 0x0000'0001'0000'0007, // Base
-    ACE = 0x0000'0001'0000'0008, // Base
-    Authority = 0x0000'0001'0000'0009, // Base
-    Certificates = 0x0000'0001'0000'000A, // Base
-    C_PIN = 0x0000'0001'0000'000B, // Base
-    C_RSA_1024 = 0x0000'0001'0000'000C, // Base
-    C_RSA_2048 = 0x0000'0001'0000'000D, // Base
-    C_AES_128 = 0x0000'0001'0000'000E, // Base
-    C_AES_256 = 0x0000'0001'0000'000F, // Base
-    C_EC_160 = 0x0000'0001'0000'0010, // Base
-    C_EC_192 = 0x0000'0001'0000'0011, // Base
-    C_EC_224 = 0x0000'0001'0000'0012, // Base
-    C_EC_256 = 0x0000'0001'0000'0013, // Base
-    C_EC_384 = 0x0000'0001'0000'0014, // Base
-    C_EC_521 = 0x0000'0001'0000'0015, // Base
-    C_EC_163 = 0x0000'0001'0000'0016, // Base
-    C_EC_233 = 0x0000'0001'0000'0017, // Base
-    C_EC_283 = 0x0000'0001'0000'0018, // Base
-    C_HMAC_160 = 0x0000'0001'0000'0019, // Base
-    C_HMAC_256 = 0x0000'0001'0000'001A, // Base
-    C_HMAC_384 = 0x0000'0001'0000'001B, // Base
-    C_HMAC_512 = 0x0000'0001'0000'001C, // Base
-    SecretProtect = 0x0000'0001'0000'001D, // Base
-    // Admin
-    TPerInfo = 0x0000'0001'0000'0201, // Admin
-    CryptoSuite = 0x0000'0001'0000'0203, // Admin
-    Template = 0x0000'0001'0000'0204, // Admin
-    SP = 0x0000'0001'0000'0205, // Admin
-    // Clock
-    ClockTime = 0x0000'0001'0000'0401, // Clock
-    // Crypto
-    H_SHA_1 = 0x0000'0001'0000'0601, // Crypto
-    H_SHA_256 = 0x0000'0001'0000'0602, // Crypto
-    H_SHA_384 = 0x0000'0001'0000'0603, // Crypto
-    H_SHA_512 = 0x0000'0001'0000'0604, // Crypto
-    // Log
-    Log = 0x0000'0001'0000'0A01, // Log
-    LogList = 0x0000'0001'0000'0A02, // Log
-    // Locking
-    LockingInfo = 0x0000'0001'0000'0801, // Locking
-    Locking = 0x0000'0001'0000'0802, // Locking
-    MBRControl = 0x0000'0001'0000'0803, // Locking
-    MBR = 0x0000'0001'0000'0804, // Locking
-    K_AES_128 = 0x0000'0001'0000'0805, // Locking
-    K_AES_256 = 0x0000'0001'0000'0806, // Locking
-};
+inline Uid TableToDescriptor(Uid table) {
+    return (uint64_t(table) >> 32) | (1ull << 31);
+}
+
+
+inline Uid DescriptorToTable(Uid descriptor) {
+    return uint64_t(descriptor) << 32;
+}
+
 
 enum class eRows_Locking : uint64_t {
     GlobalRange = 0x0000'0802'0000'0001,
@@ -198,3 +170,33 @@ enum class eRows_Locking : uint64_t {
 };
 
 } // namespace opal
+
+
+namespace tables {
+
+
+struct TableEntry {
+    std::string name;
+    eTableKind kind;
+    Uid column = 0;
+    uint32_t numColumns;
+    std::optional<Uid> singleRow = std::nullopt;
+};
+
+
+struct ColumnEntry {
+    uint32_t columnNumber;
+    std::string_view name;
+    bool isUnique;
+    std::string_view type;
+    Uid next = 0;
+};
+
+
+std::pair<const std::unordered_map<Uid, TableEntry>&, const std::unordered_map<Uid, ColumnEntry>&> TableDescriptions();
+
+extern const std::unordered_map<Uid, TableEntry>& table;
+extern const std::unordered_map<Uid, ColumnEntry>& column;
+
+
+}; // namespace tables

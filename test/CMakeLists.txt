@@ -3,10 +3,11 @@ add_executable(Test)
 target_sources(Test
     PRIVATE
         main.cpp
-        TestTokenArchive.cpp
-        TestPackets.cpp
-        TestValue.cpp
-        TestMethod.cpp
+        Archive/TestTokenArchive.cpp
+        Archive/TestPacket.cpp
+        RPC/TestValue.cpp
+        RPC/TestMethod.cpp
+        RPC/TestValueCast.cpp
 )
 
 find_package(Catch2 REQUIRED)

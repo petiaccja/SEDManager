@@ -1,5 +1,6 @@
 #include "TrustedPeripheral.hpp"
 
+#include "Exception.hpp"
 #include "Setup.hpp"
 
 #include <Archive/Conversion.hpp>
@@ -120,36 +121,54 @@ static void Sleep(std::chrono::duration<Rep, Period> time) {
 
 
 ComPacket TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
+    const auto request = ToBytes(packet);
+
+    try {
+        SecuritySend(protocol, GetComId(), request);
+        auto packets = FlushResponses(protocol);
+        if (packets.empty()) {
+            throw ProtocolError("no response to IF-SEND");
+        }
+        return packets.back();
+    }
+    catch (std::exception& ex) {
+        FlushResponses(protocol);
+        throw;
+    }
+}
+
+
+std::vector<ComPacket> TrustedPeripheral::FlushResponses(uint8_t protocol) {
     using namespace std::chrono;
     using namespace std::chrono_literals;
 
-    const auto request = ToBytes(packet);
-
-    SecuritySend(protocol, GetComId(), request);
+    constexpr auto maxSleepTime = 20ms;
+    constexpr size_t maxPacketSize = 1048576;
 
     bool more = true;
-    ComPacket result;
-    std::vector<std::byte> response(2048, 0_b);
-    auto sleepTime = 50us;
-    constexpr auto maxSleepTime = 20ms;
+    std::vector<ComPacket> packets;
+    std::vector<std::byte> bytes(2048, 0_b);
+    auto currentSleepTime = 50us;
     do {
-        SecurityReceive(protocol, GetComId(), response);
-        FromBytes(response, result);
+        ComPacket packet;
+        SecurityReceive(protocol, GetComId(), bytes);
+        FromBytes(bytes, packet);
+        more = packet.outstandingData != 0;
 
-        more = result.outstandingData != 0;
-        if (result.minTransfer > response.size()) {
-            size_t newSize = std::max(size_t(result.minTransfer), size_t(1048576));
-            response.resize(result.minTransfer);
+        if (packet.minTransfer > bytes.size()) {
+            size_t newSize = std::max(size_t(packet.minTransfer), size_t(maxPacketSize));
+            bytes.resize(packet.minTransfer);
         }
         if (more) {
-            Sleep(sleepTime);
-            if (sleepTime * 2 < maxSleepTime) {
-                sleepTime *= 2;
+            Sleep(currentSleepTime);
+            if (currentSleepTime * 2 < maxSleepTime) {
+                currentSleepTime *= 2;
             }
         }
+        packets.push_back(std::move(packet));
     } while (more);
 
-    return result;
+    return packets;
 }
 
 

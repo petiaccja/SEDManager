@@ -11,3 +11,8 @@ struct PasswordError : std::logic_error {
 struct NotImplementedError : std::logic_error {
     NotImplementedError(std::string message) : std::logic_error(std::move(message)) {}
 };
+
+
+struct ProtocolError : std::logic_error {
+    ProtocolError(std::string message) : std::logic_error(std::move(message)) {}
+};

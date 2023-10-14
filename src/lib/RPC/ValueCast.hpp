@@ -82,8 +82,8 @@ struct ValueCast<CellBlock> {
     static Value To(const CellBlock& v) {
         std::vector<Value> fields;
         if (v.startRow.has_value()) {
-            auto namedVal = std::visit([](const auto& v) { return value_cast(v); }, *v.startRow);
-            fields.emplace_back(Named{ 1u, std::move(namedVal) });
+            auto valOfNamed = std::visit([](const auto& v) { return value_cast(v); }, *v.startRow);
+            fields.emplace_back(Named{ 1u, std::move(valOfNamed) });
         }
         if (v.endRow.has_value()) {
             fields.emplace_back(Named{ 2u, v.endRow.value() });
@@ -107,7 +107,7 @@ struct ValueCast<CellBlock> {
             const auto id = named.name.Get<uint32_t>();
             switch (id) {
                 case 0: break; // Table name
-                case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<Uid>(named.value);
+                case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<Uid>(named.value); break;
                 case 2: parsed.endRow = named.value.HasValue() ? std::optional(named.value.Get<uint32_t>()) : std::optional<uint32_t>{}; break;
                 case 3: parsed.startColumn = named.value.Get<uint32_t>(); break;
                 case 4: parsed.endColumn = named.value.Get<uint32_t>(); break;

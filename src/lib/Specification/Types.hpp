@@ -40,9 +40,18 @@ struct CellBlock {
     std::optional<uint32_t> endRow;
     std::optional<uint32_t> startColumn;
     std::optional<uint32_t> endColumn;
+
+    std::strong_ordering operator<=>(const CellBlock&) const noexcept = default;
 };
 
 
-inline std::ostream& operator<<(std::ostream& os, Uid uid) {
-    return os << std::format("{:#018X}", uint64_t(uid));
-}
+namespace std {
+
+template <>
+struct hash<Uid> {
+    auto operator()(const Uid& uid) const {
+        return std::hash<uint64_t>()(uid);
+    }
+};
+
+} // namespace std

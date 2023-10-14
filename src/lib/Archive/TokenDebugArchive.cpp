@@ -56,10 +56,9 @@ void TokenDebugArchive::Insert(const Token& token) {
             dataType = std::format("b{}", token.data.size());
         }
         else {
-            uint64_t value = 0;
             dataRep += "0x";
             for (auto byte : token.data) {
-                dataRep += std::format("{:02x}", uint8_t(value));
+                dataRep += std::format("{:02x}", uint8_t(byte));
             }
             dataType = std::format("{}{}", token.isSigned ? "i" : "u", token.data.size() * 8);
         }

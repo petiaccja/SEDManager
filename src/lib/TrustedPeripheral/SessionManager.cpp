@@ -129,7 +129,7 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 Method SessionManager::InvokeMethod(const Method& method) {
     try {
         const Value requestStream = MethodToValue(INVOKING_ID, method);
-        Log("Session Manager Method - Call", requestStream);
+        Log(std::format("Call '{}' [SessionManager]", GetNameOrUid(method.methodId)), requestStream);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
@@ -140,9 +140,9 @@ Method SessionManager::InvokeMethod(const Method& method) {
 
         Value responseStream;
         FromTokens(responseTokens, responseStream);
-        Log("Session Manager Method - Result", responseStream);
 
         auto response = MethodFromValue(responseStream);
+        Log(std::format("Result '{}' [SessionManager]", GetNameOrUid(response.methodId)), responseStream);
         MethodStatusToException(GetNameOrUid(method.methodId), response.status);
         return response;
     }

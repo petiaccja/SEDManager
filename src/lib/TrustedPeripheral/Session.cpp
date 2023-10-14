@@ -91,7 +91,7 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
         assert(m_sessionManager);
 
         const auto request = MethodToValue(invokingId, method);
-        Log("Session Method - Call", request);
+        Log(std::format("Call '{}' [Session]", GetNameOrUid(method.methodId)), request);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, request);
@@ -101,7 +101,7 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
         const auto responseBytes = UnwrapPacket(responsePacket);
         Value response;
         FromTokens(responseBytes, response);
-        Log("Session Method - Result", response);
+        Log(std::format("Result '{}' [Session]", GetNameOrUid(method.methodId)), response);
 
         MethodResult result = MethodResultFromValue(response);
         MethodStatusToException(GetNameOrUid(method.methodId), result.status);

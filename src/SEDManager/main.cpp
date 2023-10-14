@@ -1,7 +1,7 @@
 
 #include "App.hpp"
 
-//#include <Specification/Tables.hpp>
+// #include <Specification/Tables.hpp>
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -96,6 +96,11 @@ std::vector<std::byte> ReadPassword(std::string_view prompt) {
 }
 
 
+std::string FormatNamed(const NamedObject& obj) {
+    return std::format("{:#018x} {}", uint64_t(obj.uid), obj.name.value_or(""));
+}
+
+
 void AddCmdHelp(App&, CLI::App& cli) {
     auto cmd = cli.add_subcommand("help", "Print this help message.");
     cmd->callback([&] {
@@ -105,7 +110,7 @@ void AddCmdHelp(App&, CLI::App& cli) {
 
 
 void AddCmdStackReset(App& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("stack-reset", "Resets the current communication stream. Does not change state.");
+    auto cmd = cli.add_subcommand("stack-reset", "Reset the current communication stream. Does not change state.");
     cmd->callback([&app] {
         app.StackReset();
     });
@@ -113,7 +118,7 @@ void AddCmdStackReset(App& app, CLI::App& cli) {
 
 
 void AddCmdReset(App& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("reset", "Resets the device as if power-cycled. Does not change state.");
+    auto cmd = cli.add_subcommand("reset", "Reset the device as if power-cycled. Does not change state.");
     cmd->callback([&app] {
         app.Reset();
     });
@@ -121,57 +126,63 @@ void AddCmdReset(App& app, CLI::App& cli) {
 
 
 void AddCmdStart(App& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("start", "Starts a session with a service provider.");
+    static std::string spName;
+
+    auto cmd = cli.add_subcommand("start", "Start a session with a service provider.");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        const auto securityProviders = app.GetSecurityProviders();
-        size_t index = 0;
-        for (auto& [uid, name] : securityProviders) {
-            if (name) {
-                std::cout << std::format("[{}] {}", ++index, *name) << std::endl;
-            }
-            else {
-                std::cout << std::format("[{}] {:#018x}", ++index, uint64_t(uid)) << std::endl;
-            }
+        const auto maybeSpUid = GetUidOrHex(spName);
+        if (!maybeSpUid) {
+            std::cout << "Cannot find security provider." << std::endl;
+            return;
         }
-        std::cout << std::format("Select SP ({}-{}): ", 1, securityProviders.size());
-        std::string s;
-        getline(std::cin, s);
-        index = size_t(std::atoi(s.data()) - 1);
-        if (index < securityProviders.size()) {
-            const auto uid = securityProviders[index].uid;
-            app.Start(uid);
-        }
-        else {
-            std::cout << "Select a valid number." << std::endl;
-        }
+        app.Start(maybeSpUid.value());
     });
 }
 
 
 void AddCmdAuth(App& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("auth", "Authenticates with an authority.");
+    static std::string authName;
+
+    auto cmd = cli.add_subcommand("auth", "Authenticate with an authority.");
+    cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        const auto authorities = app.GetAuthorities();
-        size_t index = 0;
-        for (auto& [uid, name] : authorities) {
-            if (name) {
-                std::cout << std::format("[{}] {}", ++index, *name) << std::endl;
-            }
-            else {
-                std::cout << std::format("[{}] {:#018x}", ++index, uint64_t(uid)) << std::endl;
-            }
+        const auto maybeAuthUid = GetUidOrHex(authName);
+        if (!maybeAuthUid) {
+            std::cout << "Cannot find security provider." << std::endl;
+            return;
         }
-        std::cout << std::format("Select authority ({}-{}): ", 1, authorities.size());
-        std::string s;
-        getline(std::cin, s);
-        index = size_t(std::atoi(s.data()) - 1);
-        if (index < authorities.size()) {
-            const auto uid = authorities[index].uid;
-            const auto password = ReadPassword("Password: ");
-            app.Authenticate(uid, password);
+        const auto password = ReadPassword("Password: ");
+        app.Authenticate(maybeAuthUid.value(), password);
+    });
+}
+
+
+void AddCmdList(App& app, CLI::App& cli) {
+    auto cmd = cli.add_subcommand("list", "List different objects.");
+
+    auto cmdSp = cmd->add_subcommand("sps", "List security providers.");
+    auto cmdAuth = cmd->add_subcommand("auths", "List security authorities.");
+    auto cmdTables = cmd->add_subcommand("tables", "List table.");
+
+    cmdSp->callback([&app] {
+        const auto& sps = app.GetSecurityProviders();
+        for (const auto& v : sps) {
+            std::cout << FormatNamed(v) << std::endl;
         }
-        else {
-            std::cout << "Select a valid number." << std::endl;
+    });
+
+    cmdAuth->callback([&app] {
+        const auto& auth = app.GetAuthorities();
+        for (const auto& v : auth) {
+            std::cout << FormatNamed(v) << std::endl;
+        }
+    });
+
+    cmdTables->callback([&app] {
+        const auto& tables = app.GetTables();
+        for (const auto& v : tables) {
+            std::cout << FormatNamed(v) << std::endl;
         }
     });
 }
@@ -211,14 +222,10 @@ int main(int argc, char* argv[]) {
         CLI::App cli;
         bool hasExited = false;
 
-        int lockingRange = 0;
-        uint64_t startLba = 0;
-        uint64_t lengthLba = 0;
-        bool enabled = true;
-
         AddCmdHelp(app, cli);
         AddCmdStart(app, cli);
         AddCmdAuth(app, cli);
+        AddCmdList(app, cli);
         AddCmdEnd(app, cli);
         AddCmdStackReset(app, cli);
         AddCmdReset(app, cli);
@@ -230,13 +237,14 @@ int main(int argc, char* argv[]) {
 
         while (!hasExited && std::cin.good()) {
             try {
-                std::cout << "sed-manager> ";
+                std::cout << "sedmanager";
+                std::cout << "> ";
                 std::string command;
                 std::getline(std::cin, command);
                 cli.parse(command, false);
             }
             catch (std::exception& ex) {
-                std::cout << ex.what() << std::endl;
+                std::cout << "Error: " << ex.what() << std::endl;
             }
         }
     }

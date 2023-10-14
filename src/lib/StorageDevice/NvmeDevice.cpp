@@ -1,5 +1,7 @@
 #include "NvmeDevice.hpp"
 
+#include "Exception.hpp"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/nvme_ioctl.h>
@@ -16,8 +18,8 @@ void SendCommand(int file, nvme_admin_cmd command);
 NvmeDevice::NvmeDevice(std::string_view name) {
     const auto fd = open(name.data(), O_RDWR);
     if (fd < 0) {
-        throw std::runtime_error{
-            std::format("failed to open NVMe device '{}': {}", name, strerror(errno))
+        throw DeviceError{
+            std::format("cannot open device '{}': {}", name, strerror(errno))
         };
     }
     m_file = fd;
@@ -70,14 +72,9 @@ void NvmeDevice::SecurityReceive(uint8_t securityProtocol,
 
 void SendCommand(int file, nvme_admin_cmd command) {
     const auto err = ioctl(file, NVME_IOCTL_ADMIN_CMD, &command);
-    if (err < 0) {
-        throw std::runtime_error{
-            std::format("error communicating with NVMe device: {}", strerror(errno))
-        };
-    }
     if (err != 0) {
-        throw std::runtime_error{
-            std::format("NVMe device returned an error: {}", err)
+        throw DeviceError{
+            std::format("device returned an error: NVMe status = {}, command status = {}", err & 0x7FFu, command.result)
         };
     }
 }

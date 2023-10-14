@@ -24,6 +24,7 @@ public:
     void Reset();
 
     ComPacket SendPacket(uint8_t protocol, const ComPacket& packet);
+    std::vector<ComPacket> FlushResponses(uint8_t protocol);
 
 private:
     void SecuritySend(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload);
