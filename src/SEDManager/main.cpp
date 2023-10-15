@@ -101,6 +101,7 @@ std::vector<std::byte> ReadPassword(std::string_view prompt) {
     const auto bytes = std::as_bytes(std::span(password));
     return { bytes.begin(), bytes.end() };
 #elif defined(_WIN32)
+    std::cout << prompt;
     std::vector<std::byte> password;
     char ch;
     while (true) {
@@ -109,10 +110,12 @@ std::vector<std::byte> ReadPassword(std::string_view prompt) {
             password.push_back(static_cast<std::byte>(ch));
         }
         else {
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             break;
         }
     }
+    while (0 < std::cin.readsome(&ch, 1))
+    {}
+    std::cout << std::endl;
     return password;
 #else
     static_assert(false, "Password reading is not implemented for platform.");
