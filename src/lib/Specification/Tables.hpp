@@ -76,127 +76,29 @@ enum class eTable : uint64_t {
 };
 
 
-inline Uid TableToDescriptor(Uid table) {
+constexpr Uid TableToDescriptor(Uid table) {
     return (uint64_t(table) >> 32) | (1ull << 32);
 }
 
 
-inline Uid DescriptorToTable(Uid descriptor) {
+constexpr Uid DescriptorToTable(Uid descriptor) {
     return uint64_t(descriptor) << 32;
 }
 
 
-enum class eRows_Locking : uint64_t {
-    GlobalRange = 0x0000'0802'0000'0001,
+struct ColumnDesc {
+    std::string name;
+    bool isUnique;
+    std::string type;
 };
 
 
-enum class eColumns_SP {
-    UID = 0x00, // uid
-    Name = 0x01, // Yes name
-    ORG = 0x02, // Authority_object_ref
-    EffectiveAuth = 0x03, // max_bytes_32
-    DateofIssue = 0x04, // date
-    Bytes = 0x05, // uinteger_8
-    LifeCycleState = 0x06, // life_cycle_state
-    Frozen = 0x07, // boolean_def_false
-};
-
-
-enum class eColumns_Authority {
-    UID = 0x00, // uid
-    Name = 0x01, // Yes name
-    CommonName = 0x02, // Yes name
-    IsClass = 0x03, // boolean
-    Class = 0x04, // Authority_object_ref
-    Enabled = 0x05, // boolean
-    Secure = 0x06, // messaging_type
-    HashAndSign = 0x07, // hash_protocol
-    PresentCertificate = 0x08, // boolean
-    Operation = 0x09, // auth_method
-    Credential = 0x0A, // cred_object_uidref
-    ResponseSign = 0x0B, // Authority_object_ref
-    ResponseExch = 0x0C, // Authority_object_ref
-    ClockStart = 0x0D, // date
-    ClockEnd = 0x0E, // date
-    Limit = 0x0F, // uinteger_4
-    Uses = 0x10, // uinteger_4
-    Log = 0x11, // log_select
-    LogTo = 0x12, // LogList_object_ref
-};
-
-
-enum class eColumns_Locking {
-    UID = 0x00, // uid
-    Name = 0x01, // name
-    CommonName = 0x02, // name
-    RangeStart = 0x03, // uinteger_8
-    RangeLength = 0x04, // uinteger_8
-    ReadLockEnabled = 0x05, // boolean
-    WriteLockEnabled = 0x06, // boolean
-    ReadLocked = 0x07, // boolean
-    WriteLocked = 0x08, // boolean
-    LockOnReset = 0x09, // reset_types
-    ActiveKey = 0x0A, // mediakey_object_uidref
-    NextKey = 0x0B, // mediakey_object_uidref
-    ReEncryptState = 0x0C, // reencrypt_state
-    ReEncryptRequest = 0x0D, // reencrypt_request
-    AdvKeyMode = 0x0E, // adv_key_mode
-    VerifyMode = 0x0F, // verify_mode
-    ContOnReset = 0x10, // reset_types
-    LastReEncryptLBA = 0x11, // uinteger_8
-    LastReEncStat = 0x12, // last_reenc_stat
-    GeneralStatus = 0x13, // gen_status
-};
-
-
-namespace opal {
-
-enum class eRows_C_PIN : uint64_t {
-    C_PIN_SID = 0x0000'000B'0000'0001,
-    C_PIN_MSID = 0x0000'000B'0000'8402,
-    C_PIN_Admin1 = 0x0000'000B'0000'0201,
-};
-
-enum class eRows_Locking : uint64_t {
-    Range1 = 0x0000'0802'0003'0001,
-    Range2 = 0x0000'0802'0003'0002,
-    Range3 = 0x0000'0802'0003'0003,
-    Range4 = 0x0000'0802'0003'0004,
-    Range5 = 0x0000'0802'0003'0005,
-    Range6 = 0x0000'0802'0003'0006,
-    Range7 = 0x0000'0802'0003'0007,
-    Range8 = 0x0000'0802'0003'0008,
-};
-
-} // namespace opal
-
-
-namespace tables {
-
-
-struct TableEntry {
+struct TableDesc {
     std::string name;
     eTableKind kind;
-    Uid column = 0;
-    uint32_t numColumns;
+    std::vector<ColumnDesc> columns = {};
     std::optional<Uid> singleRow = std::nullopt;
 };
 
 
-struct ColumnEntry {
-    uint32_t columnNumber;
-    std::string_view name;
-    bool isUnique;
-    std::string_view type;
-    Uid next = 0;
-};
-
-
-std::pair<const std::unordered_map<Uid, TableEntry>&, const std::unordered_map<Uid, ColumnEntry>&> TableDescriptions();
-
-extern const std::unordered_map<Uid, TableEntry>& table;
-extern const std::unordered_map<Uid, ColumnEntry>& column;
-
-
-}; // namespace tables
+TableDesc GetTableDesc(Uid table);

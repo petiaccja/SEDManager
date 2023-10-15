@@ -240,7 +240,7 @@ void AddCmdTable(App& app, CLI::App& cli) {
         }
         const auto table = app.GetTable(*maybeTableUid);
         for (const auto& row : table) {
-            std::cout << FormatUid(row.Id()) << std::endl;
+            std::cout << FormatUid(row.Id()) << "  " << GetName(row.Id()).value_or("") << std::endl;
         }
     });
 
@@ -250,17 +250,13 @@ void AddCmdTable(App& app, CLI::App& cli) {
             std::cout << "Cannot find table." << std::endl;
             return;
         }
-        const auto descriptorUid = TableToDescriptor(*maybeTableUid);
-        const auto tableDescIt = tables::table.find(descriptorUid);
-        if (tableDescIt != tables::table.end()) {
-            const auto& tableDesc = tableDescIt->second;
-            auto colDescUid = tableDesc.column;
-            while (uint64_t(colDescUid) != 0) {
-                const auto colDescIt = tables::column.find(colDescUid);
-                assert(colDescIt != tables::column.end());
-                std::cout << colDescIt->second.columnNumber << ": " << colDescIt->second.name << std::endl;
-                colDescUid = colDescIt->second.next;
-            }
+
+        const auto& desc = GetTableDesc(*maybeTableUid);
+        size_t columnNumber = 0;
+        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {:<32}";
+        std::cout << std::format(lineFormat, "Index", "Name", "IsUnique", "Type") << std::endl;
+        for (const auto& [name, isUnique, type] : desc.columns) {
+            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", type) << std::endl;
         }
     });
 

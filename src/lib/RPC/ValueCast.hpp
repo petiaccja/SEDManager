@@ -114,7 +114,7 @@ struct ValueCast<CellBlock> {
                 default: throw std::invalid_argument("invalid field for cell block");
             }
         }
-        return std::move(parsed);
+        return parsed;
     }
 };
 

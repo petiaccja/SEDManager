@@ -23,11 +23,11 @@ struct Uid {
 
     template <std::integral Integral>
         requires(sizeof(Integral) >= sizeof(uint64_t))
-    operator Integral() const noexcept { return static_cast<Integral>(value); }
+    constexpr operator Integral() const noexcept { return static_cast<Integral>(value); }
 
     template <class Enum>
         requires std::is_enum_v<Enum> && (sizeof(Enum) <= sizeof(uint64_t))
-    operator Enum() const noexcept { return static_cast<Enum>(value); }
+    constexpr operator Enum() const noexcept { return static_cast<Enum>(value); }
 
     std::strong_ordering operator<=>(const Uid&) const noexcept = default;
 

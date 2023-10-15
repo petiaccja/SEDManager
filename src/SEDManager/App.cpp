@@ -62,11 +62,10 @@ std::optional<std::string> App::GetNameFromTable(Uid uid, std::optional<uint32_t
 }
 
 
-std::vector<NamedObject> App::GetNamedRows(Session& session, const Table& table, uint32_t nameColumn) {
+std::vector<NamedObject> App::GetNamedRows(const Table& table) {
     std::vector<NamedObject> namedRows;
     for (const auto& row : table) {
-        std::optional<std::string> name = GetNameFromTable(row.Id(), uint32_t(eColumns_SP::Name));
-        namedRows.emplace_back(row.Id(), std::move(name));
+        namedRows.emplace_back(row.Id(), GetNameOrUid(row.Id()));
     }
     return namedRows;
 }
@@ -77,7 +76,7 @@ std::vector<NamedObject> App::GetSecurityProviders() {
         std::vector<NamedObject> securityProviders;
 
         Table sp = Table(eTable::SP, session);
-        return GetNamedRows(*session, sp, uint32_t(eColumns_SP::Name));
+        return GetNamedRows(sp);
     };
 
     if (m_session) {
@@ -93,7 +92,7 @@ std::vector<NamedObject> App::GetSecurityProviders() {
 std::vector<NamedObject> App::GetAuthorities() {
     if (m_session) {
         Table auth = Table(eTable::Authority, m_session);
-        return GetNamedRows(*m_session, auth, uint32_t(eColumns_Authority::Name));
+        return GetNamedRows(auth);
     }
     throw std::logic_error("a session must be active");
 }
@@ -102,13 +101,7 @@ std::vector<NamedObject> App::GetAuthorities() {
 std::vector<NamedObject> App::GetTables() {
     if (m_session) {
         Table table = Table(eTable::Table, m_session);
-        std::vector<NamedObject> namedRows;
-        for (const auto& row : table) {
-            const auto tableId = DescriptorToTable(row.Id());
-            std::optional<std::string> name = GetNameFromTable(tableId, uint32_t(eColumns_SP::Name));
-            namedRows.emplace_back(tableId, std::move(name));
-        }
-        return namedRows;
+        return GetNamedRows(table);
     }
     throw std::logic_error("a session must be active");
 }
@@ -125,7 +118,7 @@ Table App::GetTable(Uid table) {
 Object App::GetObject(Uid table, Uid object) {
     if (m_session) {
         Table t(table, m_session);
-        return Object(object, t.NumColumns(), m_session);
+        return Object(object, t.GetDesc(), m_session);
     }
     throw std::logic_error("a session must be active");
 }
@@ -181,29 +174,25 @@ void App::Revert(std::span<const std::byte> psidPassword) {
 
 Table::Table(Uid table, std::shared_ptr<Session> session)
     : m_table(table), m_session(session) {
-    Uid descriptor = TableToDescriptor(table);
-    const auto descIt = tables::table.find(descriptor);
-    if (descIt != tables::table.end() && descIt->second.numColumns != 0) {
-        m_numColumns = descIt->second.numColumns;
+    // TODO: Get dynamic description from the 'Table' table and 'Column' table if available.
+    // Looks like devices don't have proper data in these tables, hence the static description.
+    try {
+        m_desc = GetTableDesc(table);
     }
-    else {
-        try {
-            m_numColumns = m_session->base.Get(descriptor, 6).Get<size_t>();
-        }
-        catch (std::exception& ex) {
-            throw std::runtime_error(std::format("could not resolve number of columns: TPer has no information: {}", ex.what()));
-        }
+    catch (std::exception& ex) {
+        throw std::runtime_error(std::format("not implemented: static table description missing for table '{}'", GetNameOrUid(table)));
+    }
+
+    if (m_desc.columns.empty()) {
+        throw std::runtime_error(std::format("not implemented: static column descriptions missing for table '{}'", GetNameOrUid(table)));
     }
 }
 
 
 Uid Table::First() const {
     if (m_session) {
-        const auto descIt = tables::table.find(TableToDescriptor(m_table));
-        if (descIt != tables::table.end()) {
-            if (descIt->second.singleRow) {
-                return descIt->second.singleRow.value();
-            }
+        if (m_desc.singleRow) {
+            return *m_desc.singleRow;
         }
         return m_session->base.Next(m_table, {}).value_or(0);
     }
@@ -213,10 +202,9 @@ Uid Table::First() const {
 
 template <bool Mutable>
 Uid Table::row_iterator<Mutable>::Next() const {
-    const auto descIt = tables::table.find(TableToDescriptor(m_table));
-    if (descIt != tables::table.end()) {
-        if (descIt->second.singleRow) {
-            return 0;
+    if (m_session) {
+        if (m_desc.singleRow) {
+            return *m_desc.singleRow;
         }
     }
     return m_session->base.Next(m_table, m_row).value_or(0);

@@ -5,8 +5,6 @@
 #include "SecurityProviders.hpp"
 #include "Tables.hpp"
 
-#include <algorithm>
-#include <array>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -167,6 +165,56 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableNames = {
 };
 
 
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableDescriptorNames = {
+    {TableToDescriptor(eTable::Table),          "Table::Table"        },
+    { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       },
+    { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  },
+    { TableToDescriptor(eTable::Column),        "Table::Column"       },
+    { TableToDescriptor(eTable::Type),          "Table::Type"         },
+    { TableToDescriptor(eTable::MethodID),      "Table::MethodID"     },
+    { TableToDescriptor(eTable::AccessControl), "Table::AccessControl"},
+    { TableToDescriptor(eTable::ACE),           "Table::ACE"          },
+    { TableToDescriptor(eTable::Authority),     "Table::Authority"    },
+    { TableToDescriptor(eTable::Certificates),  "Table::Certificates" },
+    { TableToDescriptor(eTable::C_PIN),         "Table::C_PIN"        },
+    { TableToDescriptor(eTable::C_RSA_1024),    "Table::C_RSA_1024"   },
+    { TableToDescriptor(eTable::C_RSA_2048),    "Table::C_RSA_2048"   },
+    { TableToDescriptor(eTable::C_AES_128),     "Table::C_AES_128"    },
+    { TableToDescriptor(eTable::C_AES_256),     "Table::C_AES_256"    },
+    { TableToDescriptor(eTable::C_EC_160),      "Table::C_EC_160"     },
+    { TableToDescriptor(eTable::C_EC_192),      "Table::C_EC_192"     },
+    { TableToDescriptor(eTable::C_EC_224),      "Table::C_EC_224"     },
+    { TableToDescriptor(eTable::C_EC_256),      "Table::C_EC_256"     },
+    { TableToDescriptor(eTable::C_EC_384),      "Table::C_EC_384"     },
+    { TableToDescriptor(eTable::C_EC_521),      "Table::C_EC_521"     },
+    { TableToDescriptor(eTable::C_EC_163),      "Table::C_EC_163"     },
+    { TableToDescriptor(eTable::C_EC_233),      "Table::C_EC_233"     },
+    { TableToDescriptor(eTable::C_EC_283),      "Table::C_EC_283"     },
+    { TableToDescriptor(eTable::C_HMAC_160),    "Table::C_HMAC_160"   },
+    { TableToDescriptor(eTable::C_HMAC_256),    "Table::C_HMAC_256"   },
+    { TableToDescriptor(eTable::C_HMAC_384),    "Table::C_HMAC_384"   },
+    { TableToDescriptor(eTable::C_HMAC_512),    "Table::C_HMAC_512"   },
+    { TableToDescriptor(eTable::SecretProtect), "Table::SecretProtect"},
+    { TableToDescriptor(eTable::TPerInfo),      "Table::TPerInfo"     },
+    { TableToDescriptor(eTable::CryptoSuite),   "Table::CryptoSuite"  },
+    { TableToDescriptor(eTable::Template),      "Table::Template"     },
+    { TableToDescriptor(eTable::SP),            "Table::SP"           },
+    { TableToDescriptor(eTable::ClockTime),     "Table::ClockTime"    },
+    { TableToDescriptor(eTable::H_SHA_1),       "Table::H_SHA_1"      },
+    { TableToDescriptor(eTable::H_SHA_256),     "Table::H_SHA_256"    },
+    { TableToDescriptor(eTable::H_SHA_384),     "Table::H_SHA_384"    },
+    { TableToDescriptor(eTable::H_SHA_512),     "Table::H_SHA_512"    },
+    { TableToDescriptor(eTable::Log),           "Table::Log"          },
+    { TableToDescriptor(eTable::LogList),       "Table::LogList"      },
+    { TableToDescriptor(eTable::LockingInfo),   "Table::LockingInfo"  },
+    { TableToDescriptor(eTable::Locking),       "Table::Locking"      },
+    { TableToDescriptor(eTable::MBRControl),    "Table::MBRControl"   },
+    { TableToDescriptor(eTable::MBR),           "Table::MBR"          },
+    { TableToDescriptor(eTable::K_AES_128),     "Table::K_AES_128"    },
+    { TableToDescriptor(eTable::K_AES_256),     "Table::K_AES_256"    },
+};
+
+
 std::optional<std::string_view> GetName(Uid uid) {
     auto amend = [](auto& mapping, auto pairs) {
         for (const auto& [uid, name] : pairs) {
@@ -179,6 +227,7 @@ std::optional<std::string_view> GetName(Uid uid) {
         amend(mapping, authNames);
         amend(mapping, methodNames);
         amend(mapping, tableNames);
+        amend(mapping, tableDescriptorNames);
         return mapping;
     }();
     const auto it = mapping.find(uint64_t(uid));
@@ -210,6 +259,7 @@ std::optional<Uid> GetUid(std::string_view name) {
         amend(mapping, authNames);
         amend(mapping, methodNames);
         amend(mapping, tableNames);
+        amend(mapping, tableDescriptorNames);
         return mapping;
     }();
     const auto it = mapping.find(name);

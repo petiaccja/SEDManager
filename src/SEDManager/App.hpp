@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Specification/Tables.hpp>
 #include <StorageDevice/NvmeDevice.hpp>
 #include <TrustedPeripheral/Session.hpp>
 #include <TrustedPeripheral/SessionManager.hpp>
@@ -80,15 +81,15 @@ public:
     static_assert(std::input_iterator<const_iterator>);
 
 public:
-    TableRow(Uid object, size_t numColumns, std::shared_ptr<Session> session)
-        : m_row(object), m_numColumns(numColumns), m_session(session) {}
+    TableRow(Uid object, TableDesc desc, std::shared_ptr<Session> session)
+        : m_row(object), m_desc(std::move(desc)), m_session(session) {}
 
     iterator begin() { return iterator{ m_row, 0, m_session }; }
-    iterator end() { return iterator{ m_row, m_numColumns, m_session }; }
+    iterator end() { return iterator{ m_row, m_desc.columns.size(), m_session }; }
     const_iterator begin() const { return cbegin(); }
     const_iterator end() const { return cend(); }
     const_iterator cbegin() const { return const_iterator{ m_row, 0, m_session }; }
-    const_iterator cend() const { return const_iterator{ m_row, m_numColumns, m_session }; }
+    const_iterator cend() const { return const_iterator{ m_row, m_desc.columns.size(), m_session }; }
 
     cell_reference<Mutable> operator[](size_t index) { return begin()[index]; }
     cell_reference<false> operator[](size_t index) const { return begin()[index]; }
@@ -97,7 +98,7 @@ public:
 
 private:
     Uid m_row = 0;
-    size_t m_numColumns = 0;
+    TableDesc m_desc = {};
     std::shared_ptr<Session> m_session = nullptr;
 };
 
@@ -115,10 +116,10 @@ public:
 
     public:
         row_iterator() {}
-        row_iterator(Uid table, Uid row, size_t numColumns, std::shared_ptr<Session> session)
-            : m_table(table), m_row(row), m_numColumns(numColumns), m_session(session) {}
+        row_iterator(Uid table, Uid row, TableDesc desc, std::shared_ptr<Session> session)
+            : m_table(table), m_row(row), m_desc(std::move(desc)), m_session(session) {}
 
-        value_type operator*() const { return value_type{ m_row, m_numColumns, m_session }; }
+        value_type operator*() const { return value_type{ m_row, m_desc, m_session }; }
         row_iterator& operator++() { return m_row = Next(), *this; }
         row_iterator operator++(int) {
             auto copy = *this;
@@ -134,7 +135,7 @@ public:
 
         Uid m_table = 0;
         Uid m_row = 0;
-        size_t m_numColumns = 0;
+        TableDesc m_desc = {};
         std::shared_ptr<Session> m_session = nullptr;
     };
 
@@ -148,21 +149,21 @@ public:
     Table() {}
     Table(Uid table, std::shared_ptr<Session> session);
 
-    iterator begin() { return iterator{ m_table, First(), m_numColumns, m_session }; }
-    iterator end() { return iterator{ m_table, 0, m_numColumns, m_session }; }
+    iterator begin() { return iterator{ m_table, First(), m_desc, m_session }; }
+    iterator end() { return iterator{ m_table, 0, m_desc, m_session }; }
     const_iterator begin() const { return cbegin(); }
     const_iterator end() const { return cend(); }
-    const_iterator cbegin() const { return const_iterator{ m_table, First(), m_numColumns, m_session }; }
-    const_iterator cend() const { return const_iterator{ m_table, 0, m_numColumns, m_session }; }
+    const_iterator cbegin() const { return const_iterator{ m_table, First(), m_desc, m_session }; }
+    const_iterator cend() const { return const_iterator{ m_table, 0, m_desc, m_session }; }
 
-    uint32_t NumColumns() const { return m_numColumns; }
+    const TableDesc& GetDesc() const { return m_desc; }
 
 private:
     Uid First() const;
 
 private:
     Uid m_table = 0;
-    size_t m_numColumns = 0;
+    TableDesc m_desc = {};
     std::shared_ptr<Session> m_session = nullptr;
 };
 
@@ -191,7 +192,7 @@ public:
 
 private:
     std::optional<std::string> GetNameFromTable(Uid uid, std::optional<uint32_t> column = {});
-    std::vector<NamedObject> GetNamedRows(Session& session, const Table& table, uint32_t nameColumn);
+    std::vector<NamedObject> GetNamedRows(const Table& table);
 
 private:
     std::shared_ptr<NvmeDevice> m_device;
