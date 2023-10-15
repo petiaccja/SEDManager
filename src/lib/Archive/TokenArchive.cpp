@@ -68,9 +68,9 @@ void TokenOutputArchive::Insert(const Token& token) {
     }
     else if (token.tag == eTag::LONG_ATOM) {
         const size_t length = token.data.size() & 0x00FF'FFFFu;
-        const uint8_t header = uint8_t(token.tag)
-                               | (token.isByte << 1)
-                               | (token.isSigned);
+        const uint8_t header = int(token.tag)
+                               | int(token.isByte << 1)
+                               | int(token.isSigned);
         const std::array<std::byte, 3> lengthBytes = {
             std::byte(uint8_t(((length >> 16)))),
             std::byte(uint8_t(((length >> 8)))),

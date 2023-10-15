@@ -18,6 +18,7 @@ static std::string_view GetCmdName(eTag cmd) {
         case eTag::END_TRANSACTION: return "et";
         case eTag::EMPTY: return "empty";
     }
+    return "empty";
 }
 
 

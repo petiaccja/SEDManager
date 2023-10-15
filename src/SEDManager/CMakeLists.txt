@@ -12,3 +12,8 @@ target_sources(SEDManager
 target_link_libraries(SEDManager TrustedPeripheral)
 find_package(CLI11)
 target_link_libraries(SEDManager CLI11::CLI11)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_sources(SEDManager PRIVATE admin.manifest)
+    target_link_options(SEDManager PRIVATE "/MANIFESTUAC:NO")
+endif()

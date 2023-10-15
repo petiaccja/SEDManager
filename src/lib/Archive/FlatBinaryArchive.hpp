@@ -2,6 +2,7 @@
 
 #include <cereal/cereal.hpp>
 
+#include <array>
 #include <concepts>
 #include <cstdint>
 #include <format>

@@ -18,6 +18,7 @@ static std::string_view GetTagName(eTag tag) {
         case eTag::END_TRANSACTION: return "END_TRANSACTION";
         case eTag::EMPTY: return "EMPTY";
     }
+    return "EMPTY";
 }
 
 

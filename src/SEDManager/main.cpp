@@ -9,9 +9,14 @@
 
 #include <fstream>
 #include <iostream>
-#include <ranges>
 #include <string_view>
 #include <unordered_map>
+
+#ifdef __linux__
+    #include <unistd.h>
+#elif defined(_WIN32)
+    #include <conio.h>
+#endif
 
 
 std::string_view ConvertRawCharacters(std::ranges::contiguous_range auto&& r) {
@@ -91,9 +96,27 @@ void PrintProperies(const std::unordered_map<std::string, uint32_t>& properties)
 
 
 std::vector<std::byte> ReadPassword(std::string_view prompt) {
+#ifdef __linux__
     std::string_view password = getpass(prompt.data());
     const auto bytes = std::as_bytes(std::span(password));
     return { bytes.begin(), bytes.end() };
+#elif defined(_WIN32)
+    std::vector<std::byte> password;
+    char ch;
+    while (true) {
+        ch = _getch();
+        if (ch != '\r' && ch != '\n') {
+            password.push_back(static_cast<std::byte>(ch));
+        }
+        else {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            break;
+        }
+    }
+    return password;
+#else
+    static_assert(false, "Password reading is not implemented for platform.");
+#endif
 }
 
 

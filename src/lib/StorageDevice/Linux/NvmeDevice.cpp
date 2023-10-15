@@ -1,6 +1,6 @@
 #include "NvmeDevice.hpp"
 
-#include "Exception.hpp"
+#include "../Exception.hpp"
 
 #include <errno.h>
 #include <fcntl.h>
