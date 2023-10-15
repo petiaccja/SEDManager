@@ -174,6 +174,17 @@ namespace {
         ColumnDescStatic{ "Enabled",          false, "boolean"   },
     };
 
+    constexpr std::array columnsTPerInfo = {
+        ColumnDescStatic{"UID",               false, "uid"       },
+        ColumnDescStatic{ "Bytes",            false, "uinteger_8"},
+        ColumnDescStatic{ "GUDID",            false, "bytes_12"  },
+        ColumnDescStatic{ "Generation",       false, "uinteger_4"},
+        ColumnDescStatic{ "FirmwareVersion",  false, "uinteger_4"},
+        ColumnDescStatic{ "ProtocolVersion",  false, "uinteger_4"},
+        ColumnDescStatic{ "SpaceForIssuance", false, "uinteger_8"},
+        ColumnDescStatic{ "SSC",              false, "SSC"       },
+    };
+
     constexpr auto tableDescs = std::array{
         TableDescStatic{ eTable::Table, "Table", eTableKind::OBJECT, columnsTable },
         TableDescStatic{ eTable::SPInfo, "SPInfo", eTableKind::OBJECT, columnsSPInfo, eTableSingleRowObject::SPInfo },
@@ -204,7 +215,7 @@ namespace {
         TableDescStatic{ eTable::C_HMAC_384, "C_HMAC_384", eTableKind::OBJECT },
         TableDescStatic{ eTable::C_HMAC_512, "C_HMAC_512", eTableKind::OBJECT },
         TableDescStatic{ eTable::SecretProtect, "SecretProtect", eTableKind::OBJECT, columnsSecretProtect },
-        TableDescStatic{ eTable::TPerInfo, "TPerInfo", eTableKind::OBJECT, {}, eTableSingleRowObject::TPerInfo },
+        TableDescStatic{ eTable::TPerInfo, "TPerInfo", eTableKind::OBJECT, columnsTPerInfo, eTableSingleRowObject::TPerInfo },
         TableDescStatic{ eTable::CryptoSuite, "CryptoSuite", eTableKind::OBJECT },
         TableDescStatic{ eTable::Template, "Template", eTableKind::OBJECT },
         TableDescStatic{ eTable::SP, "SP", eTableKind::OBJECT, columnsSP },

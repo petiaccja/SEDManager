@@ -204,7 +204,7 @@ template <bool Mutable>
 Uid Table::row_iterator<Mutable>::Next() const {
     if (m_session) {
         if (m_desc.singleRow) {
-            return *m_desc.singleRow;
+            return 0;
         }
     }
     return m_session->base.Next(m_table, m_row).value_or(0);

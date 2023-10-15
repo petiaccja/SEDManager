@@ -215,6 +215,181 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableDescripto
 };
 
 
+
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableC_PINNames = {
+    {opal::eC_PIN::SID,             "C_PIN::SID"           },
+    { opal::eC_PIN::MSID,           "C_PIN::MSID"          },
+    { opal::eC_PIN::Admin1,         "C_PIN::Admin1"        },
+    { opal::eC_PIN::Admin2,         "C_PIN::Admin2"        },
+    { opal::eC_PIN::Admin3,         "C_PIN::Admin3"        },
+    { opal::eC_PIN::Admin4,         "C_PIN::Admin4"        },
+    { opal::eC_PIN::Locking_Admin1, "C_PIN::Locking_Admin1"},
+    { opal::eC_PIN::Locking_Admin2, "C_PIN::Locking_Admin2"},
+    { opal::eC_PIN::Locking_Admin3, "C_PIN::Locking_Admin3"},
+    { opal::eC_PIN::Locking_Admin4, "C_PIN::Locking_Admin4"},
+    { opal::eC_PIN::User1,          "C_PIN::User1"         },
+    { opal::eC_PIN::User2,          "C_PIN::User2"         },
+    { opal::eC_PIN::User3,          "C_PIN::User3"         },
+    { opal::eC_PIN::User4,          "C_PIN::User4"         },
+    { opal::eC_PIN::User5,          "C_PIN::User5"         },
+    { opal::eC_PIN::User6,          "C_PIN::User6"         },
+    { opal::eC_PIN::User7,          "C_PIN::User7"         },
+    { opal::eC_PIN::User8,          "C_PIN::User8"         },
+    { opal::eC_PIN::User9,          "C_PIN::User9"         },
+    { opal::eC_PIN::User10,         "C_PIN::User10"        },
+    { opal::eC_PIN::User11,         "C_PIN::User11"        },
+    { opal::eC_PIN::User12,         "C_PIN::User12"        },
+};
+
+
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableSecretProtectNames = {
+    {opal::eSecretProtect::K_AES_128,  "SecretProtect::K_AES_128"},
+    { opal::eSecretProtect::K_AES_256, "SecretProtect::K_AES_256"},
+};
+
+
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableLockingNames = {
+    {opal::eLocking::GlobalRange, "Locking::GlobalRange"},
+    { opal::eLocking::Range1,     "Locking::Range1"     },
+    { opal::eLocking::Range2,     "Locking::Range2"     },
+    { opal::eLocking::Range3,     "Locking::Range3"     },
+    { opal::eLocking::Range4,     "Locking::Range4"     },
+    { opal::eLocking::Range5,     "Locking::Range5"     },
+    { opal::eLocking::Range6,     "Locking::Range6"     },
+    { opal::eLocking::Range7,     "Locking::Range7"     },
+    { opal::eLocking::Range8,     "Locking::Range8"     },
+    { opal::eLocking::Range9,     "Locking::Range9"     },
+    { opal::eLocking::Range10,    "Locking::Range10"    },
+    { opal::eLocking::Range11,    "Locking::Range11"    },
+    { opal::eLocking::Range12,    "Locking::Range12"    },
+};
+
+
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableACENames = {
+    {opal::eACE::ACE_Anybody,                                              "ACE::Anybody"                                           },
+    { opal::eACE::ACE_Admin,                                               "ACE::Admin"                                             },
+    { opal::eACE::ACE_Anybody_Get_CommonName,                              "ACE::Anybody_Get_CommonName"                            },
+    { opal::eACE::ACE_Admins_Set_CommonName,                               "ACE::Admins_Set_CommonName"                             },
+    { opal::eACE::ACE_ACE_Get_All,                                         "ACE::ACE_Get_All"                                       },
+    { opal::eACE::ACE_ACE_Set_BooleanExpression,                           "ACE::ACE_Set_BooleanExpression"                         },
+    { opal::eACE::ACE_Authority_Get_All,                                   "ACE::Authority_Get_All"                                 },
+    { opal::eACE::ACE_Authority_Set_Enabled,                               "ACE::Authority_Set_Enabled"                             },
+    { opal::eACE::ACE_User1_Set_CommonName,                                "ACE::User1_Set_CommonName"                              },
+    { opal::eACE::ACE_User2_Set_CommonName,                                "ACE::User2_Set_CommonName"                              },
+    { opal::eACE::ACE_User3_Set_CommonName,                                "ACE::User3_Set_CommonName"                              },
+    { opal::eACE::ACE_User4_Set_CommonName,                                "ACE::User4_Set_CommonName"                              },
+    { opal::eACE::ACE_User5_Set_CommonName,                                "ACE::User5_Set_CommonName"                              },
+    { opal::eACE::ACE_User6_Set_CommonName,                                "ACE::User6_Set_CommonName"                              },
+    { opal::eACE::ACE_User7_Set_CommonName,                                "ACE::User7_Set_CommonName"                              },
+    { opal::eACE::ACE_User8_Set_CommonName,                                "ACE::User8_Set_CommonName"                              },
+    { opal::eACE::ACE_User9_Set_CommonName,                                "ACE::User9_Set_CommonName"                              },
+    { opal::eACE::ACE_User10_Set_CommonName,                               "ACE::User10_Set_CommonName"                             },
+    { opal::eACE::ACE_User11_Set_CommonName,                               "ACE::User11_Set_CommonName"                             },
+    { opal::eACE::ACE_User12_Set_CommonName,                               "ACE::User12_Set_CommonName"                             },
+    { opal::eACE::ACE_C_PIN_Admins_Get_All_NOPIN,                          "ACE::C_PIN_Admins_Get_All_NOPIN"                        },
+    { opal::eACE::ACE_C_PIN_Admins_Set_PIN,                                "ACE::C_PIN_Admins_Set_PIN"                              },
+    { opal::eACE::ACE_C_PIN_User1_Set_PIN,                                 "ACE::C_PIN_User1_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User2_Set_PIN,                                 "ACE::C_PIN_User2_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User3_Set_PIN,                                 "ACE::C_PIN_User3_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User4_Set_PIN,                                 "ACE::C_PIN_User4_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User5_Set_PIN,                                 "ACE::C_PIN_User5_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User6_Set_PIN,                                 "ACE::C_PIN_User6_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User7_Set_PIN,                                 "ACE::C_PIN_User7_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User8_Set_PIN,                                 "ACE::C_PIN_User8_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User9_Set_PIN,                                 "ACE::C_PIN_User9_Set_PIN"                               },
+    { opal::eACE::ACE_C_PIN_User10_Set_PIN,                                "ACE::C_PIN_User10_Set_PIN"                              },
+    { opal::eACE::ACE_C_PIN_User11_Set_PIN,                                "ACE::C_PIN_User11_Set_PIN"                              },
+    { opal::eACE::ACE_C_PIN_User12_Set_PIN,                                "ACE::C_PIN_User12_Set_PIN"                              },
+    { opal::eACE::ACE_K_AES_Mode,                                          "ACE::K_AES_Mode"                                        },
+    { opal::eACE::ACE_K_AES_128_GlobalRange_GenKey,                        "ACE::K_AES_128_GlobalRange_GenKey"                      },
+    { opal::eACE::ACE_K_AES_128_Range1_GenKey,                             "ACE::K_AES_128_Range1_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range2_GenKey,                             "ACE::K_AES_128_Range2_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range3_GenKey,                             "ACE::K_AES_128_Range3_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range4_GenKey,                             "ACE::K_AES_128_Range4_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range5_GenKey,                             "ACE::K_AES_128_Range5_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range6_GenKey,                             "ACE::K_AES_128_Range6_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range7_GenKey,                             "ACE::K_AES_128_Range7_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range8_GenKey,                             "ACE::K_AES_128_Range8_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range9_GenKey,                             "ACE::K_AES_128_Range9_GenKey"                           },
+    { opal::eACE::ACE_K_AES_128_Range10_GenKey,                            "ACE::K_AES_128_Range10_GenKey"                          },
+    { opal::eACE::ACE_K_AES_128_Range11_GenKey,                            "ACE::K_AES_128_Range11_GenKey"                          },
+    { opal::eACE::ACE_K_AES_128_Range12_GenKey,                            "ACE::K_AES_128_Range12_GenKey"                          },
+    { opal::eACE::ACE_K_AES_256_GlobalRange_GenKey,                        "ACE::K_AES_256_GlobalRange_GenKey"                      },
+    { opal::eACE::ACE_K_AES_256_Range1_GenKey,                             "ACE::K_AES_256_Range1_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range2_GenKey,                             "ACE::K_AES_256_Range2_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range3_GenKey,                             "ACE::K_AES_256_Range3_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range4_GenKey,                             "ACE::K_AES_256_Range4_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range5_GenKey,                             "ACE::K_AES_256_Range5_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range6_GenKey,                             "ACE::K_AES_256_Range6_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range7_GenKey,                             "ACE::K_AES_256_Range7_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range8_GenKey,                             "ACE::K_AES_256_Range8_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range9_GenKey,                             "ACE::K_AES_256_Range9_GenKey"                           },
+    { opal::eACE::ACE_K_AES_256_Range10_GenKey,                            "ACE::K_AES_256_Range10_GenKey"                          },
+    { opal::eACE::ACE_K_AES_256_Range11_GenKey,                            "ACE::K_AES_256_Range11_GenKey"                          },
+    { opal::eACE::ACE_K_AES_256_Range12_GenKey,                            "ACE::K_AES_256_Range12_GenKey"                          },
+    { opal::eACE::ACE_Locking_GlobalRange_Get_RangeStartToActiveKey,       "ACE::Locking_GlobalRange_Get_RangeStartToActiveKey"     },
+    { opal::eACE::ACE_Locking_Range1_Get_RangeStartToActiveKey,            "ACE::Locking_Range1_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range2_Get_RangeStartToActiveKey,            "ACE::Locking_Range2_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range3_Get_RangeStartToActiveKey,            "ACE::Locking_Range3_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range4_Get_RangeStartToActiveKey,            "ACE::Locking_Range4_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range5_Get_RangeStartToActiveKey,            "ACE::Locking_Range5_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range6_Get_RangeStartToActiveKey,            "ACE::Locking_Range6_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range7_Get_RangeStartToActiveKey,            "ACE::Locking_Range7_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range8_Get_RangeStartToActiveKey,            "ACE::Locking_Range8_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range9_Get_RangeStartToActiveKey,            "ACE::Locking_Range9_Get_RangeStartToActiveKey"          },
+    { opal::eACE::ACE_Locking_Range10_Get_RangeStartToActiveKey,           "ACE::Locking_Range10_Get_RangeStartToActiveKey"         },
+    { opal::eACE::ACE_Locking_Range11_Get_RangeStartToActiveKey,           "ACE::Locking_Range11_Get_RangeStartToActiveKey"         },
+    { opal::eACE::ACE_Locking_Range12_Get_RangeStartToActiveKey,           "ACE::Locking_Range12_Get_RangeStartToActiveKey"         },
+    { opal::eACE::ACE_Locking_GlobalRange_Set_RdLocked,                    "ACE::Locking_GlobalRange_Set_RdLocked"                  },
+    { opal::eACE::ACE_Locking_Range1_Set_RdLocked,                         "ACE::Locking_Range1_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range2_Set_RdLocked,                         "ACE::Locking_Range2_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range3_Set_RdLocked,                         "ACE::Locking_Range3_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range4_Set_RdLocked,                         "ACE::Locking_Range4_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range5_Set_RdLocked,                         "ACE::Locking_Range5_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range6_Set_RdLocked,                         "ACE::Locking_Range6_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range7_Set_RdLocked,                         "ACE::Locking_Range7_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range8_Set_RdLocked,                         "ACE::Locking_Range8_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range9_Set_RdLocked,                         "ACE::Locking_Range9_Set_RdLocked"                       },
+    { opal::eACE::ACE_Locking_Range10_Set_RdLocked,                        "ACE::Locking_Range10_Set_RdLocked"                      },
+    { opal::eACE::ACE_Locking_Range11_Set_RdLocked,                        "ACE::Locking_Range11_Set_RdLocked"                      },
+    { opal::eACE::ACE_Locking_Range12_Set_RdLocked,                        "ACE::Locking_Range12_Set_RdLocked"                      },
+    { opal::eACE::ACE_Locking_GlobalRange_Set_WrLocked,                    "ACE::Locking_GlobalRange_Set_WrLocked"                  },
+    { opal::eACE::ACE_Locking_Range1_Set_WrLocked,                         "ACE::Locking_Range1_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range2_Set_WrLocked,                         "ACE::Locking_Range2_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range3_Set_WrLocked,                         "ACE::Locking_Range3_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range4_Set_WrLocked,                         "ACE::Locking_Range4_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range5_Set_WrLocked,                         "ACE::Locking_Range5_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range6_Set_WrLocked,                         "ACE::Locking_Range6_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range7_Set_WrLocked,                         "ACE::Locking_Range7_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range8_Set_WrLocked,                         "ACE::Locking_Range8_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range9_Set_WrLocked,                         "ACE::Locking_Range9_Set_WrLocked"                       },
+    { opal::eACE::ACE_Locking_Range10_Set_WrLocked,                        "ACE::Locking_Range10_Set_WrLocked"                      },
+    { opal::eACE::ACE_Locking_Range11_Set_WrLocked,                        "ACE::Locking_Range11_Set_WrLocked"                      },
+    { opal::eACE::ACE_Locking_Range12_Set_WrLocked,                        "ACE::Locking_Range12_Set_WrLocked"                      },
+    { opal::eACE::ACE_Locking_GlblRng_Admins_Set,                          "ACE::Locking_GlblRng_Admins_Set"                        },
+    { opal::eACE::ACE_Locking_Admins_RangeStartToLOR,                      "ACE::Locking_Admins_RangeStartToLOR"                    },
+    { opal::eACE::ACE_MBRControl_Admins_Set,                               "ACE::MBRControl_Admins_Set"                             },
+    { opal::eACE::ACE_MBRControl_Set_DoneToDOR,                            "ACE::MBRControl_Set_DoneToDOR"                          },
+    { opal::eACE::ACE_DataStore_Get_All,                                   "ACE::DataStore_Get_All"                                 },
+    { opal::eACE::ACE_DataStore_Set_All,                                   "ACE::DataStore_Set_All"                                 },
+    { opal::eACE::ACE_Set_Enabled,                                         "ACE_Set_Enabled"                                        },
+    { opal::eACE::ACE_C_PIN_SID_Get_NOPIN,                                 "ACE_C_PIN_SID_Get_NOPIN"                                },
+    { opal::eACE::ACE_C_PIN_SID_Set_PIN,                                   "ACE_C_PIN_SID_Set_PIN"                                  },
+    { opal::eACE::ACE_C_PIN_MSID_Get_PIN,                                  "ACE_C_PIN_MSID_Get_PIN"                                 },
+    { opal::eACE::ACE_TPerInfo_Set_ProgrammaticResetEnable,                "ACE_TPerInfo_Set_ProgrammaticResetEnable"               },
+    { opal::eACE::ACE_SP_SID,                                              "ACE_SP_SID"                                             },
+    { opal::eACE::ACE_DataRemovalMechanism_Set_ActiveDataRemovalMechanism, "ACE_DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
+};
+
+
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tableSingleRowNames = {
+    {eTableSingleRowObject::SPInfo,       "SPInfo::SPInfo"          },
+    { eTableSingleRowObject::TPerInfo,    "TPerInfo::TPerInfo"      },
+    { eTableSingleRowObject::LockingInfo, "LockingInfo::LockingInfo"},
+    { eTableSingleRowObject::MBRControl,  "MBRControl::MBRControl"  },
+};
+
+
 std::optional<std::string_view> GetName(Uid uid) {
     auto amend = [](auto& mapping, auto pairs) {
         for (const auto& [uid, name] : pairs) {
@@ -228,6 +403,11 @@ std::optional<std::string_view> GetName(Uid uid) {
         amend(mapping, methodNames);
         amend(mapping, tableNames);
         amend(mapping, tableDescriptorNames);
+        amend(mapping, tableC_PINNames);
+        amend(mapping, tableSecretProtectNames);
+        amend(mapping, tableACENames);
+        amend(mapping, tableLockingNames);
+        amend(mapping, tableSingleRowNames);
         return mapping;
     }();
     const auto it = mapping.find(uint64_t(uid));
@@ -260,6 +440,11 @@ std::optional<Uid> GetUid(std::string_view name) {
         amend(mapping, methodNames);
         amend(mapping, tableNames);
         amend(mapping, tableDescriptorNames);
+        amend(mapping, tableC_PINNames);
+        amend(mapping, tableSecretProtectNames);
+        amend(mapping, tableACENames);
+        amend(mapping, tableLockingNames);
+        amend(mapping, tableSingleRowNames);
         return mapping;
     }();
     const auto it = mapping.find(name);
