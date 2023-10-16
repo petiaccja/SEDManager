@@ -8,6 +8,7 @@ target_sources(Test
         RPC/TestValue.cpp
         RPC/TestMethod.cpp
         RPC/TestValueCast.cpp
+        Specification/TestType.cpp
 )
 
 find_package(Catch2 REQUIRED)
