@@ -176,17 +176,12 @@ class EnumerationType : public UnsignedIntType {
 public:
     struct Storage : UnsignedIntType::Storage {
         using UnsignedIntType::Storage::Storage;
-        Storage(std::vector<std::pair<uint64_t, uint64_t>> ranges) : UnsignedIntType::Storage(GetLength(ranges)), ranges(ranges) {}
-        std::vector<std::pair<uint64_t, uint64_t>> ranges;
-
-        static size_t GetLength(std::span<const std::pair<uint64_t, uint64_t>> ranges) {
-            // TODO: select the integer size that can represent all ranges.
-            return 4;
-        }
+        Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {}
+        std::vector<std::pair<uint16_t, uint16_t>> ranges;
     };
 
-    EnumerationType(std::vector<std::pair<uint64_t, uint64_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
-    std::span<const std::pair<uint64_t, uint64_t>> Ranges() const { return std::dynamic_pointer_cast<Storage>(m_storage)->ranges; }
+    EnumerationType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
+    std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return std::dynamic_pointer_cast<Storage>(m_storage)->ranges; }
 
 protected:
     using UnsignedIntType::UnsignedIntType;
@@ -211,11 +206,11 @@ protected:
 class ListType : public Type {
 public:
     struct Storage : Type::Storage {
-        Storage(Type elementType) : elementType(std::move(elementType)) {}
+        Storage(const Type& elementType) : elementType(elementType) {}
         Type elementType;
     };
 
-    ListType(Type elementType) : Type(std::make_shared<Storage>(std::move(elementType))) {}
+    ListType(const Type& elementType) : Type(std::make_shared<Storage>(elementType)) {}
     Type ElementType() const { return std::dynamic_pointer_cast<Storage>(m_storage)->elementType; }
 
 protected:
@@ -223,26 +218,112 @@ protected:
 };
 
 
+class StructType : public Type {
+    struct Storage : Type::Storage {
+        Storage(std::vector<Type> elementTypes) : elementTypes(std::move(elementTypes)) {}
+        std::vector<Type> elementTypes;
+    };
+
+    StructType(std::vector<Type> elementTypes) : Type(std::make_shared<Storage>(std::move(elementTypes))) {}
+    std::span<const Type> ElementTypes() const { return std::dynamic_pointer_cast<Storage>(m_storage)->elementTypes; }
+};
+
+
+class SetType : public UnsignedIntType {
+public:
+    struct Storage : UnsignedIntType::Storage {
+        using UnsignedIntType::Storage::Storage;
+        Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {}
+        std::vector<std::pair<uint16_t, uint16_t>> ranges;
+    };
+
+    SetType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
+    std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return std::dynamic_pointer_cast<Storage>(m_storage)->ranges; }
+
+protected:
+    using UnsignedIntType::UnsignedIntType;
+};
+
+
 //------------------------------------------------------------------------------
-// Identified types
+// Reference types
 //------------------------------------------------------------------------------
 
-struct UInteger1 final : IdentifiedType<UnsignedIntType, 0x0000'0005'0000'0210> {
-    UInteger1() : IdentifiedType(1) {}
+class RestrictedByteReferenceType : public Type {
+    struct Storage : Type::Storage {
+        Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
+        std::vector<uint64_t> tables;
+    };
+
+    RestrictedByteReferenceType(std::vector<uint64_t> tables) : Type(std::make_shared<Storage>(std::move(tables))) {}
+
+protected:
+    using Type::Type;
 };
 
-struct UInteger2 final : IdentifiedType<UnsignedIntType, 0> {
-    UInteger2() : IdentifiedType(2) {}
+
+class RestrictedObjectReferenceType : public Type {
+    struct Storage : Type::Storage {
+        Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
+        std::vector<uint64_t> tables;
+    };
+
+    RestrictedObjectReferenceType(std::vector<uint64_t> tables) : Type(std::make_shared<Storage>(std::move(tables))) {}
+
+protected:
+    using Type::Type;
 };
 
-struct UInteger4 final : IdentifiedType<UnsignedIntType, 0> {
-    UInteger4() : IdentifiedType(4) {}
+
+class GeneralByteReferenceType : Type {
+public:
+    struct Storage : Type::Storage {};
+
+    GeneralByteReferenceType() : Type(std::make_shared<Storage>()) {}
+
+protected:
+    using Type::Type;
 };
 
-struct UInteger8 final : IdentifiedType<UnsignedIntType, 0> {
-    UInteger8() : IdentifiedType(8) {}
+
+class GeneralObjectReferenceType : Type {
+public:
+    struct Storage : Type::Storage {};
+
+    GeneralObjectReferenceType() : Type(std::make_shared<Storage>()) {}
+
+protected:
+    using Type::Type;
 };
 
-struct AnyUInteger final : IdentifiedType<AlternativeType, 0> {
-    AnyUInteger() : IdentifiedType(std::vector<Type>{ UInteger1(), UInteger2(), UInteger4(), UInteger8() }) {}
+
+class GeneralTableReferenceType : Type {
+public:
+    struct Storage : Type::Storage {};
+
+    GeneralTableReferenceType() : Type(std::make_shared<Storage>()) {}
+
+protected:
+    using Type::Type;
+};
+
+
+//------------------------------------------------------------------------------
+// Named types
+//------------------------------------------------------------------------------
+
+class NameValueUintegerType : public Type {
+public:
+    struct Storage : Type::Storage {
+        Storage(uint16_t name, const Type& valueType) : name(name), valueType(valueType) {}
+        uint16_t name;
+        Type valueType;
+    };
+
+    NameValueUintegerType(uint16_t name, const Type& valueType) : Type(std::make_shared<Storage>(name, valueType)) {}
+    uint16_t NameType() const { return std::dynamic_pointer_cast<Storage>(m_storage)->name; }
+    Type ValueType() const { return std::dynamic_pointer_cast<Storage>(m_storage)->valueType; }
+
+protected:
+    using Type::Type;
 };
