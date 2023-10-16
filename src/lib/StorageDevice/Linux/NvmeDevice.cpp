@@ -32,7 +32,7 @@ NvmeIdentifyController NvmeDevice::IdentifyController() {
     nvme_admin_cmd command;
     memset(&command, 0, sizeof(command));
     NvmeIdentifyController data;
-    command.opcode = static_cast<uint8_t>(eNvmeOpcodes::IDENTIFY_CONTROLLER);
+    command.opcode = static_cast<uint8_t>(eNvmeOpcode::IDENTIFY_CONTROLLER);
     command.addr = reinterpret_cast<size_t>(&data);
     command.data_len = sizeof(data);
     command.cdw10 = 0x0000'0001;
@@ -45,7 +45,7 @@ void NvmeDevice::SecuritySend(uint8_t securityProtocol,
                               std::span<const std::byte> data) {
     nvme_admin_cmd command;
     memset(&command, 0, sizeof(command));
-    command.opcode = static_cast<uint8_t>(eNvmeOpcodes::SECURITY_SEND);
+    command.opcode = static_cast<uint8_t>(eNvmeOpcode::SECURITY_SEND);
     command.addr = reinterpret_cast<size_t>(data.data());
     command.data_len = data.size();
     command.cdw10 = (securityProtocol << 24)
@@ -60,7 +60,7 @@ void NvmeDevice::SecurityReceive(uint8_t securityProtocol,
                                  std::span<std::byte> data) {
     nvme_admin_cmd command;
     memset(&command, 0, sizeof(command));
-    command.opcode = static_cast<uint8_t>(eNvmeOpcodes::SECURITY_RECV);
+    command.opcode = static_cast<uint8_t>(eNvmeOpcode::SECURITY_RECV);
     command.addr = reinterpret_cast<size_t>(data.data());
     command.data_len = data.size();
     command.cdw10 = (securityProtocol << 24)
