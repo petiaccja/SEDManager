@@ -3,7 +3,7 @@
 #include "Value.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Specification/Types.hpp>
+#include <Specification/NativeTypes.hpp>
 
 #include <concepts>
 #include <optional>

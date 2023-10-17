@@ -4,7 +4,7 @@
 
 #include <RPC/Exception.hpp>
 #include <RPC/Method.hpp>
-#include <Specification/Methods.hpp>
+#include <Specification/Identifiers.hpp>
 #include <Specification/Names.hpp>
 
 #include <vector>

@@ -161,7 +161,7 @@ Value BaseTemplate::Get(Uid object, uint32_t column) {
 
 
 void BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
-    const std::optional<Uid> rowAddress = object;
+    const std::optional<Uid> rowAddress = std::nullopt; // Must be omitted for objects.
     std::optional<std::vector<Value>> namedValuePairs = std::vector<Value>();
     for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
          colIt != columns.end() && valIt != values.end();

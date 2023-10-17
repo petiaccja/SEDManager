@@ -2,7 +2,7 @@
 #include "App.hpp"
 
 #include <Archive/TokenTextArchive.hpp>
-#include <Specification/Tables.hpp>
+#include <UI/ValueToJSON.hpp>
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -163,6 +163,9 @@ void AddCmdStart(App& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("start", "Start a session with a service provider.");
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
+        if (SplitName(spName).size() == 1) {
+            spName = "SP::" + spName;
+        }
         const auto maybeSpUid = GetUidOrHex(spName);
         if (!maybeSpUid) {
             std::cout << "Cannot find security provider." << std::endl;
@@ -179,6 +182,9 @@ void AddCmdAuth(App& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("auth", "Authenticate with an authority.");
     cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
+        if (SplitName(authName).size() == 1) {
+            authName = "Authority::" + authName;
+        }
         const auto maybeAuthUid = GetUidOrHex(authName);
         if (!maybeAuthUid) {
             std::cout << "Cannot find authority." << std::endl;
@@ -222,18 +228,12 @@ void AddCmdList(App& app, CLI::App& cli) {
 
 void AddCmdTable(App& app, CLI::App& cli) {
     static std::string tableName;
-    static std::string rowName;
-    static uint32_t column = 0;
 
-    auto cmd = cli.add_subcommand("table", "Manipulate tables.");
-    auto cmdColumns = cmd->add_subcommand("columns", "List the columns of the table.");
-    auto cmdRows = cmd->add_subcommand("rows", "List the rows of the table.");
-    auto cmdGet = cmd->add_subcommand("get", "Get a cell from a table.");
+    auto cmdColumns = cli.add_subcommand("columns", "List the columns of the table.");
+    auto cmdRows = cli.add_subcommand("rows", "List the rows of the table.");
 
     cmdRows->add_option("table", tableName, "The table to list the rows of.");
     cmdColumns->add_option("table", tableName, "The table to list the columns of.");
-    cmdGet->add_option("row", rowName, "The row to get the cells of.");
-    cmdGet->add_option("column", column, "The row to get the cells of.");
 
     cmdRows->callback([&app] {
         const auto maybeTableUid = GetUidOrHex(tableName);
@@ -256,27 +256,78 @@ void AddCmdTable(App& app, CLI::App& cli) {
 
         const auto& desc = GetTableDesc(*maybeTableUid);
         size_t columnNumber = 0;
-        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {:<32}";
+        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {}";
         std::cout << std::format(lineFormat, "Index", "Name", "IsUnique", "Type") << std::endl;
         for (const auto& [name, isUnique, type] : desc.columns) {
-            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", type) << std::endl;
+            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", GetTypeStr(type)) << std::endl;
         }
     });
+}
+
+void AddCmdGetSet(App& app, CLI::App& cli) {
+    static std::string rowName;
+    static uint32_t column = 0;
+    static std::string jsonValue;
+
+    auto cmdGet = cli.add_subcommand("get", "Get a cell from a table.");
+    auto cmdSet = cli.add_subcommand("set", "Set a cell in a table to new value.");
+
+    cmdGet->add_option("row", rowName, "The row to get the cells of.");
+    cmdGet->add_option("column", column, "The column to get.");
+    cmdSet->add_option("row", rowName, "The row to set the cells of.");
+    cmdSet->add_option("column", column, "The column to set.");
+    cmdSet->add_option("value", jsonValue, "The new value of the cell.");
+
+
+    static const auto parse = [&]() -> std::optional<std::tuple<Uid, uint32_t, Type>> {
+        const auto& rowNameSections = SplitName(rowName);
+        if (rowNameSections.size() != 2) {
+            std::cout << "Specify object to get as 'Table::Object', either with names or UIDs." << std::endl;
+            return std::nullopt;
+        }
+
+        const auto maybeTableUid = GetUidOrHex(rowNameSections[0]);
+        const auto maybeRowUid = GetUidOrHex(rowName);
+        if (!maybeTableUid) {
+            std::cout << "Table must be a valid name or a UID." << std::endl;
+            return std::nullopt;
+        }
+        if (!maybeRowUid) {
+            std::cout << "Object must be a valid name or a UID." << std::endl;
+            return std::nullopt;
+        }
+        const auto& tableDesc = GetTableDesc(*maybeTableUid);
+        if (!(column < tableDesc.columns.size())) {
+            std::cout << std::format("Column must be in range 0-{}.", std::ssize(tableDesc.columns) - 1) << std::endl;
+            return std::nullopt;
+        }
+        return std::tuple{ *maybeRowUid, column, tableDesc.columns[column].type };
+    };
 
     cmdGet->callback([&app] {
-        const auto maybeRowUid = GetUidOrHex(rowName);
-        if (!maybeRowUid) {
-            std::cout << "Cannot find row." << std::endl;
+        const auto parsed = parse();
+        if (!parsed) {
             return;
         }
-        const Value value = app.Get(*maybeRowUid, column);
+        const auto [rowUid, column, type] = *parsed;
+        const Value value = app.Get(rowUid, column);
         if (!value.HasValue()) {
             std::cout << "<empty>" << std::endl;
         }
         else {
-            TokenTextArchive ar(std::cout);
-            ar(value);
+            const auto json = ValueToJSON(value, type);
+            std::cout << json.dump() << std::endl;
         }
+    });
+
+    cmdSet->callback([&app] {
+        const auto parsed = parse();
+        if (!parsed) {
+            return;
+        }
+        const auto [rowUid, column, type] = *parsed;
+        const auto value = JSONToValue(nlohmann::json::parse(jsonValue), type);
+        app.Set(rowUid, column, value);
     });
 }
 
@@ -320,6 +371,7 @@ int main(int argc, char* argv[]) {
         AddCmdAuth(app, cli);
         AddCmdList(app, cli);
         AddCmdTable(app, cli);
+        AddCmdGetSet(app, cli);
         AddCmdEnd(app, cli);
         AddCmdStackReset(app, cli);
         AddCmdReset(app, cli);
