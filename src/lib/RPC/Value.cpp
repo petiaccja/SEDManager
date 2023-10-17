@@ -5,7 +5,7 @@ void foo() {
     Value stream = {
         1,
         2,
-        { "name", 6 },
+        {"name", 6},
     };
 }
 
@@ -28,6 +28,32 @@ Value::Value(Named value)
 Value::Value(eCommand command)
     : m_value(command) {}
 
+
+
+bool Value::operator==(const Value& rhs) const {
+    if (Type() != rhs.Type()) {
+        return false;
+    }
+    if (IsInteger()) {
+        return ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
+                   return Type() == typeid(T) ? std::optional(Get<T>() == rhs.Get<T>()) : std::nullopt;
+               })
+            .value_or(false);
+    }
+    else if (IsBytes()) {
+        return std::ranges::equal(AsBytes(), rhs.AsBytes());
+    }
+    else if (IsCommand()) {
+        return AsCommand() == rhs.AsCommand();
+    }
+    else if (IsList()) {
+        return std::ranges::equal(AsList(), rhs.AsList());
+    }
+    else if (IsNamed()) {
+        return AsNamed().name == rhs.AsNamed().name && AsNamed().value == rhs.AsNamed().value;
+    }
+    return false;
+}
 
 
 //------------------------------------------------------------------------------

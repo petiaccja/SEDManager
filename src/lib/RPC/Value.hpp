@@ -86,6 +86,13 @@ public:
     // Get
     //----------------------------------
 
+    bool operator==(const Value& rhs) const;
+    bool operator!=(const Value& rhs) const { return !operator==(rhs); }
+
+    //----------------------------------
+    // Get
+    //----------------------------------
+
     template <std::integral T>
     T Get() const;
 
@@ -150,7 +157,6 @@ public:
     std::string GetTypeStr() const;
 
 private:
-
 private:
     std::any m_value;
 };
@@ -306,7 +312,7 @@ void SaveInteger(Archive& ar, const Value& stream) {
                 .tag = eTag::SHORT_ATOM,
                 .isByte = false,
                 .isSigned = std::is_signed_v<T>,
-                .data = { begin(bytes), end(bytes) },
+                .data = {begin(bytes), end(bytes)},
             };
             ar(token);
             return { true };
@@ -337,7 +343,7 @@ void SaveBytes(Archive& ar, const Value& stream) {
         .tag = GetTagForData(bytes.size_bytes()),
         .isByte = true,
         .isSigned = false,
-        .data = { bytes.begin(), bytes.end() },
+        .data = {bytes.begin(), bytes.end()},
     };
     ar(token);
 }

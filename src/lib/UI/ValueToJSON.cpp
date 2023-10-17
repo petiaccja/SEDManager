@@ -148,6 +148,49 @@ namespace {
         return nlohmann::json(rep);
     }
 
+    std::vector<std::byte> JSONToBytes(nlohmann::json json, std::string_view prefix, bool asString) {
+        if (!json.is_string()) {
+            throw std::invalid_argument("expected string");
+        }
+        auto str = json.get<std::string_view>();
+        if (str.find(prefix) != 0) {
+            throw std::invalid_argument("expected prefix");
+        }
+        str = str.substr(prefix.size());
+        if (asString) {
+            const auto bytes = std::as_bytes(std::span(str));
+            return { bytes.begin(), bytes.end() };
+        }
+        else {
+            std::vector<std::byte> bytes;
+            size_t pos = 0;
+            std::string chunk;
+            while (pos != str.size()) {
+                if (str[pos] == '\'') {
+                    ++pos;
+                    continue;
+                }
+                const auto start = pos;
+                chunk.assign(str.substr(pos, 2));
+                if (chunk.size() != 2) {
+                    throw std::invalid_argument("incomplete bytes");
+                }
+                size_t idx = 0;
+                try {
+                    bytes.push_back(static_cast<std::byte>(std::stoul(chunk, &idx, 16)));
+                }
+                catch (std::exception&) {
+                    throw std::invalid_argument("invalid character");
+                }
+                if (idx != 2) {
+                    throw std::invalid_argument("invalid character");
+                }
+                pos += 2;
+            }
+            return bytes;
+        }
+    }
+
     nlohmann::json ValueToJSON(const Value& value, const IntegerType& type) {
         if (value.IsInteger()) {
             if (type.Signedness()) {
@@ -214,34 +257,44 @@ namespace {
         throw TypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
+    struct ReducedStruct {
+        std::vector<Type> mandatoryFields;
+        std::unordered_map<uint64_t, Type> optionalFields;
+    };
+
+    ReducedStruct ReduceStructType(const StructType& type) {
+        ReducedStruct s;
+
+        const auto& elementTypes = type.ElementTypes();
+        auto mandatoryTypes = elementTypes | std::views::filter([](const Type& t) { return !type_isa<NameValueUintegerType>(t); });
+        auto optionalTypes = elementTypes | std::views::filter([](const Type& t) { return type_isa<NameValueUintegerType>(t); });
+
+        for (auto& type : mandatoryTypes) {
+            s.mandatoryFields.push_back(type);
+        }
+        for (const auto& optionalType : optionalTypes) {
+            const auto& namedType = type_cast<NameValueUintegerType>(optionalType);
+            s.optionalFields.insert({ namedType.NameType(), namedType.ValueType() });
+        }
+        return s;
+    }
+
     nlohmann::json ValueToJSON(const Value& value, const StructType& type) {
         if (value.IsList()) {
             const auto& elements = value.AsList();
-            const auto& elementTypes = type.ElementTypes();
 
+            const auto [mandatoryTypes, optionalTypeLookup] = ReduceStructType(type);
             auto mandatoryElements = elements | std::views::filter([](const Value& v) { return !v.IsNamed(); });
-            auto mandatoryTypes = elementTypes | std::views::filter([](const Type& t) { return !type_isa<NameValueUintegerType>(t); });
-            std::vector<std::pair<const Value&, const Type&>> mandatories;
+            auto optionalElements = elements | std::views::filter([](const Value& v) { return v.IsNamed(); });
+
+            std::vector<nlohmann::json> jsons;
+
             auto [meit, mtit] = std::tuple(begin(mandatoryElements), begin(mandatoryTypes));
             for (; meit != end(mandatoryElements) && mtit != end(mandatoryTypes); ++meit, ++mtit) {
-                mandatories.emplace_back(*meit, *mtit);
+                jsons.emplace_back(ValueToJSON(*meit, *mtit));
             }
             if (meit != end(mandatoryElements) || mtit != end(mandatoryTypes)) {
                 throw std::logic_error(std::format("value does not contain the same number of mandatory fields specified in {}", GetTypeStr(type)));
-            }
-
-            auto optionalElements = elements | std::views::filter([](const Value& v) { return v.IsNamed(); });
-            auto optionalTypes = elementTypes | std::views::filter([](const Type& t) { return type_isa<NameValueUintegerType>(t); });
-
-            std::unordered_map<uint64_t, Type> optionalTypeLookup;
-            for (const auto& optionalType : optionalTypes) {
-                const auto& namedType = type_cast<NameValueUintegerType>(optionalType);
-                optionalTypeLookup.insert({ namedType.NameType(), namedType.ValueType() });
-            }
-
-            std::vector<nlohmann::json> jsons;
-            for (const auto& mandatoryElement : mandatories) {
-                jsons.emplace_back(ValueToJSON(mandatoryElement.first, mandatoryElement.second));
             }
 
             for (const auto& optionalElement : optionalElements) {
@@ -276,6 +329,129 @@ namespace {
             return BytesToJSON(value.AsBytes(), "ref:", false);
         }
         throw TypeError(GetTypeStr(type), value.GetTypeStr());
+    }
+
+
+    Value JSONToValue(const nlohmann::json& json, const IntegerType& type) {
+        if (!json.is_number_integer()) {
+            throw std::invalid_argument("expected integer");
+        }
+        if (type.Signedness()) {
+            const auto number = json.get<int64_t>();
+            switch (type.Width()) {
+                case 1: return int8_t(number);
+                case 2: return int16_t(number);
+                case 4: return int32_t(number);
+                default: return number;
+            }
+        }
+        else {
+            const auto number = json.get<uint64_t>();
+            switch (type.Width()) {
+                case 1: return uint8_t(number);
+                case 2: return uint16_t(number);
+                case 4: return uint32_t(number);
+                default: return number;
+            }
+        }
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const BytesType& type) {
+        return JSONToBytes(json, "", InterpretAsString(type));
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const AlternativeType& type) {
+        if (!json.is_object() || !json.contains("type") || !json.contains("value")) {
+            throw std::invalid_argument("expected a type-value pair");
+        }
+        const auto& altJson = json["type"];
+        const auto& valueJson = json["value"];
+        const auto altBytes = JSONToBytes(altJson, {}, false);
+        uint32_t altId = 0;
+        for (auto byte : altBytes) {
+            altId <<= 8;
+            altId |= static_cast<uint8_t>(byte);
+        }
+
+        const auto& alts = type.Types();
+        const auto altIter = std::ranges::find_if(alts, [&altId](const Type& alt) {
+            try {
+                return static_cast<uint32_t>(type_uid(alt)) == altId;
+            }
+            catch (std::bad_cast&) {
+                throw std::invalid_argument(std::format("expected an identified type, got {}", GetTypeStr(alt)));
+            }
+        });
+        if (altIter == alts.end()) {
+            throw TypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
+        }
+
+        return Named{
+            altBytes,
+            JSONToValue(valueJson, *altIter),
+        };
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const ListType& type) {
+        if (!json.is_array()) {
+            throw std::invalid_argument("expected a list");
+        }
+        std::vector<Value> values;
+        for (const auto& item : json) {
+            values.push_back(JSONToValue(item, type.ElementType()));
+        }
+        return values;
+    }
+
+    bool IsOptionalField(const nlohmann::json& json) {
+        return json.contains("field") && json.contains("value");
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const StructType& type) {
+        if (json.is_array()) {
+            const auto& elements = json;
+
+            const auto [mandatoryTypes, optionalTypeLookup] = ReduceStructType(type);
+            auto mandatoryElements = elements | std::views::filter([](const auto& v) { return !IsOptionalField(v); });
+            auto optionalElements = elements | std::views::filter([](const auto& v) { return IsOptionalField(v); });
+
+            std::vector<Value> values;
+
+            auto [meit, mtit] = std::tuple(begin(mandatoryElements), begin(mandatoryTypes));
+            for (; meit != end(mandatoryElements) && mtit != end(mandatoryTypes); ++meit, ++mtit) {
+                values.emplace_back(JSONToValue(*meit, *mtit));
+            }
+            if (meit != end(mandatoryElements) || mtit != end(mandatoryTypes)) {
+                throw std::logic_error(std::format("value does not contain the same number of mandatory fields specified in {}", GetTypeStr(type)));
+            }
+
+            for (const auto& optionalElement : optionalElements) {
+                const auto& field = optionalElement["field"];
+                const auto& value = optionalElement["value"];
+                if (!field.is_number_integer()) {
+                    throw std::logic_error("optional element of struct type must have integer key");
+                }
+                const auto key = field.get<uint64_t>();
+                const auto typeIt = optionalTypeLookup.find(key);
+                if (typeIt == optionalTypeLookup.end()) {
+                    throw std::logic_error("unexpected optional element in value of type struct");
+                }
+                values.push_back(Named{
+                    uint16_t(key),
+                    JSONToValue(value, typeIt->second),
+                });
+            }
+            return values;
+        }
+        throw std::invalid_argument("expected list");
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const RestrictedReferenceType& type) {
+        return JSONToBytes(json, "ref:", false);
+    }
+
+    Value JSONToValue(const nlohmann::json& json, const GeneralReferenceType& type) {
+        return JSONToBytes(json, "ref:", false);
     }
 
 } // namespace
@@ -335,5 +511,26 @@ nlohmann::json ValueToJSON(const Value& value, const Type& type) {
 
 
 Value JSONToValue(const nlohmann::json& value, const Type& type) {
+    if (type_isa<IntegerType>(type)) {
+        return impl::JSONToValue(value, type_cast<IntegerType>(type));
+    }
+    else if (type_isa<BytesType>(type)) {
+        return impl::JSONToValue(value, type_cast<BytesType>(type));
+    }
+    else if (type_isa<AlternativeType>(type)) {
+        return impl::JSONToValue(value, type_cast<AlternativeType>(type));
+    }
+    else if (type_isa<ListType>(type)) {
+        return impl::JSONToValue(value, type_cast<ListType>(type));
+    }
+    else if (type_isa<StructType>(type)) {
+        return impl::JSONToValue(value, type_cast<StructType>(type));
+    }
+    else if (type_isa<RestrictedReferenceType>(type)) {
+        return impl::JSONToValue(value, type_cast<RestrictedReferenceType>(type));
+    }
+    else if (type_isa<GeneralReferenceType>(type)) {
+        return impl::JSONToValue(value, type_cast<GeneralReferenceType>(type));
+    }
     throw std::logic_error("not implemented");
 }
