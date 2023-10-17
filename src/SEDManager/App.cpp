@@ -125,7 +125,15 @@ Object App::GetObject(Uid table, Uid object) {
 
 Value App::Get(Uid object, uint32_t column) {
     if (m_session) {
-        return m_session.get()->base.Get(object, column);
+        return m_session->base.Get(object, column);
+    }
+    throw std::logic_error("a session must be active");
+}
+
+
+void App::Set(Uid object, uint32_t column, Value value) {
+    if (m_session) {
+        return m_session->base.Set(object, column, value);
     }
     throw std::logic_error("a session must be active");
 }

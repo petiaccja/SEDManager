@@ -181,6 +181,7 @@ public:
     Table GetTable(Uid table);
     Object GetObject(Uid table, Uid object);
     Value Get(Uid object, uint32_t column);
+    void Set(Uid object, uint32_t column, Value value);
 
     void Start(Uid securityProvider);
     void Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});

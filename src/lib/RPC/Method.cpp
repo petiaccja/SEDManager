@@ -12,7 +12,7 @@ Value MethodToValue(Uid invokingId, const Method& method) {
         ToBytes(uint64_t(method.methodId)),
         method.args,
         eCommand::END_OF_DATA,
-        { uint8_t(method.status), uint8_t(0), uint8_t(0) },
+        {uint8_t(method.status), uint8_t(0), uint8_t(0)},
     };
     return stream;
 }
@@ -49,7 +49,7 @@ Method MethodFromValue(const Value& stream) {
         FromBytes(methodIdBytes, methodId);
         Method method{
             .methodId = methodId,
-            .args = { begin(args), end(args) },
+            .args = {begin(args), end(args)},
             .status = static_cast<eMethodStatus>(statusCode),
         };
         return method;
@@ -96,7 +96,7 @@ MethodResult MethodResultFromValue(const Value& result) {
         const auto statusCode = statusList[0].Get<unsigned>();
 
         MethodResult methodResult{
-            .values = { begin(results), end(results) },
+            .values = {begin(results), end(results)},
             .status = static_cast<eMethodStatus>(statusCode),
         };
         return methodResult;
@@ -108,6 +108,27 @@ MethodResult MethodResultFromValue(const Value& result) {
 
 
 void MethodStatusToException(std::string_view methodName, eMethodStatus status) {
+    switch (status) {
+        case eMethodStatus::NOT_AUTHORIZED: throw NotAuthorizedError(methodName);
+        case eMethodStatus::SP_BUSY: throw SecurityProviderBusyError(methodName);
+        case eMethodStatus::SP_FAILED: throw SecurityProviderFailedError(methodName);
+        case eMethodStatus::SP_DISABLED: throw SecurityProviderDisabledError(methodName);
+        case eMethodStatus::SP_FROZEN: throw SecurityProviderFrozenError(methodName);
+        case eMethodStatus::NO_SESSIONS_AVAILABLE: throw NoSessionsAvailableError(methodName);
+        case eMethodStatus::UNIQUENESS_CONFLICT: throw UniquenessConflictError(methodName);
+        case eMethodStatus::INSUFFICIENT_SPACE: throw InsufficientSpaceError(methodName);
+        case eMethodStatus::INSUFFICIENT_ROWS: throw InsufficientRowsError(methodName);
+        case eMethodStatus::INVALID_PARAMETER: throw InvalidParameterError(methodName);
+        case eMethodStatus::TPER_MALFUNCTION: throw TPerMalfunctionError(methodName);
+        case eMethodStatus::TRANSACTION_FAILURE: throw TransactionFailureError(methodName);
+        case eMethodStatus::RESPONSE_OVERFLOW: throw ResponseOverflowError(methodName);
+        case eMethodStatus::AUTHORITY_LOCKED_OUT: throw AuthorityLockedOutError(methodName);
+        case eMethodStatus::OBSOLETE: [[fallthrough]];
+        case eMethodStatus::OBSOLETE_1: [[fallthrough]];
+        case eMethodStatus::OBSOLETE_2: [[fallthrough]];
+        case eMethodStatus::FAIL: throw InvocationError(methodName, "unknown error");
+        default: return;
+    }
 }
 
 
