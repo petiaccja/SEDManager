@@ -5,7 +5,7 @@
 
 
 TEST_CASE("Type integer", "[Type]") {
-    UInteger1 type;
+    UnsignedIntType type(1);
     REQUIRE(type.Width() == 1);
     REQUIRE(type.Signedness() == true);
     REQUIRE(type_uid(type) == 0x0000'0005'0000'0210);
@@ -13,7 +13,7 @@ TEST_CASE("Type integer", "[Type]") {
 
 
 TEST_CASE("Type cast", "[Type]") {
-    Type source = UInteger1();
+    Type source = UnsignedIntType(1);
     IntegerType target = type_cast<IntegerType>(source);
     REQUIRE(target.Width() == 1);
     REQUIRE(target.Signedness() == true);

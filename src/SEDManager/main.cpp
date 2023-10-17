@@ -256,10 +256,10 @@ void AddCmdTable(App& app, CLI::App& cli) {
 
         const auto& desc = GetTableDesc(*maybeTableUid);
         size_t columnNumber = 0;
-        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {:<32}";
-        std::cout << std::format(lineFormat, "Index", "Name", "IsUnique", "Type") << std::endl;
+        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8}";
+        std::cout << std::format(lineFormat, "Index", "Name", "IsUnique") << std::endl;
         for (const auto& [name, isUnique, type] : desc.columns) {
-            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", type) << std::endl;
+            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no") << std::endl;
         }
     });
 

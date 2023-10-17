@@ -65,6 +65,12 @@ Out type_cast(const In& in) {
 }
 
 
+template <class Out, class In>
+bool type_isa(const In& in) {
+    return nullptr != std::dynamic_pointer_cast<typename Out::Storage>(in.m_storage);
+}
+
+
 template <class Type>
 uint64_t type_uid(const Type& in) {
     const auto idStorage = std::dynamic_pointer_cast<typename TypeIdentifier::Storage>(in.m_storage);
@@ -181,6 +187,8 @@ public:
     };
 
     EnumerationType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
+    EnumerationType(std::pair<uint16_t, uint16_t> range) : EnumerationType(std::vector{ range }) {}
+    EnumerationType(uint16_t lower, uint16_t upper) : EnumerationType(std::pair{ lower, upper }) {}
     std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return std::dynamic_pointer_cast<Storage>(m_storage)->ranges; }
 
 protected:
@@ -196,6 +204,8 @@ public:
     };
 
     AlternativeType(std::vector<Type> types) : Type(std::make_shared<Storage>(std::move(types))) {}
+    template <std::convertible_to<Type>... Types>
+    AlternativeType(Types&&... types) : AlternativeType(std::vector<Type>{ std::forward<Types>(types)... }) {}
     std::span<const Type> Types() const { return std::dynamic_pointer_cast<Storage>(m_storage)->types; }
 
 protected:
@@ -219,13 +229,19 @@ protected:
 
 
 class StructType : public Type {
+public:
     struct Storage : Type::Storage {
         Storage(std::vector<Type> elementTypes) : elementTypes(std::move(elementTypes)) {}
         std::vector<Type> elementTypes;
     };
 
     StructType(std::vector<Type> elementTypes) : Type(std::make_shared<Storage>(std::move(elementTypes))) {}
+    template <std::convertible_to<Type>... Types>
+    StructType(Types&&... types) : StructType(std::vector<Type>{ std::forward<Types>(types)... }) {}
     std::span<const Type> ElementTypes() const { return std::dynamic_pointer_cast<Storage>(m_storage)->elementTypes; }
+
+protected:
+    using Type::Type;
 };
 
 
@@ -238,6 +254,8 @@ public:
     };
 
     SetType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
+    SetType(std::pair<uint16_t, uint16_t> range) : SetType(std::vector{ range }) {}
+    SetType(uint16_t lower, uint16_t upper) : SetType(std::pair{ lower, upper }) {}
     std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return std::dynamic_pointer_cast<Storage>(m_storage)->ranges; }
 
 protected:
@@ -250,12 +268,14 @@ protected:
 //------------------------------------------------------------------------------
 
 class RestrictedByteReferenceType : public Type {
+public:
     struct Storage : Type::Storage {
         Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
         std::vector<uint64_t> tables;
     };
 
     RestrictedByteReferenceType(std::vector<uint64_t> tables) : Type(std::make_shared<Storage>(std::move(tables))) {}
+    RestrictedByteReferenceType(uint64_t table) : RestrictedByteReferenceType(std::vector{ table }) {}
 
 protected:
     using Type::Type;
@@ -263,19 +283,21 @@ protected:
 
 
 class RestrictedObjectReferenceType : public Type {
+public:
     struct Storage : Type::Storage {
         Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
         std::vector<uint64_t> tables;
     };
 
     RestrictedObjectReferenceType(std::vector<uint64_t> tables) : Type(std::make_shared<Storage>(std::move(tables))) {}
+    RestrictedObjectReferenceType(uint64_t table) : RestrictedObjectReferenceType(std::vector{ table }) {}
 
 protected:
     using Type::Type;
 };
 
 
-class GeneralByteReferenceType : Type {
+class GeneralByteReferenceType : public Type {
 public:
     struct Storage : Type::Storage {};
 
@@ -286,7 +308,7 @@ protected:
 };
 
 
-class GeneralObjectReferenceType : Type {
+class GeneralObjectReferenceType : public Type {
 public:
     struct Storage : Type::Storage {};
 
@@ -297,7 +319,7 @@ protected:
 };
 
 
-class GeneralTableReferenceType : Type {
+class GeneralTableReferenceType : public Type {
 public:
     struct Storage : Type::Storage {};
 
@@ -306,6 +328,29 @@ public:
 protected:
     using Type::Type;
 };
+
+
+class GeneralByteTableReferenceType : public Type {
+public:
+    struct Storage : Type::Storage {};
+
+    GeneralByteTableReferenceType() : Type(std::make_shared<Storage>()) {}
+
+protected:
+    using Type::Type;
+};
+
+
+class GeneralObjectTableReferenceType : public Type {
+public:
+    struct Storage : Type::Storage {};
+
+    GeneralObjectTableReferenceType() : Type(std::make_shared<Storage>()) {}
+
+protected:
+    using Type::Type;
+};
+
 
 
 //------------------------------------------------------------------------------

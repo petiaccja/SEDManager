@@ -1,8 +1,6 @@
 #include "Names.hpp"
 
-#include "Authorities.hpp"
-#include "Methods.hpp"
-#include "SecurityProviders.hpp"
+#include "Identifiers.hpp"
 #include "Tables.hpp"
 
 #include <string>

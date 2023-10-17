@@ -1,6 +1,10 @@
 #pragma once
 
-#include <cstdint>
+
+enum class eTableKind {
+    OBJECT,
+    BYTE,
+};
 
 
 enum class eSecurityProviderLifecycle {
@@ -13,11 +17,6 @@ enum class eSecurityProviderLifecycle {
 
 
 namespace opal {
-
-enum class eSecurityProvider : uint64_t {
-    Admin = 0x0000'0205'0000'0001,
-    Locking = 0x0000'0205'0000'0002,
-};
 
 enum class eSecurityProviderLifecycle {
     MANUFACTURED_INACTIVE = 8,

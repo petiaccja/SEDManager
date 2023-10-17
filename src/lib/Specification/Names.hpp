@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Types.hpp"
+#include "NativeTypes.hpp"
 
 #include <optional>
 #include <string_view>
