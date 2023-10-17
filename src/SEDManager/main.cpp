@@ -299,6 +299,7 @@ void AddCmdGetSet(App& app, CLI::App& cli) {
         const auto& tableDesc = GetTableDesc(*maybeTableUid);
         if (!(column < tableDesc.columns.size())) {
             std::cout << std::format("Column must be in range 0-{}.", std::ssize(tableDesc.columns) - 1) << std::endl;
+            return std::nullopt;
         }
         return std::tuple{ *maybeRowUid, column, tableDesc.columns[column].type };
     };
