@@ -2,7 +2,7 @@
 #include "App.hpp"
 
 #include <Archive/TokenTextArchive.hpp>
-#include <Specification/Tables.hpp>
+#include <UI/ValueToJSON.hpp>
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -256,26 +256,41 @@ void AddCmdTable(App& app, CLI::App& cli) {
 
         const auto& desc = GetTableDesc(*maybeTableUid);
         size_t columnNumber = 0;
-        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8}";
-        std::cout << std::format(lineFormat, "Index", "Name", "IsUnique") << std::endl;
+        constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {}";
+        std::cout << std::format(lineFormat, "Index", "Name", "IsUnique", "Type") << std::endl;
         for (const auto& [name, isUnique, type] : desc.columns) {
-            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no") << std::endl;
+            std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", GetTypeStr(type)) << std::endl;
         }
     });
 
     cmdGet->callback([&app] {
-        const auto maybeRowUid = GetUidOrHex(rowName);
-        if (!maybeRowUid) {
-            std::cout << "Cannot find row." << std::endl;
+        const auto& rowNameSections = SplitName(rowName);
+        if (rowNameSections.size() != 2) {
+            std::cout << "Specify object to get as 'Table::Object', either with names or UIDs." << std::endl;
             return;
+        }
+
+        const auto maybeTableUid = GetUidOrHex(rowNameSections[0]);
+        const auto maybeRowUid = GetUidOrHex(rowName);
+        if (!maybeTableUid) {
+            std::cout << "Table must be a valid name or a UID." << std::endl;
+            return;
+        }
+        if (!maybeRowUid) {
+            std::cout << "Object must be a valid name or a UID." << std::endl;
+            return;
+        }
+        const auto& tableDesc = GetTableDesc(*maybeTableUid);
+        if (!(column < tableDesc.columns.size())) {
+            std::cout << std::format("Column must be in range 0-{}.", std::ssize(tableDesc.columns) - 1) << std::endl;
         }
         const Value value = app.Get(*maybeRowUid, column);
         if (!value.HasValue()) {
             std::cout << "<empty>" << std::endl;
         }
         else {
-            TokenTextArchive ar(std::cout);
-            ar(value);
+            const auto json = ValueToJSON(value, tableDesc.columns[column].type);
+            std::cout << json.dump() << std::endl;
         }
     });
 }

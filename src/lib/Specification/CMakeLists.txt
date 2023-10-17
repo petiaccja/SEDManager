@@ -4,6 +4,7 @@ target_compile_features(Specification PRIVATE cxx_std_20)
 
 target_sources(Specification
     PRIVATE
+        ColumnTypes.cpp
         ColumnTypes.hpp
         Enumerations.hpp
         Identifiers.hpp

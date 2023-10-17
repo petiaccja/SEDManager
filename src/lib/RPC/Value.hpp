@@ -147,9 +147,9 @@ public:
     bool IsCommand() const;
     bool HasValue() const { return m_value.has_value(); }
     const std::type_info& Type() const;
+    std::string GetTypeStr() const;
 
 private:
-    std::string GetTypeStr() const;
 
 private:
     std::any m_value;

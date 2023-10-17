@@ -9,10 +9,10 @@ target_sources(Test
         RPC/TestMethod.cpp
         RPC/TestValueCast.cpp
         Specification/TestType.cpp
+        UI/TestValueToJSON.cpp
 )
 
 find_package(Catch2 REQUIRED)
 
-target_link_libraries(Test Archive)
-target_link_libraries(Test RPC)
+target_link_libraries(Test Archive RPC Specification UI)
 target_link_libraries(Test Catch2::Catch2)
