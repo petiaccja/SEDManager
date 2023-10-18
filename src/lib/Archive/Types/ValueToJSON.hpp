@@ -1,9 +1,12 @@
 #pragma once
 
-#include <RPC/Value.hpp>
-#include <Specification/Type.hpp>
+#include <Data/Type.hpp>
+#include <Data/Value.hpp>
 
 #include <nlohmann/json.hpp>
+
+#include <string>
+
 
 std::string GetTypeStr(const Type& type);
 nlohmann::json ValueToJSON(const Value& value, const Type& type);

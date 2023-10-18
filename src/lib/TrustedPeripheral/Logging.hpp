@@ -1,9 +1,7 @@
 #pragma once
 
-#include <RPC/Packet.hpp>
-#include <RPC/Value.hpp>
-
-#include <optional>
+#include <Data/ComPacket.hpp>
+#include <Data/Value.hpp>
 
 
 void SetLogging(bool enabled);

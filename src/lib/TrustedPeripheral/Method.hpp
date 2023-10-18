@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Value.hpp"
-#include "ValueCast.hpp"
+#include <Archive/Types/ValueToNative.hpp>
+#include <Data/NativeTypes.hpp>
+#include <Data/Value.hpp>
 
 
 enum class eMethodStatus : uint8_t {
@@ -52,7 +53,9 @@ template <class T>
 concept OptionalType =
     requires(T& v) {
         typename T::value_type;
-        {v} -> std::same_as<std::optional<typename T::value_type>&>;
+        {
+            v
+            } -> std::same_as<std::optional<typename T::value_type>&>;
     };
 
 static_assert(OptionalType<std::optional<bool>>);

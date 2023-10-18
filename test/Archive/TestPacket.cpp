@@ -1,5 +1,5 @@
 #include <Archive/Conversion.hpp>
-#include <RPC/Packet.hpp>
+#include <Data/ComPacket.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

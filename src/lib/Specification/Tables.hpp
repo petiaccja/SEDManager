@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Enumerations.hpp"
-#include "Type.hpp"
-#include "NativeTypes.hpp"
+
+#include <Data/NativeTypes.hpp>
+#include <Data/Type.hpp>
 
 #include <cstdint>
 #include <vector>

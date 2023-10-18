@@ -14,24 +14,19 @@ public:
         virtual ~Storage() {}
     };
 
-    virtual ~Type() {}
+    Type() = default;
+    Type(const Type&) = default;
+    Type& operator=(const Type&) = default;
+    virtual ~Type() = default;
 
 protected:
-    Type(std::shared_ptr<Storage> storage) : m_storage(std::move(storage)) {}
+    inline Type(std::shared_ptr<Storage> storage);
 
     template <class T>
-    typename T::Storage& GetStorage() {
-        const auto storage = std::dynamic_pointer_cast<typename T::Storage>(m_storage);
-        assert(storage);
-        return *storage;
-    }
+    typename T::Storage& GetStorage();
 
     template <class T>
-    const typename T::Storage& GetStorage() const {
-        const auto storage = std::dynamic_pointer_cast<const typename T::Storage>(m_storage);
-        assert(storage);
-        return *storage;
-    }
+    const typename T::Storage& GetStorage() const;
 
     template <class Out, class In>
     friend Out type_cast(const In& in);
@@ -71,6 +66,24 @@ public:
         requires std::is_constructible_v<Storage, Args...>
     IdentifiedType(Args&&... args) : BaseType(std::make_shared<Storage>(std::forward<Args>(args)...)) {}
 };
+
+
+inline Type::Type(std::shared_ptr<Storage> storage) : m_storage(std::move(storage)) {}
+
+
+template <class T>
+typename T::Storage& Type::GetStorage() {
+    const auto storage = std::dynamic_pointer_cast<typename T::Storage>(m_storage);
+    assert(storage);
+    return *storage;
+}
+
+template <class T>
+const typename T::Storage& Type::GetStorage() const {
+    const auto storage = std::dynamic_pointer_cast<const typename T::Storage>(m_storage);
+    assert(storage);
+    return *storage;
+}
 
 
 template <class Out, class In>

@@ -2,8 +2,8 @@
 
 #include "TrustedPeripheral.hpp"
 
-#include <RPC/Exception.hpp>
-#include <RPC/Method.hpp>
+#include "Exception.hpp"
+#include "Method.hpp"
 #include <Specification/Identifiers.hpp>
 #include <Specification/Names.hpp>
 

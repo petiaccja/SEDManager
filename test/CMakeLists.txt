@@ -14,5 +14,5 @@ target_sources(Test
 
 find_package(Catch2 REQUIRED)
 
-target_link_libraries(Test Archive RPC Specification UI)
+target_link_libraries(Test Archive Data Specification TrustedPeripheral)
 target_link_libraries(Test Catch2::Catch2)

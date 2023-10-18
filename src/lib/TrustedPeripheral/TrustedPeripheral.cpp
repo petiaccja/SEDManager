@@ -1,10 +1,10 @@
 #include "TrustedPeripheral.hpp"
 
 #include "Exception.hpp"
-#include "Setup.hpp"
+#include <Data/SetupPackets.hpp>
 
 #include <Archive/Conversion.hpp>
-#include <RPC/Packet.hpp>
+#include <Data/ComPacket.hpp>
 
 #include <array>
 #include <stdexcept>

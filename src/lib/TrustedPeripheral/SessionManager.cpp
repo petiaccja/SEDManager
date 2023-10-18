@@ -1,12 +1,13 @@
 #include "SessionManager.hpp"
 
+#include "Exception.hpp"
 #include "Logging.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenArchive.hpp>
+#include <Archive/TokenBinaryArchive.hpp>
 #include <Archive/TokenDebugArchive.hpp>
-#include <RPC/Exception.hpp>
-#include <RPC/Packet.hpp>
+#include <Archive/Types/ValueToToken.hpp>
+#include <Data/ComPacket.hpp>
 #include <Specification/Names.hpp>
 
 
@@ -131,7 +132,7 @@ Method SessionManager::InvokeMethod(const Method& method) {
         const Value requestStream = MethodToValue(INVOKING_ID, method);
         Log(std::format("Call '{}' [SessionManager]", GetNameOrUid(method.methodId)), requestStream);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
-        TokenOutputArchive requestAr(requestSs);
+        TokenBinaryOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = std::as_bytes(std::span(requestSs.view()));
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });

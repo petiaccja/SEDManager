@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Discovery.hpp"
-#include "Setup.hpp"
+#include <Data/SetupPackets.hpp>
 
 #include <StorageDevice/NvmeDevice.hpp>
 

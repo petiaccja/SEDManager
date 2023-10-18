@@ -10,10 +10,9 @@ target_sources(Specification
         Identifiers.hpp
         Names.cpp
         Names.hpp
-        NativeTypes.hpp
         Tables.cpp
         Tables.hpp
-        Type.hpp
 )
 
 target_include_directories(Specification INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
+target_link_libraries(Specification Data)

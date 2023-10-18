@@ -5,12 +5,11 @@
 
 #include <Archive/Conversion.hpp>
 #include <Archive/TokenDebugArchive.hpp>
-#include <RPC/Exception.hpp>
-#include <RPC/Packet.hpp>
+#include <Archive/Types/ValueToToken.hpp>
+#include <Data/ComPacket.hpp>
 #include <Specification/Names.hpp>
 
 #include <atomic>
-
 
 
 Session::Session(std::shared_ptr<SessionManager> sessionManager,
@@ -93,7 +92,7 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
         const auto request = MethodToValue(invokingId, method);
         Log(std::format("Call '{}' [Session]", GetNameOrUid(method.methodId)), request);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
-        TokenOutputArchive requestAr(requestSs);
+        TokenBinaryOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, request);
         const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
         const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });

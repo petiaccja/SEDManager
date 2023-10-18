@@ -1,8 +1,10 @@
 #pragma once
 
-#include <Specification/Names.hpp>
-#include <RPC/Exception.hpp>
+#include "Exception.hpp"
+#include "Method.hpp"
 #include "SessionManager.hpp"
+
+#include <Specification/Names.hpp>
 
 #include <memory>
 

@@ -1,6 +1,7 @@
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenArchive.hpp>
-#include <RPC/Value.hpp>
+#include <Archive/TokenBinaryArchive.hpp>
+#include <Archive/Types/ValueToToken.hpp>
+#include <Data/Value.hpp>
 
 #include <cereal/archives/json.hpp>
 
@@ -179,7 +180,7 @@ static Value GetFirstInList(const Value& arg) {
 }
 
 using JSONArchivePair = std::tuple<cereal::JSONOutputArchive, cereal::JSONInputArchive>;
-using TokenArchivePair = std::tuple<TokenOutputArchive, TokenInputArchive>;
+using TokenArchivePair = std::tuple<TokenBinaryOutputArchive, TokenBinaryInputArchive>;
 
 
 TEMPLATE_TEST_CASE("Serialize command", "[Value]", JSONArchivePair, TokenArchivePair) {

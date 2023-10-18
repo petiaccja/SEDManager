@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FlatBinaryArchive.hpp"
-#include "TokenArchive.hpp"
+#include "TokenBinaryArchive.hpp"
 
 #include <cstdint>
 #include <span>
@@ -51,7 +51,7 @@ inline std::string_view ToStringView(std::span<const std::byte> bytes) {
 template <class Object>
 std::vector<std::byte> ToTokens(const Object& object) {
     std::stringstream buffer(std::ios::binary | std::ios::out);
-    TokenOutputArchive ar(buffer);
+    TokenBinaryOutputArchive ar(buffer);
     ar(object);
     const auto chars = buffer.view();
     const auto bytes = reinterpret_cast<const std::byte*>(chars.data());
@@ -65,6 +65,6 @@ void FromTokens(std::span<const std::byte> bytes, Object& object) {
     const auto chars = reinterpret_cast<const char*>(bytes.data());
     const auto view = std::string_view{ chars, chars + bytes.size() };
     buffer.str(std::string{ view });
-    TokenInputArchive ar(buffer);
+    TokenBinaryInputArchive ar(buffer);
     ar(object);
 }

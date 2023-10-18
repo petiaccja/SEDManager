@@ -1,4 +1,4 @@
-#include <RPC/Method.hpp>
+#include <TrustedPeripheral/Method.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

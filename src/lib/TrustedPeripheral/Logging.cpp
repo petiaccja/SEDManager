@@ -1,6 +1,7 @@
 #include "Logging.hpp"
 
 #include <Archive/TokenDebugArchive.hpp>
+#include <Archive/Types/ValueToToken.hpp>
 
 #include <filesystem>
 #include <fstream>

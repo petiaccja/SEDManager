@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Value.hpp"
+#include <Data/Value.hpp>
 
-#include <Archive/Conversion.hpp>
-#include <Specification/NativeTypes.hpp>
+#include "../Conversion.hpp"
+#include <Data/NativeTypes.hpp>
 
 #include <concepts>
 #include <optional>

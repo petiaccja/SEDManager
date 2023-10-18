@@ -1,4 +1,4 @@
-#include "TokenArchive.hpp"
+#include "TokenBinaryArchive.hpp"
 
 
 eTag GetTagFromHeader(uint8_t header) {
@@ -20,25 +20,25 @@ eTag GetTagFromHeader(uint8_t header) {
 }
 
 
-TokenInputArchive::TokenInputArchive(std::istream& stream)
-    : cereal::InputArchive<TokenInputArchive>(this),
+TokenBinaryInputArchive::TokenBinaryInputArchive(std::istream& stream)
+    : cereal::InputArchive<TokenBinaryInputArchive>(this),
       m_stream(stream) {}
 
 
-TokenOutputArchive::TokenOutputArchive(std::ostream& stream)
-    : cereal::OutputArchive<TokenOutputArchive>(this),
+TokenBinaryOutputArchive::TokenBinaryOutputArchive(std::ostream& stream)
+    : cereal::OutputArchive<TokenBinaryOutputArchive>(this),
       m_stream(stream) {}
 
 
-void CEREAL_SAVE_FUNCTION_NAME(TokenOutputArchive& ar, const Token& token) {
+void CEREAL_SAVE_FUNCTION_NAME(TokenBinaryOutputArchive& ar, const Token& token) {
     ar.Insert(token);
 }
 
-void CEREAL_LOAD_FUNCTION_NAME(TokenInputArchive& ar, Token& token) {
+void CEREAL_LOAD_FUNCTION_NAME(TokenBinaryInputArchive& ar, Token& token) {
     ar.Extract(token);
 }
 
-void TokenOutputArchive::Insert(const Token& token) {
+void TokenBinaryOutputArchive::Insert(const Token& token) {
     if (token.tag == eTag::TINY_ATOM) {
         if (token.data.size() != 1) {
             throw std::invalid_argument("tiny atom must have a data length of 1 byte");
@@ -88,7 +88,7 @@ void TokenOutputArchive::Insert(const Token& token) {
 }
 
 
-void TokenInputArchive::Extract(Token& token) {
+void TokenBinaryInputArchive::Extract(Token& token) {
     uint8_t header;
     Extract(std::span(reinterpret_cast<std::byte*>(&header), 1));
     eTag tag = GetTagFromHeader(header);
@@ -143,6 +143,6 @@ void TokenInputArchive::Extract(Token& token) {
 }
 
 
-eTag TokenInputArchive::PeekTag() const {
+eTag TokenBinaryInputArchive::PeekTag() const {
     return GetTagFromHeader(uint8_t(Peek()));
 }

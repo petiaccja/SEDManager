@@ -1,5 +1,5 @@
+#include <Data/Type.hpp>
 #include <Specification/ColumnTypes.hpp>
-#include <Specification/Type.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
