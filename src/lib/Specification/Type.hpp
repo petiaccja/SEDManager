@@ -20,14 +20,14 @@ protected:
     Type(std::shared_ptr<Storage> storage) : m_storage(std::move(storage)) {}
 
     template <class T>
-    T::Storage& GetStorage() {
+    typename T::Storage& GetStorage() {
         const auto storage = std::dynamic_pointer_cast<typename T::Storage>(m_storage);
         assert(storage);
         return *storage;
     }
 
     template <class T>
-    const T::Storage& GetStorage() const {
+    const typename T::Storage& GetStorage() const {
         const auto storage = std::dynamic_pointer_cast<const typename T::Storage>(m_storage);
         assert(storage);
         return *storage;
