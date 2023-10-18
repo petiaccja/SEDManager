@@ -1,6 +1,6 @@
 #include "Method.hpp"
 
-#include "Exception.hpp"
+#include <Error/Exception.hpp>
 
 #include <Archive/Conversion.hpp>
 

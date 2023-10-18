@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Error/Exception.hpp>
+
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -108,7 +110,7 @@ uint64_t type_uid(const Type& in) {
     if (idStorage) {
         return idStorage->Id();
     }
-    throw std::bad_cast();
+    throw InvalidTypeError("expected an identified type");
 }
 
 

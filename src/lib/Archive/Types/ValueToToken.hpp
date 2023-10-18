@@ -8,14 +8,15 @@
 
 #include <cereal/cereal.hpp>
 
+#include <cassert>
 #include <stack>
 
 
 template <class Archive>
-void SaveInteger(Archive& ar, const Value& stream) {
+void SaveInteger(Archive& ar, const Value& value) {
     std::optional<bool> r = ForEachType<Value::IntTypes>([&]<class T>(T* ptr) -> std::optional<bool> {
-        if (stream.Type() == typeid(T)) {
-            const auto bytes = ToFlatBinary(stream.Get<T>());
+        if (value.Type() == typeid(T)) {
+            const auto bytes = ToFlatBinary(value.Get<T>());
             const Token token{
                 .tag = eTag::SHORT_ATOM,
                 .isByte = false,
@@ -27,9 +28,7 @@ void SaveInteger(Archive& ar, const Value& stream) {
         }
         return std::nullopt;
     });
-    if (!r) {
-        throw std::invalid_argument("stream is not an int");
-    }
+    assert(r);
 }
 
 
@@ -161,7 +160,7 @@ void load(Archive& ar, Value& stream) {
     } while (true);
 
     if (stack.size() != 1) {
-        throw std::invalid_argument("archive terminated improperly");
+        throw InvalidFormatError("invalid token stream");
     }
 
     stream = std::move(stack.top());

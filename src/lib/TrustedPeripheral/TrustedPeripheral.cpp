@@ -1,6 +1,8 @@
 #include "TrustedPeripheral.hpp"
 
-#include "Exception.hpp"
+#include "Method.hpp"
+
+#include <Error/Exception.hpp>
 #include <Data/SetupPackets.hpp>
 
 #include <Archive/Conversion.hpp>
@@ -21,7 +23,7 @@ std::pair<uint16_t, uint16_t> ExtractBaseComId(const auto& desc) {
 
 
 
-TrustedPeripheral::TrustedPeripheral(std::shared_ptr<NvmeDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
+TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
     m_desc = Discovery();
     if (m_desc.tperDesc) {
         try {
@@ -87,7 +89,7 @@ eComIdState TrustedPeripheral::VerifyComId() {
         FromBytes(responseBytes, response);
 
         if (response.requestCode == 0) {
-            throw std::runtime_error("verify comid valid failed: no response available");
+            throw NoResponseError("VERIFY_COMID_VALID");
         }
         if (response.availableDataLength == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -225,7 +227,7 @@ void TrustedPeripheral::StackReset() {
         FromBytes(responseBytes, response);
 
         if (response.requestCode == 0) {
-            throw std::runtime_error("stack reset failed: no response available");
+            throw NoResponseError("STACK_RESET");
         }
         if (response.availableDataLength == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -233,6 +235,6 @@ void TrustedPeripheral::StackReset() {
     } while (response.availableDataLength == 0);
 
     if (response.success != eStackResetStatus::SUCCESS) {
-        throw std::runtime_error("stack reset failed with failure code");
+        throw InvocationError("STACK_RESET", "failed");
     }
 }

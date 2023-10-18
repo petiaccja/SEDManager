@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Error/Exception.hpp>
 
 #include <algorithm>
 #include <any>
@@ -8,7 +9,6 @@
 #include <format>
 #include <optional>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <typeinfo>
 #include <vector>
@@ -37,12 +37,6 @@ struct is_const_std_span : std::bool_constant<false> {};
 
 template <class T>
 struct is_const_std_span<std::span<const T>> : std::bool_constant<true> {};
-
-
-struct ValueConversionError : std::logic_error {
-    ValueConversionError(std::string_view expected, std::string_view actual)
-        : std::logic_error(std::format("expected a value of '{}' but got a value of '{}'", expected, actual)) {}
-};
 
 
 class Value {
@@ -234,9 +228,9 @@ T Value::AsInt() const {
         return std::nullopt;
     });
     if (!v) {
-        const auto expected = std::format("{}int{}", std::is_signed_v<T> ? "" : "u", sizeof(T) * 8);
-        const auto actual = GetTypeStr();
-        throw ValueConversionError(expected, actual);
+        const auto targetType = std::format("{}int{}", std::is_signed_v<T> ? "" : "u", sizeof(T) * 8);
+        const auto actualType = GetTypeStr();
+        throw TypeConversionError(actualType, targetType);
     }
     return *v;
 }

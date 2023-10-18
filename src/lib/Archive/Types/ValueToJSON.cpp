@@ -1,13 +1,13 @@
 #include "ValueToJSON.hpp"
 
-#include "Exception.hpp"
-
 #include <Specification/ColumnTypes.hpp>
 #include <Specification/Names.hpp>
 
+#include <Error/Exception.hpp>
+
 #include <sstream>
 
-// Types:
+// Hierarchy of types:
 //
 // IntegerType
 // - SignedIntType
@@ -150,11 +150,11 @@ namespace {
 
     std::vector<std::byte> JSONToBytes(nlohmann::json json, std::string_view prefix, bool asString) {
         if (!json.is_string()) {
-            throw std::invalid_argument("expected string");
+            throw UnexpectedTypeError("JSON:string");
         }
         auto str = json.get<std::string_view>();
         if (str.find(prefix) != 0) {
-            throw std::invalid_argument("expected prefix");
+            throw InvalidFormatError(std::format("prefix \"{}\" not found", prefix));
         }
         str = str.substr(prefix.size());
         if (asString) {
@@ -173,17 +173,17 @@ namespace {
                 const auto start = pos;
                 chunk.assign(str.substr(pos, 2));
                 if (chunk.size() != 2) {
-                    throw std::invalid_argument("incomplete bytes");
+                    throw InvalidFormatError("bytes type must have an even number of hexadecimal digits");
                 }
                 size_t idx = 0;
                 try {
                     bytes.push_back(static_cast<std::byte>(std::stoul(chunk, &idx, 16)));
                 }
                 catch (std::exception&) {
-                    throw std::invalid_argument("invalid character");
+                    throw InvalidFormatError(std::format("invalid character in byte data: {}", chunk));
                 }
                 if (idx != 2) {
-                    throw std::invalid_argument("invalid character");
+                    throw InvalidFormatError(std::format("invalid character in byte data: {}", chunk));
                 }
                 pos += 2;
             }
@@ -200,14 +200,14 @@ namespace {
                 return nlohmann::json(value.Get<uint64_t>());
             }
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const BytesType& type) {
         if (value.IsBytes()) {
             return BytesToJSON(value.AsBytes(), "", InterpretAsString(type));
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const AlternativeType& type) {
@@ -217,7 +217,7 @@ namespace {
             const Value& currentType = value.AsNamed().name;
             const Value& currentValue = value.AsNamed().value;
             if (!currentType.IsBytes()) {
-                throw TypeError(GetTypeStr(currentTypeType), value.GetTypeStr());
+                throw UnexpectedTypeError(GetTypeStr(currentTypeType), value.GetTypeStr());
             }
             const auto& typeIdBytes = currentType.AsBytes();
             uint64_t altId = 0;
@@ -230,11 +230,11 @@ namespace {
                     return static_cast<uint32_t>(type_uid(alt)) == altId;
                 }
                 catch (std::bad_cast&) {
-                    throw std::invalid_argument(std::format("expected an identified type, got {}", GetTypeStr(alt)));
+                    throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));
                 }
             });
             if (altIter == alts.end()) {
-                throw TypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
+                throw UnexpectedTypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
             }
 
             return nlohmann::json({
@@ -242,7 +242,7 @@ namespace {
                 { "value", ValueToJSON(currentValue, *altIter)       },
             });
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const ListType& type) {
@@ -254,7 +254,7 @@ namespace {
             }
             return nlohmann::json(jsons);
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     struct ReducedStruct {
@@ -294,18 +294,18 @@ namespace {
                 jsons.emplace_back(ValueToJSON(*meit, *mtit));
             }
             if (meit != end(mandatoryElements) || mtit != end(mandatoryTypes)) {
-                throw std::logic_error(std::format("value does not contain the same number of mandatory fields specified in {}", GetTypeStr(type)));
+                throw InvalidTypeError(std::format("value does not contain the same number of mandatory fields specified in type '{}'", GetTypeStr(type)));
             }
 
             for (const auto& optionalElement : optionalElements) {
                 const auto& named = optionalElement.AsNamed();
                 if (!named.name.IsInteger()) {
-                    throw std::logic_error("optional element of struct type must have integer key");
+                    throw InvalidTypeError(std::format("optional element of struct type must have integer key: got '{}'", named.name.GetTypeStr()));
                 }
                 const auto key = named.name.Get<uint64_t>();
                 const auto typeIt = optionalTypeLookup.find(key);
                 if (typeIt == optionalTypeLookup.end()) {
-                    throw std::logic_error("unexpected optional element in value of type struct");
+                    throw InvalidTypeError(std::format("unexpected optional element in value of type struct: element key {}", key));
                 }
                 jsons.push_back({
                     { "field", key },
@@ -314,27 +314,27 @@ namespace {
             }
             return nlohmann::json(jsons);
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const RestrictedReferenceType& type) {
         if (value.IsBytes()) {
             return BytesToJSON(value.AsBytes(), "ref:", false);
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const GeneralReferenceType& type) {
         if (value.IsBytes()) {
             return BytesToJSON(value.AsBytes(), "ref:", false);
         }
-        throw TypeError(GetTypeStr(type), value.GetTypeStr());
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
 
     Value JSONToValue(const nlohmann::json& json, const IntegerType& type) {
         if (!json.is_number_integer()) {
-            throw std::invalid_argument("expected integer");
+            throw UnexpectedTypeError("integer");
         }
         if (type.Signedness()) {
             const auto number = json.get<int64_t>();
@@ -362,7 +362,7 @@ namespace {
 
     Value JSONToValue(const nlohmann::json& json, const AlternativeType& type) {
         if (!json.is_object() || !json.contains("type") || !json.contains("value")) {
-            throw std::invalid_argument("expected a type-value pair");
+            throw UnexpectedTypeError(R"(object: { "type": ..., "value": ... })");
         }
         const auto& altJson = json["type"];
         const auto& valueJson = json["value"];
@@ -379,11 +379,11 @@ namespace {
                 return static_cast<uint32_t>(type_uid(alt)) == altId;
             }
             catch (std::bad_cast&) {
-                throw std::invalid_argument(std::format("expected an identified type, got {}", GetTypeStr(alt)));
+                throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));
             }
         });
         if (altIter == alts.end()) {
-            throw TypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
+            throw UnexpectedTypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
         }
 
         return Named{
@@ -394,7 +394,7 @@ namespace {
 
     Value JSONToValue(const nlohmann::json& json, const ListType& type) {
         if (!json.is_array()) {
-            throw std::invalid_argument("expected a list");
+            throw UnexpectedTypeError("list");
         }
         std::vector<Value> values;
         for (const auto& item : json) {
@@ -422,19 +422,19 @@ namespace {
                 values.emplace_back(JSONToValue(*meit, *mtit));
             }
             if (meit != end(mandatoryElements) || mtit != end(mandatoryTypes)) {
-                throw std::logic_error(std::format("value does not contain the same number of mandatory fields specified in {}", GetTypeStr(type)));
+                throw InvalidTypeError(std::format("value does not contain the same number of mandatory fields specified in '{}'", GetTypeStr(type)));
             }
 
             for (const auto& optionalElement : optionalElements) {
                 const auto& field = optionalElement["field"];
                 const auto& value = optionalElement["value"];
                 if (!field.is_number_integer()) {
-                    throw std::logic_error("optional element of struct type must have integer key");
+                    throw InvalidTypeError(std::format("optional element of struct type must have integer key: got '{}'", field.dump()));
                 }
                 const auto key = field.get<uint64_t>();
                 const auto typeIt = optionalTypeLookup.find(key);
                 if (typeIt == optionalTypeLookup.end()) {
-                    throw std::logic_error("unexpected optional element in value of type struct");
+                    throw InvalidTypeError(std::format("unexpected optional element in value of type struct: element key {}", key));
                 }
                 values.push_back(Named{
                     uint16_t(key),
@@ -443,7 +443,7 @@ namespace {
             }
             return values;
         }
-        throw std::invalid_argument("expected list");
+        throw UnexpectedTypeError("list");
     }
 
     Value JSONToValue(const nlohmann::json& json, const RestrictedReferenceType& type) {
@@ -480,7 +480,7 @@ std::string GetTypeStr(const Type& type) {
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::GetTypeStr(type_cast<GeneralReferenceType>(type));
     }
-    throw std::logic_error("cannot convert type to string: not implemented");
+    throw NotImplementedError(std::format("Type to std::string for '{}'", typeid(type).name()));
 }
 
 
@@ -506,7 +506,7 @@ nlohmann::json ValueToJSON(const Value& value, const Type& type) {
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::ValueToJSON(value, type_cast<GeneralReferenceType>(type));
     }
-    throw std::logic_error("not implemented");
+    throw NotImplementedError(std::format("Value to JSON for '{}'", typeid(type).name()));
 }
 
 
@@ -532,5 +532,5 @@ Value JSONToValue(const nlohmann::json& value, const Type& type) {
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::JSONToValue(value, type_cast<GeneralReferenceType>(type));
     }
-    throw std::logic_error("not implemented");
+    throw NotImplementedError(std::format("JSON to Value for '{}'", typeid(type).name()));
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdexcept>
-#include <exception>
 #include <format>
+#include <stdexcept>
+#include <optional>
 
 
 
@@ -10,14 +10,60 @@
 // General errors
 //------------------------------------------------------------------------------
 
+struct NotImplementedError : std::logic_error {
+    NotImplementedError(std::string_view message = {})
+        : std::logic_error(message.empty() ? std::string("not implemented") : std::format("not implemented: {}", message)) {}
+};
+
 
 struct PasswordError : std::logic_error {
     PasswordError() : std::logic_error("invalid password") {}
 };
 
 
-struct NotImplementedError : std::logic_error {
-    NotImplementedError(std::string message) : std::logic_error(std::move(message)) {}
+
+//------------------------------------------------------------------------------
+// Data format and data type related errors
+//------------------------------------------------------------------------------
+
+struct InvalidTypeError : std::logic_error {
+    InvalidTypeError(std::string_view message)
+        : std::logic_error(std::format("invalid type: {}", message)) {}
+};
+
+
+struct UnexpectedTypeError : InvalidTypeError {
+    UnexpectedTypeError(std::string_view expected, std::optional<std::string_view> actual = {}, std::optional<std::string_view> message = {})
+        : InvalidTypeError(Message(expected, actual, message)) {}
+
+    static std::string Message(std::string_view expected, std::optional<std::string_view> actual = {}, std::optional<std::string_view> message = {}) {
+        std::string expectedBit = std::format("expected a value of type '{}'", expected);
+        std::string actualBit = actual ? std::format("but got a value of type '{}'", *actual) : std::string{};
+        std::string messageBit = message ? std::format(": {}", *message) : std::string{};
+        return expectedBit + actualBit + messageBit;
+    }
+};
+
+
+struct TypeConversionError : std::logic_error {
+    TypeConversionError(std::string_view source, std::string_view target)
+        : std::logic_error(std::format("could not convert '{}' to '{}'", source, target)) {}
+};
+
+
+struct InvalidFormatError : std::logic_error {
+    InvalidFormatError(std::string_view message)
+        : std::logic_error(std::format("invalid format: {}", message)) {}
+};
+
+
+//------------------------------------------------------------------------------
+// RPC errors
+//------------------------------------------------------------------------------
+
+
+struct DeviceError : std::runtime_error {
+    DeviceError(std::string message) : std::runtime_error(std::move(message)) {}
 };
 
 
@@ -26,25 +72,25 @@ struct ProtocolError : std::logic_error {
 };
 
 
-
-//------------------------------------------------------------------------------
-// Method invocation errors
-//------------------------------------------------------------------------------
-
-
-struct MethodError : std::exception {
-    MethodError(std::string message) : m_message(std::move(message)) {}
-
-    const char* what() const noexcept override { return m_message.data(); }
-
-private:
-    std::string m_message;
+struct InvalidResponseError : std::logic_error {
+    InvalidResponseError(std::string_view message)
+        : std::logic_error(std::format("invalid response: {}", message)) {}
+    InvalidResponseError(std::string_view methodName, std::string_view message)
+        : std::logic_error(std::format("invalid response to '{}': {}", methodName, message)) {}
 };
 
 
-struct InvocationError : MethodError {
+struct NoResponseError : std::logic_error {
+    NoResponseError()
+        : std::logic_error("no response") {}
+    NoResponseError(std::string_view methodName)
+        : std::logic_error(std::format("no response to '{}'", methodName)) {}
+};
+
+
+struct InvocationError : std::logic_error {
     InvocationError(std::string_view methodName, std::string_view message)
-        : MethodError(std::format("invoking '{}' failed: {}", methodName, message)) {}
+        : std::logic_error(std::format("invoking '{}' failed: {}", methodName, message)) {}
 };
 
 struct NotAuthorizedError : InvocationError {
@@ -88,20 +134,4 @@ struct ResponseOverflowError : InvocationError {
 };
 struct AuthorityLockedOutError : InvocationError {
     AuthorityLockedOutError(std::string_view methodName) : InvocationError(methodName, "authority locked out") {}
-};
-
-
-struct InvalidResponseError : MethodError {
-    InvalidResponseError(std::string_view message)
-        : MethodError(std::format("invalid response: {}", message)) {}
-    InvalidResponseError(std::string_view methodName, std::string_view message)
-        : MethodError(std::format("invalid response to '{}': {}", methodName, message)) {}
-};
-
-
-struct NoResponseError : MethodError {
-    NoResponseError()
-        : MethodError("no response") {}
-    NoResponseError(std::string_view methodName)
-        : MethodError(std::format("no response to '{}'", methodName)) {}
 };

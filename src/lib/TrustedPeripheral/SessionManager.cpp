@@ -1,6 +1,5 @@
 #include "SessionManager.hpp"
 
-#include "Exception.hpp"
 #include "Logging.hpp"
 
 #include <Archive/Conversion.hpp>
@@ -8,6 +7,7 @@
 #include <Archive/TokenDebugArchive.hpp>
 #include <Archive/Types/ValueToToken.hpp>
 #include <Data/ComPacket.hpp>
+#include <Error/Exception.hpp>
 #include <Specification/Names.hpp>
 
 

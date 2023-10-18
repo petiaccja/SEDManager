@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Exception.hpp"
+#include <Error/Exception.hpp>
 #include "Method.hpp"
 #include "SessionManager.hpp"
 

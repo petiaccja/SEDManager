@@ -17,7 +17,6 @@ target_sources(Archive
 
 target_sources(Archive
     PRIVATE
-        Types/Exception.hpp
         Types/ValueToJSON.cpp
         Types/ValueToJSON.hpp
         Types/ValueToToken.cpp
@@ -28,4 +27,4 @@ target_sources(Archive
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 find_package(cereal REQUIRED)
 find_package(nlohmann_json REQUIRED)
-target_link_libraries(Archive Data cereal::cereal nlohmann_json::nlohmann_json)
+target_link_libraries(Archive Data Error cereal::cereal nlohmann_json::nlohmann_json)

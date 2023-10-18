@@ -57,7 +57,7 @@ std::span<const Value> Value::AsList() const {
         return std::any_cast<const ListType&>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("list", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "list");
     }
 }
 
@@ -66,7 +66,7 @@ std::vector<Value>& Value::AsList() {
         return std::any_cast<std::vector<Value>&>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("list", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "list");
     }
 }
 
@@ -76,7 +76,7 @@ std::vector<std::byte>& Value::AsBytes() {
         return std::any_cast<BytesType&>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("bytes", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "bytes");
     }
 }
 
@@ -85,7 +85,7 @@ std::span<const std::byte> Value::AsBytes() const {
         return { std::any_cast<const BytesType&>(m_value) };
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("bytes", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "bytes");
     }
 }
 
@@ -95,7 +95,7 @@ const Named& Value::AsNamed() const {
         return std::any_cast<const Named&>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("named", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "named");
     }
 }
 
@@ -104,7 +104,7 @@ Named& Value::AsNamed() {
         return std::any_cast<Named&>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("named", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "named");
     }
 }
 
@@ -114,7 +114,7 @@ eCommand Value::AsCommand() const {
         return std::any_cast<eCommand>(m_value);
     }
     catch (std::bad_any_cast&) {
-        throw ValueConversionError("command", GetTypeStr());
+        throw TypeConversionError(GetTypeStr(), "command");
     }
 }
 

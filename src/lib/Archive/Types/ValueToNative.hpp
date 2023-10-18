@@ -1,9 +1,11 @@
 #pragma once
 
+#include "../Conversion.hpp"
+
+#include <Data/NativeTypes.hpp>
 #include <Data/Value.hpp>
 
-#include "../Conversion.hpp"
-#include <Data/NativeTypes.hpp>
+#include <Error/Exception.hpp>
 
 #include <concepts>
 #include <optional>
@@ -97,9 +99,6 @@ struct ValueCast<CellBlock> {
         return fields;
     }
     static CellBlock From(const Value& v) {
-        if (!v.IsList()) {
-            throw std::invalid_argument("expected a list");
-        }
         const auto fields = v.Get<std::span<const Value>>();
         CellBlock parsed;
         for (const auto& field : fields) {
@@ -111,7 +110,7 @@ struct ValueCast<CellBlock> {
                 case 2: parsed.endRow = named.value.HasValue() ? std::optional(named.value.Get<uint32_t>()) : std::optional<uint32_t>{}; break;
                 case 3: parsed.startColumn = named.value.Get<uint32_t>(); break;
                 case 4: parsed.endColumn = named.value.Get<uint32_t>(); break;
-                default: throw std::invalid_argument("invalid field for cell block");
+                default: throw InvalidFormatError(std::format("unexpected field in CellBlock: field {}", id));
             }
         }
         return parsed;
@@ -127,7 +126,7 @@ struct ValueCast<Range> {
         return Value(b);
     }
     static Range From(const Value& v) {
-        if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
+        if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
             Range r;
             for (const auto byte : v.Get<std::span<const std::byte>>()) {
                 r.push_back(std::bit_cast<std::ranges::range_value_t<Range>>(byte));
@@ -152,7 +151,7 @@ struct ValueCast<Range> {
         return Value(std::move(values));
     }
     static Range From(const Value& v) {
-        if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
+        if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
             Range r;
             for (auto& item : v.AsList()) {
                 r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));
@@ -176,15 +175,9 @@ struct ValueCast<std::unordered_map<K, V>> {
         return Value(std::move(nameds));
     }
     static std::unordered_map<K, V> From(const Value& v) {
-        if (!v.IsList()) {
-            throw std::invalid_argument("expected a list of named values for unordered_map");
-        }
         const auto& nameds = v.Get<std::span<const Value>>();
         std::unordered_map<K, V> mapped = {};
         for (auto& named : nameds) {
-            if (!named.IsNamed()) {
-                throw std::invalid_argument("expected a named value within unordered_map");
-            }
             mapped.insert_or_assign(value_cast<K>(named.AsNamed().name), value_cast<V>(named.AsNamed().value));
         }
         return mapped;

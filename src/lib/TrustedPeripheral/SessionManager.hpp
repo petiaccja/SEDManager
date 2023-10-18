@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Method.hpp"
 #include "TrustedPeripheral.hpp"
 
-#include "Exception.hpp"
-#include "Method.hpp"
+#include <Error/Exception.hpp>
 #include <Specification/Identifiers.hpp>
 #include <Specification/Names.hpp>
 

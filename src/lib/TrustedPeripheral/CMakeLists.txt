@@ -6,7 +6,6 @@ target_sources(TrustedPeripheral
     PRIVATE
         Discovery.cpp
         Discovery.hpp
-        Exception.hpp
         Logging.cpp
         Logging.hpp
         Session.cpp
