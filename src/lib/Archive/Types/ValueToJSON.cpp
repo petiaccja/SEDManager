@@ -1,9 +1,8 @@
 #include "ValueToJSON.hpp"
 
+#include <Error/Exception.hpp>
 #include <Specification/ColumnTypes.hpp>
 #include <Specification/Names.hpp>
-
-#include <Error/Exception.hpp>
 
 #include <sstream>
 
@@ -227,7 +226,7 @@ namespace {
             }
             const auto altIter = std::ranges::find_if(alts, [&altId](const Type& alt) {
                 try {
-                    return static_cast<uint32_t>(type_uid(alt)) == altId;
+                    return uint32_t(uint64_t(type_uid(alt))) == altId;
                 }
                 catch (std::bad_cast&) {
                     throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));
@@ -376,7 +375,7 @@ namespace {
         const auto& alts = type.Types();
         const auto altIter = std::ranges::find_if(alts, [&altId](const Type& alt) {
             try {
-                return static_cast<uint32_t>(type_uid(alt)) == altId;
+                return uint32_t(uint64_t(type_uid(alt))) == altId;
             }
             catch (std::bad_cast&) {
                 throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));

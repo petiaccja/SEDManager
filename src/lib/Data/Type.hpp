@@ -1,5 +1,7 @@
 #pragma once
 
+#include "NativeTypes.hpp"
+
 #include <Error/Exception.hpp>
 
 #include <cassert>
@@ -37,7 +39,7 @@ protected:
     friend bool type_isa(const In& in);
 
     template <class In>
-    friend uint64_t type_uid(const In& in);
+    friend Uid type_uid(const In& in);
 
 private:
     std::shared_ptr<Storage> m_storage;
@@ -105,7 +107,7 @@ bool type_isa(const In& in) {
 
 
 template <class Type>
-uint64_t type_uid(const Type& in) {
+Uid type_uid(const Type& in) {
     const auto idStorage = std::dynamic_pointer_cast<typename TypeIdentifier::Storage>(in.m_storage);
     if (idStorage) {
         return idStorage->Id();

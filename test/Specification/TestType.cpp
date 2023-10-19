@@ -7,7 +7,7 @@
 TEST_CASE("Type UID", "[Type]") {
     const Type type = IdentifiedType<IntegerType, 754>(4, false);
     REQUIRE(type_isa<IntegerType>(type));
-    REQUIRE(type_uid(type) == 754);
+    REQUIRE(type_uid(type) == Uid(754));
 }
 
 
