@@ -43,6 +43,11 @@ struct CellBlock {
 };
 
 
+inline std::string to_string(Uid uid) {
+    return std::format("{:#018x}", uint64_t(uid));
+}
+
+
 namespace std {
 
 template <>

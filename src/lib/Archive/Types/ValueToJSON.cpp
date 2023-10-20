@@ -1,8 +1,8 @@
 #include "ValueToJSON.hpp"
 
 #include <Error/Exception.hpp>
-#include <Specification/ColumnTypes.hpp>
-#include <Specification/Names.hpp>
+#include <Specification/Core/CoreModule.hpp>
+#include <Specification/Core/Defs/Types.hpp>
 
 #include <sstream>
 
@@ -85,7 +85,7 @@ namespace {
         ss << "{ ";
         const auto& tables = type.Tables();
         for (const auto& table : tables) {
-            ss << GetNameOrUid(table);
+            ss << CoreModule::Get()->FindName(table).value_or(to_string(table));
             if (&table != &tables.back()) {
                 ss << " | ";
             }
@@ -121,7 +121,7 @@ namespace {
     bool InterpretAsString(const BytesType& type) {
         try {
             const auto uid = type_uid(type);
-            if (uid == type_uid(column_types::name) || uid == type_uid(column_types::password)) {
+            if (uid == type_uid(core::name) || uid == type_uid(core::password)) {
                 return true;
             }
         }

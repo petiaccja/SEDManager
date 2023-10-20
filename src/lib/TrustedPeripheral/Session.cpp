@@ -7,7 +7,8 @@
 #include <Archive/Types/ValueToToken.hpp>
 #include <Data/ComPacket.hpp>
 #include <Error/Exception.hpp>
-#include <Specification/Names.hpp>
+#include <Specification/Core/CoreModule.hpp>
+#include <Specification/Opal/OpalModule.hpp>
 
 #include <atomic>
 
@@ -84,13 +85,18 @@ Template::Template(std::shared_ptr<SessionManager> sessionManager,
       m_hostSessionNumber(hostSessionNumber) {}
 
 
+const TPerModules& Template::GetModules() const {
+    return m_sessionManager->GetTrustedPeripheral()->GetModules();
+}
+
 
 MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
+    const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
         assert(m_sessionManager);
 
         const auto request = MethodToValue(invokingId, method);
-        Log(std::format("Call '{}' [Session]", GetNameOrUid(method.methodId)), request);
+        Log(std::format("Call '{}' [Session]", methodIdStr), request);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
         TokenBinaryOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, request);
@@ -100,17 +106,17 @@ MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
         const auto responseBytes = UnwrapPacket(responsePacket);
         Value response;
         FromTokens(responseBytes, response);
-        Log(std::format("Result '{}' [Session]", GetNameOrUid(method.methodId)), response);
+        Log(std::format("Result '{}' [Session]", methodIdStr), response);
 
         MethodResult result = MethodResultFromValue(response);
-        MethodStatusToException(GetNameOrUid(method.methodId), result.status);
+        MethodStatusToException(methodIdStr, result.status);
         return result;
     }
     catch (InvocationError&) {
         throw;
     }
     catch (std::exception& ex) {
-        throw InvocationError(GetNameOrUid(method.methodId), ex.what());
+        throw InvocationError(methodIdStr, ex.what());
     }
 };
 
@@ -134,7 +140,7 @@ std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t 
         .startColumn = startColumn,
         .endColumn = endColumn - 1,
     };
-    auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, eMethod::Get, cellBlock);
+    auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
     std::vector<Value> values(endColumn - startColumn);
     for (auto& nvp : nameValuePairs) {
         const auto idx = nvp.AsNamed().name.Get<size_t>();
@@ -167,7 +173,7 @@ void BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<
          ++colIt, ++valIt) {
         namedValuePairs.value().emplace_back(Named{ *colIt, *valIt });
     }
-    InvokeMethod(object, eMethod::Set, rowAddress, namedValuePairs);
+    InvokeMethod(object, core::eMethod::Set, rowAddress, namedValuePairs);
 }
 
 
@@ -177,7 +183,7 @@ void BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
 
 
 std::vector<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
-    auto [nexts] = InvokeMethod<std::tuple<std::vector<Uid>>>(table, eMethod::Next, row, std::optional(count));
+    auto [nexts] = InvokeMethod<std::tuple<std::vector<Uid>>>(table, core::eMethod::Next, row, std::optional(count));
     return nexts;
 }
 
@@ -192,7 +198,7 @@ std::optional<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
 
 
 void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
-    auto [result] = InvokeMethod<std::tuple<Value>>(THIS_SP, eMethod::Authenticate, authority, proof);
+    auto [result] = InvokeMethod<std::tuple<Value>>(THIS_SP, core::eMethod::Authenticate, authority, proof);
     if (result.IsInteger()) {
         const auto success = result.Get<uint8_t>();
         if (!success) {
@@ -206,7 +212,7 @@ void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std
 
 
 void BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
-    InvokeMethod(object, eMethod::GenKey, publicExponent, pinLength);
+    InvokeMethod(object, core::eMethod::GenKey, publicExponent, pinLength);
 }
 
 

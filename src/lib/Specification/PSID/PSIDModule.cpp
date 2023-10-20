@@ -18,6 +18,12 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> names = {
 }
 
 
+std::shared_ptr<Module> PSIDModule::Get() {
+    static const auto instance = std::make_shared<PSIDModule>();
+    return instance;
+}
+
+
 std::string_view PSIDModule::ModuleName() const {
     return "PSID";
 }

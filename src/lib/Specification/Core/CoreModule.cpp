@@ -1,7 +1,6 @@
 #include "CoreModule.hpp"
 
 #include "../Common/Utility.hpp"
-
 #include "Defs/TableDescs.hpp"
 #include "Defs/Types.hpp"
 #include "Defs/UIDs.hpp"
@@ -154,6 +153,12 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> authorities = 
 };
 
 } // namespace core
+
+
+std::shared_ptr<Module> CoreModule::Get() {
+    static const auto instance = std::make_shared<CoreModule>();
+    return instance;
+}
 
 
 std::string_view CoreModule::ModuleName() const {

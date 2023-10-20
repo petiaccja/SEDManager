@@ -16,7 +16,6 @@ enum class eMethod : uint64_t {
 
 class OpalModule : public Module {
 public:
-    std::string_view ModuleName() const override;
     eModuleKind ModuleKind() const override;
 
     std::optional<std::string> FindName(Uid uid) const override;
@@ -25,4 +24,18 @@ public:
     std::optional<Type> FindType(Uid uid) const override;
 
     std::span<const std::shared_ptr<Module>> Features() const override;
+};
+
+
+class Opal1Module : public OpalModule {
+public:
+    static std::shared_ptr<Module> Get();
+    std::string_view ModuleName() const override;
+};
+
+
+class Opal2Module : public OpalModule {
+public:
+    static std::shared_ptr<Module> Get();
+    std::string_view ModuleName() const override;
 };

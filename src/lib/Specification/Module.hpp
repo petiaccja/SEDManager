@@ -11,10 +11,12 @@
 
 
 
+// Values determine the order in which lookup happens in case of multiple modules.
+// We want features first, then SSCs, and finally core.
 enum class eModuleKind {
-    CORE,
-    SSC,
-    FEATURE,
+    FEATURE = 1,
+    SSC = 2,
+    CORE = 3,
 };
 
 

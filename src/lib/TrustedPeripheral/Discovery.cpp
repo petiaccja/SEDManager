@@ -7,6 +7,20 @@
 #include <format>
 
 
+template <class... DescOptions>
+void ParseDesc(std::span<const std::byte> featurePayloadBytes, uint16_t featureCode, std::optional<std::variant<DescOptions...>>& out) {
+    const auto parsePayload = [&]<class Desc> {
+        if (featureCode == Desc::featureCode) {
+            Desc desc;
+            FromBytes(featurePayloadBytes, desc);
+            out = std::variant<DescOptions...>(std::move(desc));
+        }
+    };
+    (..., parsePayload.template operator()<DescOptions>());
+}
+
+
+
 TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     constexpr int headerSizeBytes = 48;
 
@@ -27,48 +41,28 @@ TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
 
     while (offset < size) {
         FeatureDescHeader featureHeader;
-        FromBytes(featureBytes.subspan(offset, 4), featureHeader);
-        offset += 4;
-        switch (static_cast<eDiscoveryFeatureCode>(featureHeader.featureCode)) {
-            case eDiscoveryFeatureCode::TPER: {
-                TPerFeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.tperDesc = desc;
-                break;
-            }
-            case eDiscoveryFeatureCode::LOCKING: {
-                LockingFeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.lockingDesc = desc;
-                break;
-            }
-            case eDiscoveryFeatureCode::OPAL2: {
-                Opal2FeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.sscDesc = desc;
-                break;
-            }
-            case eDiscoveryFeatureCode::OPALITE: {
-                OpaliteFeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.sscDesc = desc;
-                break;
-            }
-            case eDiscoveryFeatureCode::PYRITE1: {
-                Pyrite1FeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.sscDesc = desc;
-                break;
-            }
-            case eDiscoveryFeatureCode::PYRITE2: {
-                Pyrite2FeatureDesc desc;
-                FromBytes(featureBytes.subspan(offset, featureHeader.length), desc);
-                tperDesc.sscDesc = desc;
-                break;
-            }
-            default: break;
+        const auto featureHeaderBytes = featureBytes.subspan(offset, 4);
+        const auto featurePayloadBytes = featureBytes.subspan(offset + 4, featureHeader.length);
+        FromBytes(featureHeaderBytes, featureHeader);
+        if (featureHeader.featureCode == TPerFeatureDesc::featureCode) {
+            TPerFeatureDesc desc;
+            FromBytes(featurePayloadBytes, desc);
+            tperDesc.tperDesc = desc;
         }
-        offset += featureHeader.length;
+        if (featureHeader.featureCode == LockingFeatureDesc::featureCode) {
+            LockingFeatureDesc desc;
+            FromBytes(featurePayloadBytes, desc);
+            tperDesc.lockingDesc = desc;
+        }
+        else {
+            std::optional<SSCFeatureDesc> sscFeatureDesc;
+            ParseDesc(featurePayloadBytes, featureHeader.featureCode, sscFeatureDesc);
+            if (sscFeatureDesc) {
+                tperDesc.sscDescs.push_back(std::move(*sscFeatureDesc));
+            }
+        }
+
+        offset += 4 + featureHeader.length;
     }
     return tperDesc;
 }

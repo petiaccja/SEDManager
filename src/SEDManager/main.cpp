@@ -1,5 +1,5 @@
 
-#include "App.hpp"
+#include "SEDManager.hpp"
 
 #include <Archive/Types/ValueToJSON.hpp>
 
@@ -8,89 +8,12 @@
 
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
 
 #ifdef __linux__
     #include <unistd.h>
 #elif defined(_WIN32)
     #include <conio.h>
 #endif
-
-
-std::string_view ConvertRawCharacters(std::ranges::contiguous_range auto&& r) {
-    return std::string_view(std::ranges::begin(r), std::ranges::end(r));
-}
-
-
-std::string_view GetSSCName(const StorageClassFeatureDesc& sscDesc) {
-    if (std::holds_alternative<Opal2FeatureDesc>(sscDesc)) {
-        return "Opal V2";
-    }
-    else if (std::holds_alternative<Pyrite1FeatureDesc>(sscDesc)) {
-        return "Pyrite V1";
-    }
-    else if (std::holds_alternative<Pyrite2FeatureDesc>(sscDesc)) {
-        return "Pyrite V2";
-    }
-    else if (std::holds_alternative<OpaliteFeatureDesc>(sscDesc)) {
-        return "Opalite";
-    }
-    else {
-        return "Unkown storage subsystem class";
-    }
-}
-
-
-std::string_view GetComIdStateStr(eComIdState state) {
-    switch (state) {
-        case eComIdState::INVALID: return "invalid";
-        case eComIdState::INACTIVE: return "inactive";
-        case eComIdState::ISSUED: return "issued";
-        case eComIdState::ASSOCIATED: return "associated";
-    }
-    return "unknown";
-};
-
-
-void PrintCapabilities(const TPerDesc& desc) {
-    std::cout << std::format("  {}", GetSSCName(desc.sscDesc)) << std::endl;
-
-    if (desc.tperDesc) {
-        std::cout << "  TPer:" << std::endl;
-        std::cout << std::format("    ComID management supported: {}", desc.tperDesc->comIdMgmtSupported) << std::endl;
-    }
-    if (desc.lockingDesc) {
-        std::cout << "  Locking:" << std::endl;
-        std::cout << std::format("    Locking supported:          {}", desc.lockingDesc->lockingSupported) << std::endl;
-        std::cout << std::format("    Locking enabled:            {}", desc.lockingDesc->lockingEnabled) << std::endl;
-        std::cout << std::format("    Locked:                     {}", desc.lockingDesc->locked) << std::endl;
-        std::cout << std::format("    Media encryption supported: {}", desc.lockingDesc->mediaEncryption) << std::endl;
-        std::cout << std::format("    Shadow MBR done:            {}", desc.lockingDesc->mbrDone) << std::endl;
-        std::cout << std::format("    Shadow MBR enabled:         {}", desc.lockingDesc->mbrEnabled) << std::endl;
-        std::cout << std::format("    Shadow MBR supported:       {}", desc.lockingDesc->mbrSupported) << std::endl;
-    }
-    if (!std::holds_alternative<std::monostate>(desc.sscDesc)) {
-        std::cout << "  SSC:" << std::endl;
-        std::visit([](const auto& arg) {
-            if constexpr (!std::is_convertible_v<decltype(arg), std::monostate>) {
-                std::cout << std::format("    Base ComID:                 {}", arg.baseComId) << std::endl;
-                std::cout << std::format("    Num ComIDs:                 {}", arg.numComIds) << std::endl;
-                std::cout << std::format("    Initial C_PIN:              {}", arg.initialCPinSidIndicator) << std::endl;
-                std::cout << std::format("    C_PIN revert behavior:      {}", arg.cPinSidRevertBehavior) << std::endl;
-            }
-        },
-                   desc.sscDesc);
-    }
-}
-
-
-void PrintProperies(const std::unordered_map<std::string, uint32_t>& properties) {
-    std::cout << "TPer properties: " << std::endl;
-    for (const auto& [name, value] : properties) {
-        std::cout << std::format("  {} = {}", name, value) << std::endl;
-    }
-    std::cout << std::endl;
-}
 
 
 std::vector<std::byte> ReadPassword(std::string_view prompt) {
@@ -126,12 +49,39 @@ std::string FormatNamed(const NamedObject& obj) {
 }
 
 
-std::string FormatUid(const Uid& obj) {
-    return std::format("{:#018x}", uint64_t(obj));
+std::vector<std::string_view> SplitName(std::string_view name) {
+    std::vector<std::string_view> sections;
+    size_t pos = 0;
+    while (pos <= name.size()) {
+        const auto start = pos;
+        pos = name.find("::", pos);
+        sections.push_back(name.substr(start, pos));
+        pos = std::max(pos + 2, pos);
+    }
+    return sections;
 }
 
 
-void AddCmdHelp(App&, CLI::App& cli) {
+std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid) {
+    const auto maybeUid = app.GetModules().FindUid(nameOrUid);
+    if (maybeUid) {
+        return *maybeUid;
+    }
+    try {
+        size_t index = 0;
+        const uint64_t parsedUid = std::stoull(std::string(nameOrUid), &index, 16);
+        if (index == nameOrUid.size()) {
+            return Uid(parsedUid);
+        }
+    }
+    catch (...) {
+        // Fallthrough
+    }
+    throw std::invalid_argument("failed to find name or parse UID");
+}
+
+
+void AddCmdHelp(SEDManager&, CLI::App& cli) {
     auto cmd = cli.add_subcommand("help", "Print this help message.");
     cmd->callback([&] {
         std::cout << cli.get_formatter()->make_help(&cli, "", CLI::AppFormatMode::Normal) << std::endl;
@@ -139,7 +89,7 @@ void AddCmdHelp(App&, CLI::App& cli) {
 }
 
 
-void AddCmdStackReset(App& app, CLI::App& cli) {
+void AddCmdStackReset(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("stack-reset", "Reset the current communication stream. Does not change state.");
     cmd->callback([&app] {
         app.StackReset();
@@ -147,7 +97,7 @@ void AddCmdStackReset(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdReset(App& app, CLI::App& cli) {
+void AddCmdReset(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("reset", "Reset the device as if power-cycled. Does not change state.");
     cmd->callback([&app] {
         app.Reset();
@@ -155,16 +105,13 @@ void AddCmdReset(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdStart(App& app, CLI::App& cli) {
+void AddCmdStart(SEDManager& app, CLI::App& cli) {
     static std::string spName;
 
     auto cmd = cli.add_subcommand("start", "Start a session with a service provider.");
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        if (SplitName(spName).size() == 1) {
-            spName = "SP::" + spName;
-        }
-        const auto maybeSpUid = GetUidOrHex(spName);
+        const auto maybeSpUid = FindOrParseUid(app, spName);
         if (!maybeSpUid) {
             std::cout << "Cannot find security provider." << std::endl;
             return;
@@ -174,16 +121,13 @@ void AddCmdStart(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdAuth(App& app, CLI::App& cli) {
+void AddCmdAuth(SEDManager& app, CLI::App& cli) {
     static std::string authName;
 
     auto cmd = cli.add_subcommand("auth", "Authenticate with an authority.");
     cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        if (SplitName(authName).size() == 1) {
-            authName = "Authority::" + authName;
-        }
-        const auto maybeAuthUid = GetUidOrHex(authName);
+        const auto maybeAuthUid = FindOrParseUid(app, authName);
         if (!maybeAuthUid) {
             std::cout << "Cannot find authority." << std::endl;
             return;
@@ -194,7 +138,7 @@ void AddCmdAuth(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdList(App& app, CLI::App& cli) {
+void AddCmdList(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("list", "List different objects.");
 
     auto cmdSp = cmd->add_subcommand("sps", "List security providers.");
@@ -224,7 +168,7 @@ void AddCmdList(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdTable(App& app, CLI::App& cli) {
+void AddCmdTable(SEDManager& app, CLI::App& cli) {
     static std::string tableName;
 
     auto cmdColumns = cli.add_subcommand("columns", "List the columns of the table.");
@@ -234,35 +178,35 @@ void AddCmdTable(App& app, CLI::App& cli) {
     cmdColumns->add_option("table", tableName, "The table to list the columns of.");
 
     cmdRows->callback([&app] {
-        const auto maybeTableUid = GetUidOrHex(tableName);
+        const auto maybeTableUid = FindOrParseUid(app, tableName);
         if (!maybeTableUid) {
             std::cout << "Cannot find table." << std::endl;
             return;
         }
         const auto table = app.GetTable(*maybeTableUid);
         for (const auto& row : table) {
-            std::cout << FormatUid(row.Id()) << "  " << GetName(row.Id()).value_or("") << std::endl;
+            std::cout << to_string(row.Id()) << "  " << app.GetModules().FindName(row.Id()).value_or("") << std::endl;
         }
     });
 
     cmdColumns->callback([&app] {
-        const auto maybeTableUid = GetUidOrHex(tableName);
+        const auto maybeTableUid = FindOrParseUid(app, tableName);
         if (!maybeTableUid) {
             std::cout << "Cannot find table." << std::endl;
             return;
         }
 
-        const auto& desc = GetTableDesc(*maybeTableUid);
+        const auto table = app.GetTable(*maybeTableUid);
         size_t columnNumber = 0;
         constexpr std::string_view lineFormat = "{:>5} | {:<32} | {:>8} | {}";
         std::cout << std::format(lineFormat, "Index", "Name", "IsUnique", "Type") << std::endl;
-        for (const auto& [name, isUnique, type] : desc.columns) {
+        for (const auto& [name, isUnique, type] : table.GetDesc().columns) {
             std::cout << std::format(lineFormat, columnNumber++, name, isUnique ? "yes" : "no", GetTypeStr(type)) << std::endl;
         }
     });
 }
 
-void AddCmdGetSet(App& app, CLI::App& cli) {
+void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
     static std::string rowName;
     static uint32_t column = 0;
     static std::string jsonValue;
@@ -277,15 +221,15 @@ void AddCmdGetSet(App& app, CLI::App& cli) {
     cmdSet->add_option("value", jsonValue, "The new value of the cell.");
 
 
-    static const auto parse = [&]() -> std::optional<std::tuple<Uid, uint32_t, Type>> {
+    static const auto parse = [&]() -> std::optional<std::tuple<Uid, Uid, uint32_t>> {
         const auto& rowNameSections = SplitName(rowName);
         if (rowNameSections.size() != 2) {
             std::cout << "Specify object to get as 'Table::Object', either with names or UIDs." << std::endl;
             return std::nullopt;
         }
 
-        const auto maybeTableUid = GetUidOrHex(rowNameSections[0]);
-        const auto maybeRowUid = GetUidOrHex(rowName);
+        const auto maybeTableUid = FindOrParseUid(app, rowNameSections[0]);
+        const auto maybeRowUid = FindOrParseUid(app, rowName);
         if (!maybeTableUid) {
             std::cout << "Table must be a valid name or a UID." << std::endl;
             return std::nullopt;
@@ -294,12 +238,7 @@ void AddCmdGetSet(App& app, CLI::App& cli) {
             std::cout << "Object must be a valid name or a UID." << std::endl;
             return std::nullopt;
         }
-        const auto& tableDesc = GetTableDesc(*maybeTableUid);
-        if (!(column < tableDesc.columns.size())) {
-            std::cout << std::format("Column must be in range 0-{}.", std::ssize(tableDesc.columns) - 1) << std::endl;
-            return std::nullopt;
-        }
-        return std::tuple{ *maybeRowUid, column, tableDesc.columns[column].type };
+        return std::tuple{ *maybeTableUid, *maybeRowUid, column };
     };
 
     cmdGet->callback([&app] {
@@ -307,13 +246,17 @@ void AddCmdGetSet(App& app, CLI::App& cli) {
         if (!parsed) {
             return;
         }
-        const auto [rowUid, column, type] = *parsed;
-        const Value value = app.Get(rowUid, column);
+        const auto& [tableUid, rowUid, column] = *parsed;
+        const auto object = app.GetObject(tableUid, rowUid);
+        if (!(column < object.size())) {
+            throw std::invalid_argument("Column index is out of bounds.");
+        }
+        const auto value = *object[column];
         if (!value.HasValue()) {
             std::cout << "<empty>" << std::endl;
         }
         else {
-            const auto json = ValueToJSON(value, type);
+            const auto json = ValueToJSON(value, object.GetDesc()[column].type);
             std::cout << json.dump() << std::endl;
         }
     });
@@ -323,14 +266,15 @@ void AddCmdGetSet(App& app, CLI::App& cli) {
         if (!parsed) {
             return;
         }
-        const auto [rowUid, column, type] = *parsed;
-        const auto value = JSONToValue(nlohmann::json::parse(jsonValue), type);
-        app.Set(rowUid, column, value);
+        const auto [tableUid, rowUid, column] = *parsed;
+        const auto object = app.GetObject(tableUid, rowUid);
+        const auto value = JSONToValue(nlohmann::json::parse(jsonValue), object.GetDesc()[column].type);
+        object[column] = value;
     });
 }
 
 
-void AddCmdEnd(App& app, CLI::App& cli) {
+void AddCmdEnd(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("end", "End session with current service provider.");
     cmd->callback([&app] {
         app.End();
@@ -338,12 +282,11 @@ void AddCmdEnd(App& app, CLI::App& cli) {
 }
 
 
-void AddCmdRevert(App& app, CLI::App& cli) {
+void AddCmdRevert(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("revert", "Revert the device to Original Manufacturing State. All data is unrecoverably lost.");
     cmd->callback([&] {
         try {
-            const auto password = ReadPassword("PSID password: ");
-            app.Revert(password);
+            throw std::logic_error("not implemented");
         }
         catch (std::exception& ex) {
             std::cout << ex.what() << std::endl;
@@ -359,7 +302,7 @@ int main(int argc, char* argv[]) {
     }
     std::string_view device = argv[1];
     try {
-        App app{ device };
+        SEDManager app{ device };
 
         CLI::App cli;
         bool hasExited = false;

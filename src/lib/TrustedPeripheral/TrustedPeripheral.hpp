@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Discovery.hpp"
-#include <Data/SetupPackets.hpp>
+#include "TPerModules.hpp"
 
+#include <Data/SetupPackets.hpp>
 #include <StorageDevice/NvmeDevice.hpp>
 
 #include <chrono>
@@ -16,9 +17,11 @@ public:
     TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice);
     ~TrustedPeripheral();
 
+    const TPerDesc& GetDesc() const;
+    const TPerModules& GetModules() const;
+
     uint16_t GetComId() const;
     uint16_t GetComIdExtension() const;
-    const TPerDesc& GetDesc() const;
     eComIdState VerifyComId();
     void StackReset();
     void Reset();
@@ -38,4 +41,5 @@ private:
     uint16_t m_comId;
     uint16_t m_comIdExtension;
     TPerDesc m_desc;
+    TPerModules m_modules;
 };

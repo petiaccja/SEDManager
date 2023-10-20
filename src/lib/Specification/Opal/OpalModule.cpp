@@ -125,8 +125,25 @@ const auto allNameSequences = {
 } // namespace opal
 
 
-std::string_view OpalModule::ModuleName() const {
-    return "Opal";
+std::shared_ptr<Module> Opal1Module::Get() {
+    static const auto instance = std::make_shared<Opal1Module>();
+    return instance;
+}
+
+
+std::string_view Opal1Module::ModuleName() const {
+    return "Opal v1";
+}
+
+
+std::shared_ptr<Module> Opal2Module::Get() {
+    static const auto instance = std::make_shared<Opal2Module>();
+    return instance;
+}
+
+
+std::string_view Opal2Module::ModuleName() const {
+    return "Opal v2";
 }
 
 
@@ -188,7 +205,7 @@ std::optional<Type> OpalModule::FindType(Uid uid) const {
 
 std::span<const std::shared_ptr<Module>> OpalModule::Features() const {
     static const std::vector<std::shared_ptr<Module>> features = {
-        std::make_shared<PSIDModule>(),
+        PSIDModule::Get(),
     };
     return features;
 }
