@@ -1,6 +1,6 @@
 #include "PSIDModule.hpp"
 
-#include "../Utility.hpp"
+#include "../Common/Utility.hpp"
 
 #include <unordered_map>
 

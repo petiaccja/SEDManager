@@ -1,10 +1,10 @@
 #include "CoreModule.hpp"
 
-#include "../Utility.hpp"
+#include "../Common/Utility.hpp"
 
-#include "Data/TableDescs.hpp"
-#include "Data/Types.hpp"
-#include "Data/UIDs.hpp"
+#include "Defs/TableDescs.hpp"
+#include "Defs/Types.hpp"
+#include "Defs/UIDs.hpp"
 
 #include <algorithm>
 

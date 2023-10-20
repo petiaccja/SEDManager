@@ -3,7 +3,7 @@
 
 #include "../Module.hpp"
 
-#include "Data/UIDs.hpp" // So that users don't have to include files directly from CoreModule's implementation.
+#include "Defs/UIDs.hpp" // So that users don't have to include files directly from CoreModule's implementation.
 
 
 class CoreModule : public Module {

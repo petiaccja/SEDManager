@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TableDesc.hpp"
+#include "Common/TableDesc.hpp"
 
 #include <Data/NativeTypes.hpp>
 #include <Data/Type.hpp>

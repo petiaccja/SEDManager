@@ -4,6 +4,7 @@
 
 #include <Data/NativeTypes.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <ranges>
 #include <regex>
