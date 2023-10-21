@@ -60,6 +60,56 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> tables = {
 };
 
 
+constexpr std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
+    {TableToDescriptor(eTable::Table),          "Table::Table"        }, // Base
+    { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       }, // Base
+    { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  }, // Base
+    { TableToDescriptor(eTable::Column),        "Table::Column"       }, // Base
+    { TableToDescriptor(eTable::Type),          "Table::Type"         }, // Base
+    { TableToDescriptor(eTable::MethodID),      "Table::MethodID"     }, // Base
+    { TableToDescriptor(eTable::AccessControl), "Table::AccessControl"}, // Base
+    { TableToDescriptor(eTable::ACE),           "Table::ACE"          }, // Base
+    { TableToDescriptor(eTable::Authority),     "Table::Authority"    }, // Base
+    { TableToDescriptor(eTable::Certificates),  "Table::Certificates" }, // Base
+    { TableToDescriptor(eTable::C_PIN),         "Table::C_PIN"        }, // Base
+    { TableToDescriptor(eTable::C_RSA_1024),    "Table::C_RSA_1024"   }, // Base
+    { TableToDescriptor(eTable::C_RSA_2048),    "Table::C_RSA_2048"   }, // Base
+    { TableToDescriptor(eTable::C_AES_128),     "Table::C_AES_128"    }, // Base
+    { TableToDescriptor(eTable::C_AES_256),     "Table::C_AES_256"    }, // Base
+    { TableToDescriptor(eTable::C_EC_160),      "Table::C_EC_160"     }, // Base
+    { TableToDescriptor(eTable::C_EC_192),      "Table::C_EC_192"     }, // Base
+    { TableToDescriptor(eTable::C_EC_224),      "Table::C_EC_224"     }, // Base
+    { TableToDescriptor(eTable::C_EC_256),      "Table::C_EC_256"     }, // Base
+    { TableToDescriptor(eTable::C_EC_384),      "Table::C_EC_384"     }, // Base
+    { TableToDescriptor(eTable::C_EC_521),      "Table::C_EC_521"     }, // Base
+    { TableToDescriptor(eTable::C_EC_163),      "Table::C_EC_163"     }, // Base
+    { TableToDescriptor(eTable::C_EC_233),      "Table::C_EC_233"     }, // Base
+    { TableToDescriptor(eTable::C_EC_283),      "Table::C_EC_283"     }, // Base
+    { TableToDescriptor(eTable::C_HMAC_160),    "Table::C_HMAC_160"   }, // Base
+    { TableToDescriptor(eTable::C_HMAC_256),    "Table::C_HMAC_256"   }, // Base
+    { TableToDescriptor(eTable::C_HMAC_384),    "Table::C_HMAC_384"   }, // Base
+    { TableToDescriptor(eTable::C_HMAC_512),    "Table::C_HMAC_512"   }, // Base
+    { TableToDescriptor(eTable::SecretProtect), "Table::SecretProtect"}, // Base
+    { TableToDescriptor(eTable::TPerInfo),      "Table::TPerInfo"     }, // Admin
+    { TableToDescriptor(eTable::CryptoSuite),   "Table::CryptoSuite"  }, // Admin
+    { TableToDescriptor(eTable::Template),      "Table::Template"     }, // Admin
+    { TableToDescriptor(eTable::SP),            "Table::SP"           }, // Admin
+    { TableToDescriptor(eTable::ClockTime),     "Table::ClockTime"    }, // Clock
+    { TableToDescriptor(eTable::H_SHA_1),       "Table::H_SHA_1"      }, // Crypto
+    { TableToDescriptor(eTable::H_SHA_256),     "Table::H_SHA_256"    }, // Crypto
+    { TableToDescriptor(eTable::H_SHA_384),     "Table::H_SHA_384"    }, // Crypto
+    { TableToDescriptor(eTable::H_SHA_512),     "Table::H_SHA_512"    }, // Crypto
+    { TableToDescriptor(eTable::Log),           "Table::Log"          }, // Log
+    { TableToDescriptor(eTable::LogList),       "Table::LogList"      }, // Log
+    { TableToDescriptor(eTable::LockingInfo),   "Table::LockingInfo"  }, // Locking
+    { TableToDescriptor(eTable::Locking),       "Table::Locking"      }, // Locking
+    { TableToDescriptor(eTable::MBRControl),    "Table::MBRControl"   }, // Locking
+    { TableToDescriptor(eTable::MBR),           "Table::MBR"          }, // Locking
+    { TableToDescriptor(eTable::K_AES_128),     "Table::K_AES_128"    }, // Locking
+    { TableToDescriptor(eTable::K_AES_256),     "Table::K_AES_256"    }, // Locking
+};
+
+
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
     {eMethod::Properties,           "MethodID::Properties"         },
     { eMethod::StartSession,        "MethodID::StartSession"       },
@@ -173,7 +223,7 @@ eModuleKind CoreModule::ModuleKind() const {
 
 std::optional<std::string> CoreModule::FindName(Uid uid, std::optional<Uid>) const {
     using namespace core;
-    static const auto lookupTable = MakeNameLookup({ tables, methods, singleRowTables, authorities });
+    static const auto lookupTable = MakeNameLookup({ tables, tablesDescriptors, methods, singleRowTables, authorities });
     const auto it = lookupTable.find(uid);
     return it != lookupTable.end() ? std::optional(std::string(it->second)) : std::nullopt;
 }

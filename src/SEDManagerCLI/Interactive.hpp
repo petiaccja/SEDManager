@@ -8,6 +8,6 @@ namespace interactive {
 
 void AddCommands(SEDManager& app, CLI::App& cli);
 std::optional<Uid> GetCurrentSP();
-std::span<const Uid> GetCurrentAuthorities();
+const std::unordered_set<Uid>& GetCurrentAuthorities();
 
 } // namespace interactive

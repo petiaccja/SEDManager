@@ -14,6 +14,8 @@ target_sources(SEDManagerCLI
 target_link_libraries(SEDManagerCLI SEDManager)
 find_package(CLI11)
 target_link_libraries(SEDManagerCLI CLI11::CLI11)
+find_package(rang)
+target_link_libraries(SEDManagerCLI rang::rang)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(SEDManagerCLI PRIVATE admin.manifest)

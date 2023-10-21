@@ -39,8 +39,8 @@ std::vector<std::byte> GetPassword(std::string_view prompt) {
 }
 
 
-std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid) {
-    const auto maybeUid = app.GetModules().FindUid(nameOrUid);
+std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp) {
+    const auto maybeUid = app.GetModules().FindUid(nameOrUid, sp);
     if (maybeUid) {
         return *maybeUid;
     }
@@ -54,7 +54,7 @@ std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid) {
     catch (...) {
         // Fallthrough
     }
-    throw std::invalid_argument("failed to find name or parse UID");
+    return std::nullopt;
 }
 
 

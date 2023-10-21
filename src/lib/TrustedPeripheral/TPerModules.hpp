@@ -7,8 +7,8 @@ class TPerModules {
 public:
     void Load(std::shared_ptr<Module> mod);
 
-    std::optional<std::string> FindName(Uid uid) const;
-    std::optional<Uid> FindUid(std::string_view name) const;
+    std::optional<std::string> FindName(Uid uid, std::optional<Uid> sp = {}) const;
+    std::optional<Uid> FindUid(std::string_view name, std::optional<Uid> sp = {}) const;
     std::optional<TableDesc> FindTable(Uid table) const;
     std::optional<Type> FindType(Uid uid) const;
 

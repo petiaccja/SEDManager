@@ -21,9 +21,9 @@ void TPerModules::Load(std::shared_ptr<Module> mod) {
 }
 
 
-std::optional<std::string> TPerModules::FindName(Uid uid) const {
+std::optional<std::string> TPerModules::FindName(Uid uid, std::optional<Uid> sp) const {
     for (const auto& mod : m_modules) {
-        const auto maybeName = mod->FindName(uid);
+        const auto maybeName = mod->FindName(uid, sp);
         if (maybeName) {
             return *maybeName;
         }
@@ -32,9 +32,9 @@ std::optional<std::string> TPerModules::FindName(Uid uid) const {
 }
 
 
-std::optional<Uid> TPerModules::FindUid(std::string_view name) const {
+std::optional<Uid> TPerModules::FindUid(std::string_view name, std::optional<Uid> sp) const {
     for (const auto& mod : m_modules) {
-        const auto maybeUid = mod->FindUid(name);
+        const auto maybeUid = mod->FindUid(name, sp);
         if (maybeUid) {
             return *maybeUid;
         }

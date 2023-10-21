@@ -14,7 +14,7 @@
 namespace {
 
 std::optional<Uid> currentSP;
-std::vector<Uid> currentAuthorities;
+std::unordered_set<Uid> currentAuthorities;
 
 
 void ClearCurrents() {
@@ -29,13 +29,9 @@ void AddCmdStart(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("start", "Start a session with a service provider.");
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        const auto maybeSpUid = FindOrParseUid(app, spName);
-        if (!maybeSpUid) {
-            std::cout << "Cannot find security provider." << std::endl;
-            return;
-        }
-        app.Start(*maybeSpUid);
-        currentSP = *maybeSpUid;
+        const auto spUid = Unwrap(FindOrParseUid(app, "SP::" + spName, currentSP), "cannot find security provider");
+        app.Start(spUid);
+        currentSP = spUid;
     });
 }
 
@@ -46,14 +42,10 @@ void AddCmdAuth(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("auth", "Authenticate with an authority.");
     cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&app] {
-        const auto maybeAuthUid = FindOrParseUid(app, authName);
-        if (!maybeAuthUid) {
-            std::cout << "Cannot find authority." << std::endl;
-            return;
-        }
+        const auto authUid = Unwrap(FindOrParseUid(app, "Authority::" + authName, currentSP), "cannot find authority");
         const auto password = GetPassword("Password: ");
-        app.Authenticate(*maybeAuthUid, password);
-        currentAuthorities.push_back(*maybeAuthUid);
+        app.Authenticate(authUid, password);
+        currentAuthorities.insert(authUid);
     });
 }
 
@@ -77,29 +69,21 @@ void AddCmdTable(SEDManager& app, CLI::App& cli) {
     cmdColumns->add_option("table", tableName, "The table to list the columns of.");
 
     cmdRows->callback([&app] {
-        const auto maybeTableUid = FindOrParseUid(app, tableName);
-        if (!maybeTableUid) {
-            std::cout << "Cannot find table." << std::endl;
-            return;
-        }
-        const auto table = app.GetTable(*maybeTableUid);
+        const auto tableUid = Unwrap(FindOrParseUid(app, tableName, currentSP), "cannot find table");
+        const auto table = app.GetTable(tableUid);
 
         const std::vector<std::string> columnNames = { "UID", "Name" };
         std::vector<std::vector<std::string>> rows;
         for (const auto& row : table) {
-            rows.push_back({ to_string(row.Id()), app.GetModules().FindName(row.Id()).value_or("") });
+            rows.push_back({ to_string(row.Id()), app.GetModules().FindName(row.Id(), currentSP).value_or("") });
         }
         std::cout << FormatTable(columnNames, rows);
     });
 
     cmdColumns->callback([&app] {
-        const auto maybeTableUid = FindOrParseUid(app, tableName);
-        if (!maybeTableUid) {
-            std::cout << "Cannot find table." << std::endl;
-            return;
-        }
+        const auto tableUid = Unwrap(FindOrParseUid(app, tableName, currentSP), "cannot find table");
+        const auto table = app.GetTable(tableUid);
 
-        const auto table = app.GetTable(*maybeTableUid);
         size_t columnNumber = 0;
         const std::vector<std::string> columnNames = { "Number", "Name", "IsUnique", "Type" };
         std::vector<std::vector<std::string>> rows;
@@ -113,37 +97,33 @@ void AddCmdTable(SEDManager& app, CLI::App& cli) {
 
 void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
     static std::string rowName;
-    static uint32_t column = 0;
+    static int32_t column = 0;
     static std::string jsonValue;
 
     auto cmdGet = cli.add_subcommand("get", "Get a cell from a table.");
     auto cmdSet = cli.add_subcommand("set", "Set a cell in a table to new value.");
 
-    cmdGet->add_option("row", rowName, "The row to get the cells of.");
-    cmdGet->add_option("column", column, "The column to get.");
-    cmdSet->add_option("row", rowName, "The row to set the cells of.");
+    cmdGet->add_option("object", rowName, "The object to get the cells of. Format as 'Table::Object'.");
+    cmdGet->add_option("column", column, "The column to get.")->default_val(-1);
+    cmdSet->add_option("object", rowName, "The object to set the cells of. Format as 'Table::Object'.");
     cmdSet->add_option("column", column, "The column to set.");
     cmdSet->add_option("value", jsonValue, "The new value of the cell.");
 
 
-    static const auto parse = [&]() -> std::optional<std::tuple<Uid, Uid, uint32_t>> {
+    static const auto parse = [&]() -> std::optional<std::tuple<Uid, Uid, int32_t>> {
         const auto& rowNameSections = SplitName(rowName);
         if (rowNameSections.size() != 2) {
-            std::cout << "Specify object to get as 'Table::Object', either with names or UIDs." << std::endl;
-            return std::nullopt;
+            throw std::invalid_argument("specify object as 'Table::Object'");
         }
 
-        const auto maybeTableUid = FindOrParseUid(app, rowNameSections[0]);
-        const auto maybeRowUid = FindOrParseUid(app, rowName);
-        if (!maybeTableUid) {
-            std::cout << "Table must be a valid name or a UID." << std::endl;
-            return std::nullopt;
+        const auto tableUid = Unwrap(FindOrParseUid(app, rowNameSections[0], currentSP), "cannot find table");
+        const auto maybeRowUid = FindOrParseUid(app, rowName, currentSP).value_or(FindOrParseUid(app, rowNameSections[1], currentSP).value_or(0));
+        if (maybeRowUid == Uid(0)) {
+            throw std::invalid_argument("cannot find object");
         }
-        if (!maybeRowUid) {
-            std::cout << "Object must be a valid name or a UID." << std::endl;
-            return std::nullopt;
-        }
-        return std::tuple{ *maybeTableUid, *maybeRowUid, column };
+        auto copy = column;
+        column = -1;
+        return std::tuple{ tableUid, maybeRowUid, copy };
     };
 
     cmdGet->callback([&app] {
@@ -153,16 +133,30 @@ void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
         }
         const auto& [tableUid, rowUid, column] = *parsed;
         const auto object = app.GetObject(tableUid, rowUid);
-        if (!(column < object.size())) {
-            throw std::invalid_argument("Column index is out of bounds.");
-        }
-        const auto value = *object[column];
-        if (!value.HasValue()) {
-            std::cout << "<empty>" << std::endl;
+        if (column < 0) {
+            const std::vector<std::string> outColumns = { "Column", "Value" };
+            std::vector<std::vector<std::string>> outData;
+            size_t idx = 0;
+            for (const auto& columnDesc : object.GetDesc()) {
+                const auto label = std::format("{}: {}", idx, columnDesc.name);
+                try {
+                    const auto value = *object[idx];
+                    const auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type).dump() : "<empty>";
+                    outData.push_back({ label, valueStr });
+                }
+                catch (std::exception& ex) {
+                    outData.push_back({ label, std::string("error: ") + ex.what() });
+                }
+                ++idx;
+            }
+            std::cout << FormatTable(outColumns, outData) << std::endl;
         }
         else {
-            const auto json = ValueToJSON(value, object.GetDesc()[column].type);
-            std::cout << json.dump() << std::endl;
+            if (!(column < std::ssize(object))) {
+                throw std::invalid_argument("column index is out of bounds.");
+            }
+            const auto value = *object[column];
+            std::cout << (value.HasValue() ? ValueToJSON(value, object.GetDesc()[column].type).dump() : "<empty>") << std::endl;
         }
     });
 
@@ -199,15 +193,11 @@ void AddCmdReset(SEDManager& app, CLI::App& cli) {
 
 void AddCmdGenMEK(SEDManager& app, CLI::App& cli) {
     static std::string rangeName;
-    auto cmd = cli.add_subcommand("gen-mek", "Creates a new Media Encryption Key for a locking range, cryptographically erasing that range.");
+    auto cmd = cli.add_subcommand("gen-mek", "Creates a new Media Encryption Key for a locking range. ERASES RANGE!");
     cmd->add_option("range", rangeName, "The locking range.");
     cmd->callback([&] {
-        const auto maybeRangeUid = FindOrParseUid(app, rangeName);
-        if (!maybeRangeUid) {
-            std::cout << "Cannot find locking range." << std::endl;
-            return;
-        }
-        app.GenMEK(*maybeRangeUid);
+        const auto rangeUid = Unwrap(FindOrParseUid(app, rangeName, currentSP), "cannot find locking range");
+        app.GenMEK(rangeUid);
     });
 }
 
@@ -218,27 +208,19 @@ void AddCmdGenPIN(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("gen-pin", "Creates a new random password for an authority.");
     cmd->add_option("c-pin-obj", credentialObj, "The authority's credential object in C_PIN.");
     cmd->callback([&] {
-        const auto maybeCredentialUid = FindOrParseUid(app, credentialObj);
-        if (!maybeCredentialUid) {
-            std::cout << "Cannot find credential object." << std::endl;
-            return;
-        }
-        app.GenMEK(*maybeCredentialUid);
+        const auto credentialUid = Unwrap(FindOrParseUid(app, credentialObj, currentSP), "cannot find credential object");
+        app.GenMEK(credentialUid);
     });
 }
 
 
 void AddCmdRevert(SEDManager& app, CLI::App& cli) {
     static std::string spName;
-    auto cmd = cli.add_subcommand("revert", "Revert an SP to Original Manufacturing State. All data is unrecoverably lost!");
+    auto cmd = cli.add_subcommand("revert", "Revert an SP to Original Manufacturing State. MAY ERASE DRIVE!");
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&] {
-        const auto maybeSpUid = FindOrParseUid(app, spName);
-        if (!maybeSpUid) {
-            std::cout << "Cannot find security provider." << std::endl;
-            return;
-        }
-        app.Revert(maybeSpUid.value());
+        const auto spUid = Unwrap(FindOrParseUid(app, spName, currentSP), "cannot find security provider");
+        app.Revert(spUid);
         ClearCurrents();
     });
 }
@@ -246,15 +228,11 @@ void AddCmdRevert(SEDManager& app, CLI::App& cli) {
 
 void AddCmdActivate(SEDManager& app, CLI::App& cli) {
     static std::string spName;
-    auto cmd = cli.add_subcommand("activate", "Activate an SP that's ben disabled the manufacturer.");
+    auto cmd = cli.add_subcommand("activate", "Activate an SP that's been disabled the manufacturer.");
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&] {
-        const auto maybeSpUid = FindOrParseUid(app, spName);
-        if (!maybeSpUid) {
-            std::cout << "Cannot find security provider." << std::endl;
-            return;
-        }
-        app.Activate(maybeSpUid.value());
+        const auto spUid = Unwrap(FindOrParseUid(app, spName, currentSP), "cannot find security provider");
+        app.Activate(spUid);
     });
 }
 
@@ -282,6 +260,6 @@ void AddCommands(SEDManager& app, CLI::App& cli) {
 
 
 std::optional<Uid> GetCurrentSP() { return currentSP; }
-std::span<const Uid> GetCurrentAuthorities() { return currentAuthorities; }
+const std::unordered_set<Uid>& GetCurrentAuthorities() { return currentAuthorities; }
 
 } // namespace interactive

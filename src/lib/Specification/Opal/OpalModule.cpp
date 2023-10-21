@@ -17,112 +17,181 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
 
 namespace preconf {
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfSP = {
-        {0x0000'0205'0000'0001,  "SP::Admin"  },
-        { 0x0000'0205'0000'0002, "SP::Locking"},
+    enum class eSP : uint64_t {
+        Admin = 0x0000'0205'0000'0001,
+        Locking = 0x0000'0205'0000'0002,
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfAuthority = {
-        {0x0000'0009'0001'FF01,  "Authority::PSID" },
-        { 0x0000'0009'0003'0000, "Authority::Users"},
-    };
+    namespace admin {
 
-    const std::initializer_list<NameSequence> preconfAuthoritySeq = {
-        {0x0000'0009'0001'0001,  1, 32, "Authority::Admin{}"},
-        { 0x0000'0009'0003'0001, 1, 32, "Authority::User{}" },
-    };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
+            {0x0000'0002'0000'0001, "SPInfo::Admin"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
+            {0x0000'0003'0000'0001,  "SPTemplates::Base" },
+            { 0x0000'0003'0000'0002, "SPTemplates::Admin"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> ace = {
+            {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
+            { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
+            { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
+            { 0x0000'0008'0000'8C02, "ACE::C_PIN_SID_Get_NOPIN"                                },
+            { 0x0000'0008'0000'8C03, "ACE::C_PIN_SID_Set_PIN"                                  },
+            { 0x0000'0008'0000'8C04, "ACE::C_PIN_MSID_Get_PIN"                                 },
+            { 0x0000'0008'0003'A001, "ACE::C_PIN_Admins_Set_PIN"                               },
+            { 0x0000'0008'0003'0003, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
+            { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
+            { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> authority = {
+            {0x0000'0009'0000'0001,  "Authority::Anybody"},
+            { 0x0000'0009'0000'0002, "Authority::Admins" },
+            { 0x0000'0009'0000'0003, "Authority::Makers" },
+            { 0x0000'0009'0000'0006, "Authority::SID"    },
+        };
+        const std::initializer_list<NameSequence> authoritySeq = {
+            {0x0000'0009'0000'0201, 1, 32, "Authority::Admin{}"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> cPin = {
+            {0x0000'000B'0000'0001,  "C_PIN::SID" },
+            { 0x0000'000B'0000'8402, "C_PIN::MSID"},
+        };
+        const std::initializer_list<NameSequence> cPinSeq = {
+            {0x0000'000B'0000'0201, 1, 32, "C_PIN::Admin{}"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> template_ = {
+            {0x0000'0204'0000'0001,  "Template::Base"   },
+            { 0x0000'0204'0000'0002, "Template::Admin"  },
+            { 0x0000'0204'0000'0006, "Template::Locking"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> sp = {
+            {eSP::Admin,    "SP::Admin"  },
+            { eSP::Locking, "SP::Locking"},
+        };
 
+        const auto allNames = {
+            spInfo,
+            spTemplates,
+            ace,
+            authority,
+            cPin,
+            template_,
+            sp,
+        };
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfC_PIN = {
-        {0x0000'000B'0000'0001,  "C_PIN::SID" },
-        { 0x0000'000B'0000'8402, "C_PIN::MSID"},
-    };
+        const auto allSeqs = {
+            authoritySeq,
+            cPinSeq,
+        };
 
-    const std::initializer_list<NameSequence> preconfC_PINSeq = {
-        {0x0000'000B'0000'0201,  1, 32, "C_PIN::Admin{}"        },
-        { 0x0000'000B'0001'0001, 1, 32, "C_PIN::Locking_Admin{}"},
-        { 0x0000'000B'0003'0001, 1, 32, "C_PIN::User{}"         },
-    };
+    } // namespace admin
 
+    namespace locking {
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
+            {0x0000'0002'0000'0001, "SPInfo::Locking"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
+            {0x0000'0003'0000'0001,  "SPTemplates::Base"   },
+            { 0x0000'0003'0000'0002, "SPTemplates::Locking"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> ace = {
+            {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
+            { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
+            { 0x0000'0008'0000'0003, "ACE::Anybody_Get_CommonName"                             },
+            { 0x0000'0008'0000'0004, "ACE::Admins_Set_CommonName"                              },
+            { 0x0000'0008'0003'8000, "ACE::ACE_Get_All"                                        },
+            { 0x0000'0008'0003'8001, "ACE::ACE_Set_BooleanExpression"                          },
+            { 0x0000'0008'0003'9000, "ACE::Authority_Get_All"                                  },
+            { 0x0000'0008'0003'9001, "ACE::Authority_Set_Enabled"                              },
+            { 0x0000'0008'0003'A000, "ACE::C_PIN_Admins_Get_All_NOPIN"                         },
+            { 0x0000'0008'0003'A001, "ACE::C_PIN_Admins_Set_PIN"                               },
+            { 0x0000'0008'0003'BFFF, "ACE::K_AES_Mode"                                         },
+            { 0x0000'0008'0003'B000, "ACE::K_AES_128_GlobalRange_GenKey"                       },
+            { 0x0000'0008'0003'B800, "ACE::K_AES_256_GlobalRange_GenKey"                       },
+            { 0x0000'0008'0003'D000, "ACE::Locking_GlobalRange_Get_RangeStartToActiveKey"      },
+            { 0x0000'0008'0003'E000, "ACE::Locking_GlobalRange_Set_RdLocked"                   },
+            { 0x0000'0008'0003'E800, "ACE::Locking_GlobalRange_Set_WrLocked"                   },
+            { 0x0000'0008'0003'F000, "ACE::Locking_GlblRng_Admins_Set"                         },
+            { 0x0000'0008'0003'F001, "ACE::Locking_Admins_RangeStartToLOR"                     },
+            { 0x0000'0008'0003'F800, "ACE::MBRControl_Admins_Set"                              },
+            { 0x0000'0008'0003'F801, "ACE::MBRControl_Set_DoneToDOR"                           },
+            { 0x0000'0008'0003'FC00, "ACE::DataStore_Get_All"                                  },
+            { 0x0000'0008'0003'FC01, "ACE::DataStore_Set_All"                                  },
+            { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
+            { 0x0000'0008'0000'8C02, "ACE::C_PIN_SID_Get_NOPIN"                                },
+            { 0x0000'0008'0000'8C03, "ACE::C_PIN_SID_Set_PIN"                                  },
+            { 0x0000'0008'0000'8C04, "ACE::C_PIN_MSID_Get_PIN"                                 },
+            { 0x0000'0008'0003'0003, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
+            { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
+            { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
+        };
+        const std::initializer_list<NameSequence> aceSeq = {
+            {0x0000'0008'0004'4001,  1, 32, "ACE::User{}_Set_CommonName"                    },
+            { 0x0000'0008'0003'A801, 1, 32, "ACE::C_PIN_User{}_Set_PIN"                     },
+            { 0x0000'0008'0003'B001, 1, 32, "ACE::K_AES_128_Range{}_GenKey"                 },
+            { 0x0000'0008'0003'B801, 1, 32, "ACE::K_AES_256_Range{}_GenKey"                 },
+            { 0x0000'0008'0003'D001, 1, 32, "ACE::Locking_Range{}_Get_RangeStartToActiveKey"},
+            { 0x0000'0008'0003'E001, 1, 32, "ACE::Locking_Range{}_Set_RdLocked"             },
+            { 0x0000'0008'0003'E801, 1, 32, "ACE::Locking_Range{}_Set_WrLocked"             },
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> authority = {
+            {0x0000'0009'0000'0001,  "Authority::Anybody"},
+            { 0x0000'0009'0000'0002, "Authority::Admins" },
+            { 0x0000'0009'0003'0000, "Authority::Users"  },
+        };
+        const std::initializer_list<NameSequence> authoritySeq = {
+            {0x0000'0009'0001'0001,  1, 32, "Authority::Admin{}"},
+            { 0x0000'0009'0003'0001, 1, 32, "Authority::User{}" },
+        };
+        const std::initializer_list<NameSequence> cPinSeq = {
+            {0x0000'000B'0001'0001,  1, 32, "C_PIN::Admin{}"},
+            { 0x0000'000B'0003'0001, 1, 32, "C_PIN::User{}" },
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> secretProtect = {
+            {0x0000'001D'0000'001D,  "SecretProtect::K_AES_128"},
+            { 0x0000'001D'0000'001E, "SecretProtect::K_AES_256"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> locking = {
+            {0x0000'0802'0000'0001, "Locking::GlobalRange"},
+        };
+        const std::initializer_list<NameSequence> lockingSeq = {
+            {0x0000'0802'0003'0001, 1, 32, "Locking::Range{}"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> kAes128 = {
+            {0x0000'0805'0000'0001, "K_AES_128::GlobalRange"},
+        };
+        const std::initializer_list<NameSequence> kAes128Seq = {
+            {0x0000'0805'0003'0001, 1, 32, "K_AES_128::Range{}"},
+        };
+        constexpr std::initializer_list<std::pair<Uid, std::string_view>> kAes256 = {
+            {0x0000'0806'0000'0001, "K_AES_256::GlobalRange"},
+        };
+        const std::initializer_list<NameSequence> kAes256Seq = {
+            {0x0000'0806'0003'0001, 1, 32, "K_AES_256::Range{}"},
+        };
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfSecretProtect = {
-        {0x0000'001D'0000'001D,  "SecretProtect::K_AES_128"},
-        { 0x0000'001D'0000'001E, "SecretProtect::K_AES_256"},
-    };
+        const auto allNames = {
+            spInfo,
+            spTemplates,
+            ace,
+            authority,
+            secretProtect,
+            locking,
+            kAes128,
+            kAes256,
+        };
 
+        const auto allSeqs = {
+            aceSeq,
+            authoritySeq,
+            cPinSeq,
+            lockingSeq,
+            kAes128Seq,
+            kAes256Seq,
+        };
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfLocking = {
-        {0x0000'0802'0000'0001, "Locking::GlobalRange"},
-    };
-
-    const std::initializer_list<NameSequence> preconfLockingSeq = {
-        {0x0000'0802'0003'0001, 1, 32, "Locking::Range{}"},
-    };
-
-
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfACE = {
-        {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
-        { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
-        { 0x0000'0008'0000'0003, "ACE::Anybody_Get_CommonName"                             },
-        { 0x0000'0008'0000'0004, "ACE::Admins_Set_CommonName"                              },
-        { 0x0000'0008'0003'8000, "ACE::ACE_Get_All"                                        },
-        { 0x0000'0008'0003'8001, "ACE::ACE_Set_BooleanExpression"                          },
-        { 0x0000'0008'0003'9000, "ACE::Authority_Get_All"                                  },
-        { 0x0000'0008'0003'9001, "ACE::Authority_Set_Enabled"                              },
-        { 0x0000'0008'0003'A000, "ACE::C_PIN_Admins_Get_All_NOPIN"                         },
-        { 0x0000'0008'0003'A001, "ACE::C_PIN_Admins_Set_PIN"                               },
-        { 0x0000'0008'0003'BFFF, "ACE::K_AES_Mode"                                         },
-        { 0x0000'0008'0003'B000, "ACE::K_AES_128_GlobalRange_GenKey"                       },
-        { 0x0000'0008'0003'B800, "ACE::K_AES_256_GlobalRange_GenKey"                       },
-        { 0x0000'0008'0003'D000, "ACE::Locking_GlobalRange_Get_RangeStartToActiveKey"      },
-        { 0x0000'0008'0003'E000, "ACE::Locking_GlobalRange_Set_RdLocked"                   },
-        { 0x0000'0008'0003'E800, "ACE::Locking_GlobalRange_Set_WrLocked"                   },
-        { 0x0000'0008'0003'F000, "ACE::Locking_GlblRng_Admins_Set"                         },
-        { 0x0000'0008'0003'F001, "ACE::Locking_Admins_RangeStartToLOR"                     },
-        { 0x0000'0008'0003'F800, "ACE::MBRControl_Admins_Set"                              },
-        { 0x0000'0008'0003'F801, "ACE::MBRControl_Set_DoneToDOR"                           },
-        { 0x0000'0008'0003'FC00, "ACE::DataStore_Get_All"                                  },
-        { 0x0000'0008'0003'FC01, "ACE::DataStore_Set_All"                                  },
-        { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
-        { 0x0000'0008'0000'8C02, "ACE::C_PIN_SID_Get_NOPIN"                                },
-        { 0x0000'0008'0000'8C03, "ACE::C_PIN_SID_Set_PIN"                                  },
-        { 0x0000'0008'0000'8C04, "ACE::C_PIN_MSID_Get_PIN"                                 },
-        { 0x0000'0008'0003'0003, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
-        { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
-        { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
-    };
-
-
-    const std::initializer_list<NameSequence> preconfACESeq = {
-        {0x0000'0008'0004'4001,  1, 32, "ACE::User{}_Set_CommonName"                    },
-        { 0x0000'0008'0003'A801, 1, 32, "ACE::C_PIN_User{}_Set_PIN"                     },
-        { 0x0000'0008'0003'B001, 1, 32, "ACE::K_AES_128_Range{}_GenKey"                 },
-        { 0x0000'0008'0003'B801, 1, 32, "ACE::K_AES_256_Range{}_GenKey"                 },
-        { 0x0000'0008'0003'D001, 1, 32, "ACE::Locking_Range{}_Get_RangeStartToActiveKey"},
-        { 0x0000'0008'0003'E001, 1, 32, "ACE::Locking_Range{}_Set_RdLocked"             },
-        { 0x0000'0008'0003'E801, 1, 32, "ACE::Locking_Range{}_Set_WrLocked"             },
-    };
-
-
-    const auto allNames = {
-        preconfSP,
-        preconfAuthority,
-        preconfC_PIN,
-        preconfSecretProtect,
-        preconfLocking,
-        preconfACE,
-        methods,
-    };
-
-
-    const auto allNameSequences = {
-        preconfAuthoritySeq,
-        preconfC_PINSeq,
-        preconfLockingSeq,
-        preconfACESeq,
-    };
-
+    } // namespace locking
 
 } // namespace preconf
 
@@ -158,17 +227,32 @@ eModuleKind OpalModule::ModuleKind() const {
 
 std::optional<std::string> OpalModule::FindName(Uid uid, std::optional<Uid> sp) const {
     using namespace opal;
-    static const auto lut = MakeNameLookup(preconf::allNames);
 
-    const auto it = lut.find(uid);
-    if (it != lut.end()) {
-        return std::string(it->second);
+    static const auto lut = MakeNameLookup({ methods, preconf::admin::sp });
+    static const auto lutAdmin = MakeNameLookup(preconf::admin::allNames);
+    static const auto lutLocking = MakeNameLookup(preconf::locking::allNames);
+
+    {
+        const auto it = lut.find(uid);
+        if (it != lut.end()) {
+            return std::string(it->second);
+        }
     }
 
-    for (const auto& seq : preconf::allNameSequences | std::views::join) {
-        const auto result = FindNameSequence(uid, seq);
-        if (result) {
-            return *result;
+    if (sp && (*sp == Uid(preconf::eSP::Admin) || *sp == Uid(preconf::eSP::Locking))) {
+        const auto& lutSp = *sp == Uid(preconf::eSP::Admin) ? lutAdmin : lutLocking;
+        const auto& seqSp = *sp == Uid(preconf::eSP::Admin) ? preconf::admin::allSeqs : preconf::locking::allSeqs;
+
+        const auto it = lutSp.find(uid);
+        if (it != lutSp.end()) {
+            return std::string(it->second);
+        }
+
+        for (const auto& seq : seqSp | std::views::join) {
+            const auto result = FindNameSequence(uid, seq);
+            if (result) {
+                return *result;
+            }
         }
     }
 
@@ -178,17 +262,32 @@ std::optional<std::string> OpalModule::FindName(Uid uid, std::optional<Uid> sp) 
 
 std::optional<Uid> OpalModule::FindUid(std::string_view name, std::optional<Uid> sp) const {
     using namespace opal;
-    static const auto lut = MakeUidLookup(preconf::allNames);
 
-    const auto it = lut.find(name);
-    if (it != lut.end()) {
-        return it->second;
+    static const auto lut = MakeUidLookup({ methods, preconf::admin::sp });
+    static const auto lutAdmin = MakeUidLookup(preconf::admin::allNames);
+    static const auto lutLocking = MakeUidLookup(preconf::locking::allNames);
+
+    {
+        const auto it = lut.find(name);
+        if (it != lut.end()) {
+            return it->second;
+        }
     }
 
-    for (const auto& seq : preconf::allNameSequences | std::views::join) {
-        const auto result = FindUidSequence(name, seq);
-        if (result) {
-            return *result;
+    if (sp && (*sp == Uid(preconf::eSP::Admin) || *sp == Uid(preconf::eSP::Locking))) {
+        const auto& lutSp = *sp == Uid(preconf::eSP::Admin) ? lutAdmin : lutLocking;
+        const auto& seqSp = *sp == Uid(preconf::eSP::Admin) ? preconf::admin::allSeqs : preconf::locking::allSeqs;
+
+        const auto it = lutSp.find(name);
+        if (it != lutSp.end()) {
+            return it->second;
+        }
+
+        for (const auto& seq : seqSp | std::views::join) {
+            const auto result = FindUidSequence(name, seq);
+            if (result) {
+                return *result;
+            }
         }
     }
 
