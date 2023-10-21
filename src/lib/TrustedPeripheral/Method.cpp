@@ -1,8 +1,7 @@
 #include "Method.hpp"
 
-#include <Error/Exception.hpp>
-
 #include <Archive/Conversion.hpp>
+#include <Error/Exception.hpp>
 
 
 Value MethodToValue(Uid invokingId, const Method& method) {

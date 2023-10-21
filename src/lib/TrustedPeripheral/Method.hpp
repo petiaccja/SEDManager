@@ -55,7 +55,7 @@ concept OptionalType =
         typename T::value_type;
         {
             v
-            } -> std::same_as<std::optional<typename T::value_type>&>;
+        } -> std::same_as<std::optional<typename T::value_type>&>;
     };
 
 static_assert(OptionalType<std::optional<bool>>);
