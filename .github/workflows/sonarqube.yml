@@ -72,7 +72,7 @@ jobs:
           CC: clang
           CXX: clang++
         run: |
-          conan install $GITHUB_WORKSPACE --output-folder=. --build=missing -pr ci -pr:b ci -s build_type=Debug
+          conan install $GITHUB_WORKSPACE --output-folder=. --build="*" -pr ci -pr:b ci -s build_type=Debug
           conan cache clean
           cmake $GITHUB_WORKSPACE --preset conan-debug -DENABLE_LLVM_COV:BOOL=ON
 

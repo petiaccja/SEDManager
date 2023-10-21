@@ -92,7 +92,7 @@ jobs:
         CC: ${{matrix.c_compiler}}
         CXX: ${{matrix.cxx_compiler}}
       run: |
-        conan install $GITHUB_WORKSPACE --output-folder=. --build=missing -pr ci -pr:b ci -s build_type=${{ matrix.build_type }}
+        conan install $GITHUB_WORKSPACE --output-folder=. --build="*" -pr ci -pr:b ci -s build_type=${{ matrix.build_type }}
         conan cache clean
         cmake $GITHUB_WORKSPACE --preset ${{ matrix.conan_preset }}
 
