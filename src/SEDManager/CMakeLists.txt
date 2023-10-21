@@ -1,10 +1,9 @@
-add_executable(SEDManager)
+add_library(SEDManager)
 
 target_compile_features(SEDManager PRIVATE cxx_std_20)
 
 target_sources(SEDManager
     PRIVATE
-        main.cpp
         SEDManager.cpp
         SEDManager.hpp
         Object.hpp
@@ -12,11 +11,5 @@ target_sources(SEDManager
         Table.hpp
 )
 
+target_include_directories(SEDManager INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 target_link_libraries(SEDManager TrustedPeripheral)
-find_package(CLI11)
-target_link_libraries(SEDManager CLI11::CLI11)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_sources(SEDManager PRIVATE admin.manifest)
-    target_link_options(SEDManager PRIVATE "/MANIFESTUAC:NO")
-endif()

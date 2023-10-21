@@ -114,6 +114,10 @@ namespace {
         return "ref";
     }
 
+    std::string GetTypeStr(const NameValueUintegerType& type) {
+        return std::format("named{{ {}: {} }}", type.Name(), GetTypeStr(type.ValueType()));
+    }
+
     //--------------------------------------------------------------------------
     // Get JSON from value
     //--------------------------------------------------------------------------
@@ -273,7 +277,7 @@ namespace {
         }
         for (const auto& optionalType : optionalTypes) {
             const auto& namedType = type_cast<NameValueUintegerType>(optionalType);
-            s.optionalFields.insert({ namedType.NameType(), namedType.ValueType() });
+            s.optionalFields.insert({ namedType.Name(), namedType.ValueType() });
         }
         return s;
     }
@@ -326,6 +330,17 @@ namespace {
     nlohmann::json ValueToJSON(const Value& value, const GeneralReferenceType& type) {
         if (value.IsBytes()) {
             return BytesToJSON(value.AsBytes(), "ref:", false);
+        }
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
+    }
+
+
+    nlohmann::json ValueToJSON(const Value& value, const NameValueUintegerType& type) {
+        if (!value.IsNamed()) {
+            return nlohmann::json({
+                { "name", type.Name() },
+                { "value", ValueToJSON(value.AsNamed().value, type.ValueType()) },
+            });
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
@@ -453,6 +468,27 @@ namespace {
         return JSONToBytes(json, "ref:", false);
     }
 
+    Value JSONToValue(const nlohmann::json& json, const NameValueUintegerType& type) {
+        if (!json.contains("name") || !json.contains("value")) {
+            throw UnexpectedTypeError(R"(object: { "name": ..., "value": ... })");
+        }
+        const auto& nameJson = json["name"];
+        const auto& valueJson = json["value"];
+
+        if (!nameJson.is_number_integer()) {
+            throw UnexpectedTypeError("integer");
+        }
+
+        const auto name = nameJson.get<uint16_t>();
+        const auto value = JSONToValue(valueJson, type.ValueType());
+
+        if (name != type.Name()) {
+            throw InvalidTypeError(std::format("expected name to be {}, got {}", type.Name(), name));
+        }
+
+        return Value(Named(name, value));
+    }
+
 } // namespace
 } // namespace impl
 
@@ -478,6 +514,9 @@ std::string GetTypeStr(const Type& type) {
     }
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::GetTypeStr(type_cast<GeneralReferenceType>(type));
+    }
+    else if (type_isa<NameValueUintegerType>(type)) {
+        return impl::GetTypeStr(type_cast<NameValueUintegerType>(type));
     }
     throw NotImplementedError(std::format("Type to std::string for '{}'", typeid(type).name()));
 }
@@ -505,6 +544,9 @@ nlohmann::json ValueToJSON(const Value& value, const Type& type) {
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::ValueToJSON(value, type_cast<GeneralReferenceType>(type));
     }
+    else if (type_isa<NameValueUintegerType>(type)) {
+        return impl::ValueToJSON(value, type_cast<NameValueUintegerType>(type));
+    }
     throw NotImplementedError(std::format("Value to JSON for '{}'", typeid(type).name()));
 }
 
@@ -530,6 +572,9 @@ Value JSONToValue(const nlohmann::json& value, const Type& type) {
     }
     else if (type_isa<GeneralReferenceType>(type)) {
         return impl::JSONToValue(value, type_cast<GeneralReferenceType>(type));
+    }
+    else if (type_isa<NameValueUintegerType>(type)) {
+        return impl::JSONToValue(value, type_cast<NameValueUintegerType>(type));
     }
     throw NotImplementedError(std::format("JSON to Value for '{}'", typeid(type).name()));
 }

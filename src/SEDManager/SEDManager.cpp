@@ -55,46 +55,6 @@ const TPerModules& SEDManager::GetModules() const {
 }
 
 
-std::vector<NamedObject> SEDManager::GetSecurityProviders() {
-    auto get = [this](std::shared_ptr<Session> session) {
-        std::vector<NamedObject> securityProviders;
-
-        Table sp = GetTable(core::eTable::SP);
-        return GetNamedRows(sp);
-    };
-
-    if (m_session) {
-        return get(m_session);
-    }
-    else {
-        const auto maybeAdminSP = GetModules().FindUid("SP::Admin");
-        if (!maybeAdminSP) {
-            throw std::runtime_error("could not find the Admin SP");
-        }
-        const auto session = std::make_shared<Session>(m_sessionManager, *maybeAdminSP);
-        return get(session);
-    }
-}
-
-
-std::vector<NamedObject> SEDManager::GetAuthorities() {
-    if (m_session) {
-        Table auth = GetTable(core::eTable::Authority);
-        return GetNamedRows(auth);
-    }
-    throw std::logic_error("a session must be active");
-}
-
-
-std::vector<NamedObject> SEDManager::GetTables() {
-    if (m_session) {
-        Table table = GetTable(core::eTable::Table);
-        return GetNamedRows(table);
-    }
-    throw std::logic_error("a session must be active");
-}
-
-
 Table SEDManager::GetTable(Uid table) {
     if (m_session) {
         auto maybeTableDesc = GetModules().FindTable(table);

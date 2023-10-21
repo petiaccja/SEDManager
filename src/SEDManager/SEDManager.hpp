@@ -21,22 +21,21 @@ public:
 
     const TPerDesc& GetCapabilities() const;
     std::unordered_map<std::string, uint32_t> GetProperties();
-
-    std::vector<NamedObject> GetSecurityProviders();
-    std::vector<NamedObject> GetAuthorities();
-    std::vector<NamedObject> GetTables();
-
-    Table GetTable(Uid table);
-    Object GetObject(Uid table, Uid object);
+    const TPerModules& GetModules() const;
 
     void Start(Uid securityProvider);
     void Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
     void End();
 
+    Table GetTable(Uid table);
+    Object GetObject(Uid table, Uid object);
+    void GenKey(Uid credentialObject);
+    void Revert(Uid securityProvider);
+    void Activate(Uid securityProvider);
+
     void StackReset();
     void Reset();
 
-    const TPerModules& GetModules() const;
 
 private:
     std::vector<NamedObject> GetNamedRows(const Table& table);

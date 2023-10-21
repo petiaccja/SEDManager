@@ -47,10 +47,15 @@ TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevic
                     [](const auto& desc) { return std::pair{ desc.baseComId, uint16_t(0) }; },
                     m_desc.sscDescs[0]);
             }
-            throw std::runtime_error("no statically allocated ComIDs available");
+            else {
+                throw std::runtime_error("no statically allocated ComIDs available");
+            }
         }
     }
-    throw std::runtime_error("level 0 discovery did not return a TPer description -- not a TCG-compliant device?");
+    else {
+        throw std::runtime_error("level 0 discovery did not return a TPer description -- not a TCG-compliant device?");
+    }
+    LoadModules(m_desc, m_modules);
 }
 
 

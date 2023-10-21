@@ -418,7 +418,7 @@ public:
     };
 
     NameValueUintegerType(uint16_t name, const Type& valueType) : Type(std::make_shared<Storage>(name, valueType)) {}
-    uint16_t NameType() const { return GetStorage<NameValueUintegerType>().name; }
+    uint16_t Name() const { return GetStorage<NameValueUintegerType>().name; }
     Type ValueType() const { return GetStorage<NameValueUintegerType>().valueType; }
 
     explicit NameValueUintegerType(std::shared_ptr<Storage> s) : Type(std::move(s)) {}

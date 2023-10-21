@@ -10,52 +10,52 @@ namespace opal {
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
-    {opal::eMethod::Activate, "Activate"},
-    { opal::eMethod::Revert,  "Revert"  },
+    {opal::eMethod::Activate, "MethodID::Activate"},
+    { opal::eMethod::Revert,  "MethodID::Revert"  },
 };
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfSP = {
-    {0x0000'0205'0000'0001,  "Admin"  },
-    { 0x0000'0205'0000'0002, "Locking"},
+    {0x0000'0205'0000'0001,  "SP::Admin"  },
+    { 0x0000'0205'0000'0002, "SP::Locking"},
 };
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfAuthority = {
-    {0x0000'0009'0001'FF01,  "PSID" },
-    { 0x0000'0009'0003'0000, "Users"},
+    {0x0000'0009'0001'FF01,  "Authority::PSID" },
+    { 0x0000'0009'0003'0000, "Authority::Users"},
 };
 
 const std::initializer_list<NameSequence> preconfAuthoritySeq = {
-    {0x0000'0009'0001'0001,  1, 32, "Admin{}"},
-    { 0x0000'0009'0003'0001, 1, 32, "User{}" },
+    {0x0000'0009'0001'0001,  1, 32, "Authority::Admin{}"},
+    { 0x0000'0009'0003'0001, 1, 32, "Authority::User{}" },
 };
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfC_PIN = {
-    {0x0000'000B'0000'0001,  "SID" },
-    { 0x0000'000B'0000'8402, "MSID"},
+    {0x0000'000B'0000'0001,  "C_PIN::SID" },
+    { 0x0000'000B'0000'8402, "C_PIN::MSID"},
 };
 
 const std::initializer_list<NameSequence> preconfC_PINSeq = {
-    {0x0000'000B'0000'0201,  1, 32, "Admin{}"        },
-    { 0x0000'000B'0001'0001, 1, 32, "Locking_Admin{}"},
-    { 0x0000'000B'0003'0001, 1, 32, "User{}"         },
+    {0x0000'000B'0000'0201,  1, 32, "C_PIN::Admin{}"        },
+    { 0x0000'000B'0001'0001, 1, 32, "C_PIN::Locking_Admin{}"},
+    { 0x0000'000B'0003'0001, 1, 32, "C_PIN::User{}"         },
 };
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfSecretProtect = {
-    {0x0000'001D'0000'001D,  "K_AES_128"},
-    { 0x0000'001D'0000'001E, "K_AES_256"},
+    {0x0000'001D'0000'001D,  "SecretProtect::K_AES_128"},
+    { 0x0000'001D'0000'001E, "SecretProtect::K_AES_256"},
 };
 
 
 constexpr std::initializer_list<std::pair<Uid, std::string_view>> preconfLocking = {
-    {0x0000'0802'0000'0001, "GlobalRange"},
+    {0x0000'0802'0000'0001, "Locking::GlobalRange"},
 };
 
 const std::initializer_list<NameSequence> preconfLockingSeq = {
-    {0x0000'0802'0003'0001, 1, 32, "Range{}"},
+    {0x0000'0802'0003'0001, 1, 32, "Locking::Range{}"},
 };
 
 

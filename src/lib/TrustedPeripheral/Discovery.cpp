@@ -42,8 +42,8 @@ TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     while (offset < size) {
         FeatureDescHeader featureHeader;
         const auto featureHeaderBytes = featureBytes.subspan(offset, 4);
-        const auto featurePayloadBytes = featureBytes.subspan(offset + 4, featureHeader.length);
         FromBytes(featureHeaderBytes, featureHeader);
+        const auto featurePayloadBytes = featureBytes.subspan(offset + 4, featureHeader.length);
         if (featureHeader.featureCode == TPerFeatureDesc::featureCode) {
             TPerFeatureDesc desc;
             FromBytes(featurePayloadBytes, desc);

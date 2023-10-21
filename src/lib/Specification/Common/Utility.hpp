@@ -76,7 +76,7 @@ constexpr Uid DescriptorToTable(Uid descriptor) {
 
 struct NameSequence {
     NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
-        : base(base), start(start), count(count), format(format), parse(std::regex_replace(format.get().data(), std::regex("{}"), "([0-9]*)")) {
+        : base(base), start(start), count(count), format(format), parse(std::regex_replace(format.get().data(), std::regex(R"(\{\})"), "([0-9]*)")) {
         assert(format.get().find("{}") != format.get().npos);
     }
     Uid base;
