@@ -4,4 +4,10 @@
 #include <SEDManager/SEDManager.hpp>
 
 
-void AddCommandsInteractive(SEDManager& app, CLI::App& cli);
+namespace interactive {
+
+void AddCommands(SEDManager& app, CLI::App& cli);
+std::optional<Uid> GetCurrentSP();
+std::span<const Uid> GetCurrentAuthorities();
+
+} // namespace interactive

@@ -1,4 +1,5 @@
 #include "Interactive.hpp"
+#include "Utility.hpp"
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
@@ -27,8 +28,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: SEDManager <device>" << std::endl;
         return 1;
     }
-    std::string_view device = argv[1];
+    std::string_view devicePath = argv[1];
     try {
+        const auto device = std::make_shared<NvmeDevice>(devicePath);
+        const auto identity = device->IdentifyController();
         SEDManager app{ device };
 
         CLI::App cli;
@@ -36,11 +39,33 @@ int main(int argc, char* argv[]) {
 
         AddCmdHelp(cli);
         AddCmdExit(cli, hasExited);
-        AddCommandsInteractive(app, cli);
+        interactive::AddCommands(app, cli);
 
         while (!hasExited && std::cin.good()) {
             try {
-                std::cout << "sedmanager";
+                std::string currentSPName = "?";
+                std::vector<std::string> currentAuthNames;
+                const auto currentSP = interactive::GetCurrentSP();
+                if (currentSP) {
+                    currentSPName = app.GetModules().FindName(*currentSP).value_or(to_string(*currentSP));
+                }
+                for (auto auth : interactive::GetCurrentAuthorities()) {
+                    const std::string n = app.GetModules().FindName(auth).value_or(to_string(auth));
+                    currentAuthNames.push_back(std::string(SplitName(n).back()));
+                }
+
+                std::cout << SplitName(currentSPName).back();
+                if (currentSP) {
+                    std::cout << "[ ";
+                    if (currentAuthNames.empty()) {
+                        std::cout << "Anybody";
+                    }
+                    else {
+                        std::cout << Join(currentAuthNames, ", ");
+                    }
+                    std::cout << " ]";
+                }
+                std::cout << " @ " << identity.modelNumber;
                 std::cout << "> ";
                 std::string command;
                 std::getline(std::cin, command);

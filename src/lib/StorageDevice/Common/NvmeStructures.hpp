@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
+#include <string>
 
 
 // Documentation:
@@ -14,13 +14,12 @@ enum class eNvmeOpcode {
     SECURITY_RECV = 0x82,
 };
 
-struct NvmeIdentifyController {
-    uint16_t vendorId;
-    uint16_t subsystemVendorId;
-    std::array<char, 20> serialNumber;
-    std::array<char, 40> modelNumber;
-    std::array<char, 8> firmwareRevision;
-    uint8_t recommendedArbitrationBurst;
-    unsigned int ieeeOuiIdentifier : 24;
-    std::array<char, 4020> reserved;
+struct NvmeControllerIdentity {
+    uint16_t vendorId = 0;
+    uint16_t subsystemVendorId = 0;
+    std::string serialNumber;
+    std::string modelNumber;
+    std::string firmwareRevision;
+    uint8_t recommendedArbitrationBurst = 0;
+    unsigned int ieeeOuiIdentifier = 0;
 };

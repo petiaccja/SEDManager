@@ -5,15 +5,8 @@
 #include <stdexcept>
 
 
-SEDManager::SEDManager(std::string_view device) {
-    m_device = std::make_shared<NvmeDevice>(device);
-    m_tper = std::make_shared<TrustedPeripheral>(m_device);
-    m_capabilities = m_tper->GetDesc();
-    const auto comIdState = m_tper->VerifyComId();
-    if (comIdState != eComIdState::ISSUED && comIdState != eComIdState::ASSOCIATED) {
-        throw std::runtime_error("failed to acquire valid ComID");
-    }
-    m_sessionManager = std::make_shared<SessionManager>(m_tper);
+SEDManager::SEDManager(std::shared_ptr<StorageDevice> device) : m_device(device) {
+    LaunchStack();
 }
 
 
@@ -100,15 +93,48 @@ void SEDManager::End() {
 }
 
 
+void SEDManager::GenMEK(Uid lockingRange) {
+    m_session->base.GenKey(lockingRange);
+}
+
+
+void SEDManager::GenPIN(Uid credentialObject, uint32_t length) {
+    m_session->base.GenKey(credentialObject, std::nullopt, length);
+}
+
+
+void SEDManager::Revert(Uid securityProvider) {
+    m_session->opal.Revert(securityProvider);
+    End();
+    LaunchStack();
+}
+
+
+void SEDManager::Activate(Uid securityProvider) {
+    m_session->opal.Activate(securityProvider);
+}
+
+
 void SEDManager::StackReset() {
     m_tper->StackReset();
     End();
+    LaunchStack();
 }
 
 
 void SEDManager::Reset() {
     m_tper->Reset();
     End();
+    LaunchStack();
 }
 
-
+void SEDManager::LaunchStack() {
+    m_session = {};
+    m_tper = std::make_shared<TrustedPeripheral>(m_device);
+    m_capabilities = m_tper->GetDesc();
+    const auto comIdState = m_tper->VerifyComId();
+    if (comIdState != eComIdState::ISSUED && comIdState != eComIdState::ASSOCIATED) {
+        throw std::runtime_error("failed to acquire valid ComID");
+    }
+    m_sessionManager = std::make_shared<SessionManager>(m_tper);
+}

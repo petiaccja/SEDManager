@@ -17,7 +17,7 @@ struct NamedObject {
 
 class SEDManager {
 public:
-    SEDManager(std::string_view device);
+    SEDManager(std::shared_ptr<StorageDevice> device);
 
     const TPerDesc& GetCapabilities() const;
     std::unordered_map<std::string, uint32_t> GetProperties();
@@ -29,7 +29,8 @@ public:
 
     Table GetTable(Uid table);
     Object GetObject(Uid table, Uid object);
-    void GenKey(Uid credentialObject);
+    void GenMEK(Uid lockingRange);
+    void GenPIN(Uid credentialObject, uint32_t length);
     void Revert(Uid securityProvider);
     void Activate(Uid securityProvider);
 
@@ -39,9 +40,10 @@ public:
 
 private:
     std::vector<NamedObject> GetNamedRows(const Table& table);
+    void LaunchStack();
 
 private:
-    std::shared_ptr<NvmeDevice> m_device;
+    std::shared_ptr<StorageDevice> m_device;
     std::shared_ptr<TrustedPeripheral> m_tper;
     std::shared_ptr<SessionManager> m_sessionManager;
     std::shared_ptr<Session> m_session;

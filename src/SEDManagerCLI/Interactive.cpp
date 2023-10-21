@@ -11,6 +11,17 @@
 #include <ostream>
 
 
+namespace {
+
+std::optional<Uid> currentSP;
+std::vector<Uid> currentAuthorities;
+
+
+void ClearCurrents() {
+    currentSP = std::nullopt;
+    currentAuthorities.clear();
+}
+
 
 void AddCmdStart(SEDManager& app, CLI::App& cli) {
     static std::string spName;
@@ -23,7 +34,8 @@ void AddCmdStart(SEDManager& app, CLI::App& cli) {
             std::cout << "Cannot find security provider." << std::endl;
             return;
         }
-        app.Start(maybeSpUid.value());
+        app.Start(*maybeSpUid);
+        currentSP = *maybeSpUid;
     });
 }
 
@@ -40,7 +52,8 @@ void AddCmdAuth(SEDManager& app, CLI::App& cli) {
             return;
         }
         const auto password = GetPassword("Password: ");
-        app.Authenticate(maybeAuthUid.value(), password);
+        app.Authenticate(*maybeAuthUid, password);
+        currentAuthorities.push_back(*maybeAuthUid);
     });
 }
 
@@ -49,6 +62,7 @@ void AddCmdEnd(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("end", "End session with current service provider.");
     cmd->callback([&app] {
         app.End();
+        ClearCurrents();
     });
 }
 
@@ -169,6 +183,7 @@ void AddCmdStackReset(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("stack-reset", "Reset the current communication stream.");
     cmd->callback([&app] {
         app.StackReset();
+        ClearCurrents();
     });
 }
 
@@ -177,30 +192,96 @@ void AddCmdReset(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("reset", "Reset the device as if power-cycled.");
     cmd->callback([&app] {
         app.Reset();
+        ClearCurrents();
+    });
+}
+
+
+void AddCmdGenMEK(SEDManager& app, CLI::App& cli) {
+    static std::string rangeName;
+    auto cmd = cli.add_subcommand("gen-mek", "Creates a new Media Encryption Key for a locking range, cryptographically erasing that range.");
+    cmd->add_option("range", rangeName, "The locking range.");
+    cmd->callback([&] {
+        const auto maybeRangeUid = FindOrParseUid(app, rangeName);
+        if (!maybeRangeUid) {
+            std::cout << "Cannot find locking range." << std::endl;
+            return;
+        }
+        app.GenMEK(*maybeRangeUid);
+    });
+}
+
+
+void AddCmdGenPIN(SEDManager& app, CLI::App& cli) {
+    static std::string credentialObj;
+    static uint32_t length = 32;
+    auto cmd = cli.add_subcommand("gen-pin", "Creates a new random password for an authority.");
+    cmd->add_option("c-pin-obj", credentialObj, "The authority's credential object in C_PIN.");
+    cmd->callback([&] {
+        const auto maybeCredentialUid = FindOrParseUid(app, credentialObj);
+        if (!maybeCredentialUid) {
+            std::cout << "Cannot find credential object." << std::endl;
+            return;
+        }
+        app.GenMEK(*maybeCredentialUid);
     });
 }
 
 
 void AddCmdRevert(SEDManager& app, CLI::App& cli) {
+    static std::string spName;
     auto cmd = cli.add_subcommand("revert", "Revert an SP to Original Manufacturing State. All data is unrecoverably lost!");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
     cmd->callback([&] {
-        try {
-            throw std::logic_error("not implemented");
+        const auto maybeSpUid = FindOrParseUid(app, spName);
+        if (!maybeSpUid) {
+            std::cout << "Cannot find security provider." << std::endl;
+            return;
         }
-        catch (std::exception& ex) {
-            std::cout << ex.what() << std::endl;
-        }
+        app.Revert(maybeSpUid.value());
+        ClearCurrents();
     });
 }
 
 
-void AddCommandsInteractive(SEDManager& app, CLI::App& cli) {
+void AddCmdActivate(SEDManager& app, CLI::App& cli) {
+    static std::string spName;
+    auto cmd = cli.add_subcommand("activate", "Activate an SP that's ben disabled the manufacturer.");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
+    cmd->callback([&] {
+        const auto maybeSpUid = FindOrParseUid(app, spName);
+        if (!maybeSpUid) {
+            std::cout << "Cannot find security provider." << std::endl;
+            return;
+        }
+        app.Activate(maybeSpUid.value());
+    });
+}
+
+} // namespace
+
+
+namespace interactive {
+
+void AddCommands(SEDManager& app, CLI::App& cli) {
     AddCmdStart(app, cli);
     AddCmdAuth(app, cli);
+    AddCmdEnd(app, cli);
+
     AddCmdTable(app, cli);
     AddCmdGetSet(app, cli);
-    AddCmdEnd(app, cli);
+    AddCmdGenMEK(app, cli);
+    AddCmdGenPIN(app, cli);
+
+    AddCmdRevert(app, cli);
+    AddCmdActivate(app, cli);
+
     AddCmdStackReset(app, cli);
     AddCmdReset(app, cli);
-    AddCmdRevert(app, cli);
 }
+
+
+std::optional<Uid> GetCurrentSP() { return currentSP; }
+std::span<const Uid> GetCurrentAuthorities() { return currentAuthorities; }
+
+} // namespace interactive

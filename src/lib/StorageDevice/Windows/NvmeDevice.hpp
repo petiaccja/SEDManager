@@ -16,7 +16,7 @@ public:
     NvmeDevice& operator=(const NvmeDevice&) = delete;
     ~NvmeDevice();
 
-    NvmeIdentifyController IdentifyController();
+    NvmeControllerIdentity IdentifyController();
     void SecuritySend(uint8_t securityProtocol,
                       std::span<const std::byte, 2> protocolSpecific,
                       std::span<const std::byte> data) override;

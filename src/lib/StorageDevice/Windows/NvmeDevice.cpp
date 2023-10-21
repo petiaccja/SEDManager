@@ -1,7 +1,6 @@
 #include "NvmeDevice.hpp"
 
 #include <Error/Exception.hpp>
-#include "NvmeDevice.hpp"
 
 #include <Windows.h>
 #include <ntddscsi.h>
@@ -9,9 +8,9 @@
 #include <winioctl.h>
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <format>
-#include <vector>
 
 
 void SendCommand(HANDLE handle,
@@ -43,11 +42,60 @@ NvmeDevice::~NvmeDevice() {
     CloseHandle(m_handle);
 }
 
-NvmeIdentifyController NvmeDevice::IdentifyController() {
-    std::array protocolSpecific{ std::byte(0), std::byte(0) };
-    NvmeIdentifyController data;
-    SendCommand(m_handle, 0, protocolSpecific, &data, sizeof(data), eNvmeOpcode::IDENTIFY_CONTROLLER);
-    return data;
+
+std::string_view Trim(std::string_view s) {
+    auto it = std::find_if(s.rbegin(), s.rend(), [](char c) { return !std::isspace(c); });
+    return { std::begin(s), it.base() };
+}
+
+
+NvmeControllerIdentity NvmeDevice::IdentifyController() {
+    const size_t bufferLength = FIELD_OFFSET(STORAGE_PROPERTY_QUERY, AdditionalParameters) + sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA) + NVME_MAX_LOG_SIZE;
+    const auto buffer = std::make_unique_for_overwrite<std::byte[]>(bufferLength);
+    std::memset(buffer.get(), 0, bufferLength);
+
+    const auto query = reinterpret_cast<STORAGE_PROPERTY_QUERY*>(buffer.get());
+    const auto protocolData = reinterpret_cast<STORAGE_PROTOCOL_SPECIFIC_DATA*>(query->AdditionalParameters);
+
+    query->PropertyId = StorageAdapterProtocolSpecificProperty;
+    query->QueryType = PropertyStandardQuery;
+
+    protocolData->ProtocolType = ProtocolTypeNvme;
+    protocolData->DataType = NVMeDataTypeIdentify;
+    protocolData->ProtocolDataRequestValue = NVME_IDENTIFY_CNS_CONTROLLER;
+    protocolData->ProtocolDataRequestSubValue = 0;
+    protocolData->ProtocolDataOffset = sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA);
+    protocolData->ProtocolDataLength = NVME_MAX_LOG_SIZE;
+
+
+    ULONG returnedLength = 0;
+    const bool result = !!DeviceIoControl(m_handle,
+                                          IOCTL_STORAGE_QUERY_PROPERTY,
+                                          buffer.get(),
+                                          bufferLength,
+                                          buffer.get(),
+                                          bufferLength,
+                                          &returnedLength,
+                                          NULL);
+
+    if (!result) {
+        throw DeviceError(std::format("device returned an error: NVMe status = {}", GetLastError()));
+    }
+
+    const auto data = reinterpret_cast<const NVME_IDENTIFY_CONTROLLER_DATA*>(
+        reinterpret_cast<const std::byte*>(protocolData) + protocolData->ProtocolDataOffset);
+
+
+    NvmeControllerIdentity identity{
+        .vendorId = data->VID,
+        .subsystemVendorId = data->SSVID,
+        .serialNumber = std::string(Trim({ (const char*)std::begin(data->SN), (const char*)std::end(data->SN) })),
+        .modelNumber = std::string(Trim({ (const char*)std::begin(data->MN), (const char*)std::end(data->MN) })),
+        .firmwareRevision = std::string(Trim({ (const char*)std::begin(data->FR), (const char*)std::end(data->FR) })),
+        .recommendedArbitrationBurst = data->RAB,
+        .ieeeOuiIdentifier = unsigned(data->IEEE[2] << 2 | data->IEEE[1] << 1 | data->IEEE[0]),
+    };
+    return identity;
 }
 
 
@@ -145,6 +193,6 @@ void SendCommand(HANDLE handle,
                                          &returnedLength,
                                          nullptr);
     if (!success || scsiCommand->ScsiStatus != 0) {
-        throw std::format("device returned an error: NVMe status = {}", scsiCommand->ScsiStatus);
+        throw DeviceError(std::format("device returned an error: NVMe status = {}", scsiCommand->ScsiStatus));
     }
 }
