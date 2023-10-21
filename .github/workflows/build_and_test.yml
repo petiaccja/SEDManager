@@ -93,4 +93,4 @@ jobs:
     - name: Test
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: ./build/${{ matrix.build_type }}/bin/UnitTest
+      run: ./build/${{ matrix.build_type }}/bin/Test
