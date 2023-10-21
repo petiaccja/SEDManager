@@ -89,7 +89,7 @@ struct NameSequence {
 
 inline std::optional<std::string> FindNameSequence(Uid uid, const NameSequence& desc) {
     const auto index = int64_t(uid) - int64_t(desc.base);
-    if (0 < index && index < int64_t(desc.count)) {
+    if (0 <= index && index < int64_t(desc.count)) {
         const auto number = index + desc.start;
         return std::format(desc.format, uint64_t(number));
     }
@@ -105,7 +105,7 @@ inline std::optional<Uid> FindUidSequence(std::string_view name, const NameSeque
         try {
             const auto number = std::stoll(matches[1].str());
             const auto index = number - int64_t(desc.start);
-            if (0 < index && index < int64_t(desc.count)) {
+            if (0 <= index && index < int64_t(desc.count)) {
                 return Uid(uint64_t(desc.base) + index);
             }
         }

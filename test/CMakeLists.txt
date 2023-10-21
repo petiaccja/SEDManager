@@ -2,14 +2,16 @@ add_executable(Test)
 
 target_sources(Test
     PRIVATE
-        main.cpp
         Archive/TestTokenArchive.cpp
-        Archive/TestPacket.cpp
-        RPC/TestValue.cpp
-        RPC/TestMethod.cpp
-        RPC/TestValueCast.cpp
-        Specification/TestType.cpp
-        UI/TestValueToJSON.cpp
+        Archive/TestValueToJSON.cpp
+        Archive/TestValueToNative.cpp
+        Data/TestComPacket.cpp
+        Data/TestType.cpp
+        Data/TestValue.cpp
+        main.cpp
+        Specification/TestUtility.cpp
+        Specification/TestModule.cpp
+        TrustedPeripheral/TestMethod.cpp
 )
 
 find_package(Catch2 REQUIRED)

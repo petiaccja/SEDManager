@@ -3,14 +3,21 @@
 #include <catch2/catch_test_macros.hpp>
 
 
-TEST_CASE("Type UID", "[Type]") {
+TEST_CASE("Type: identified types", "[Type]") {
     const Type type = IdentifiedType<IntegerType, 754>(4, false);
     REQUIRE(type_isa<IntegerType>(type));
     REQUIRE(type_uid(type) == Uid(754));
 }
 
 
-TEST_CASE("Type cast", "[Type]") {
+TEST_CASE("Type: type_cast", "[Type]") {
+    const Type type = IdentifiedType<IntegerType, 754>(4, false);
+    REQUIRE(type_cast<IntegerType>(type).Width() == 4);
+    REQUIRE(type_cast<IntegerType>(type).Signedness() == false);
+}
+
+
+TEST_CASE("Type: type_isa", "[Type]") {
     SECTION("IntegerType") {
         const Type type = IntegerType(4, false);
         REQUIRE(type_isa<IntegerType>(type));
