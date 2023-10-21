@@ -24,8 +24,16 @@ inline const Type uinteger_8 = IdentifiedType<UnsignedIntType, 0x0000'0005'0000'
 
 inline const Type max_bytes_32 = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020D>(32);
 inline const Type max_bytes_64 = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020D>(64);
+inline const Type bytes_4 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0238>(4);
 inline const Type bytes_12 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0201>(12);
+inline const Type bytes_16 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0202>(16);
+inline const Type bytes_32 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0205>(32);
+inline const Type bytes_64 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0206>(64);
 
+inline const Type key_128 = IdentifiedType<AlternativeType, 0x0000'0005'0000'0602>(bytes_16, bytes_32);
+inline const Type key_256 = IdentifiedType<AlternativeType, 0x0000'0005'0000'0603>(bytes_32, bytes_64);
+
+inline const Type type_def = IdentifiedType<CappedBytesType, 0x0000'0005'0000'0203>(65536);
 inline const Type name = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020B>(32);
 inline const Type password = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020C>(32);
 inline const Type year_enum = IdentifiedType<EnumerationType, 0x0000'0005'0000'0416>(1970, 9999);
@@ -50,6 +58,7 @@ inline const Type last_reenc_stat = IdentifiedType<EnumerationType, 0x0000'0005'
 inline const Type gen_status = IdentifiedType<SetType, 0x0000'0005'0000'1A02>(0, 63);
 inline const Type enc_supported = IdentifiedType<EnumerationType, 0x0000'0005'0000'041D>(0, 15);
 inline const Type keys_avail_conds = IdentifiedType<EnumerationType, 0x0000'0005'0000'0410>(0, 7);
+inline const Type symmetric_mode_media = IdentifiedType<EnumerationType, 0x0000'0005'0000'0403>(0, 23);
 
 inline const Type uid = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0209>(8);
 

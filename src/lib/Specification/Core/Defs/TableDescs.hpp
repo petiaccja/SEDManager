@@ -159,6 +159,7 @@ constexpr std::array columnsSPInfo = {
     ColumnDescStatic{ "Enabled",          false, boolean   },
 };
 
+
 constexpr std::array columnsTPerInfo = {
     ColumnDescStatic{"UID",               false, uid       },
     ColumnDescStatic{ "Bytes",            false, uinteger_8},
@@ -170,12 +171,57 @@ constexpr std::array columnsTPerInfo = {
     ColumnDescStatic{ "SSC",              false, SSC       },
 };
 
+
+constexpr std::array columnsSPTemplates = {
+    ColumnDescStatic{"UID",         false, uid                },
+    ColumnDescStatic{ "TemplateID", false, Template_object_ref},
+    ColumnDescStatic{ "Name",       false, name               },
+    ColumnDescStatic{ "Version",    false, bytes_4            }
+};
+
+
+constexpr std::array columnsType = {
+    ColumnDescStatic{"UID",         false, uid       },
+    ColumnDescStatic{ "Name",       true,  name      },
+    ColumnDescStatic{ "CommonName", true,  name      },
+    ColumnDescStatic{ "Format",     false, type_def  },
+    ColumnDescStatic{ "Size",       false, uinteger_2},
+};
+
+
+constexpr std::array columnsTemplate = {
+    ColumnDescStatic{"UID",             false, uid       },
+    ColumnDescStatic{ "Name",           true,  name      },
+    ColumnDescStatic{ "RevisionNumber", false, uinteger_4},
+    ColumnDescStatic{ "Instances",      false, uinteger_2},
+    ColumnDescStatic{ "MaxInstances",   false, uinteger_2},
+};
+
+
+constexpr std::array columnsKAes128 = {
+    ColumnDescStatic{"UID",         false, uid                 },
+    ColumnDescStatic{ "Name",       true,  name                },
+    ColumnDescStatic{ "CommonName", true,  name                },
+    ColumnDescStatic{ "Key",        false, key_128             },
+    ColumnDescStatic{ "Mode",       false, symmetric_mode_media},
+};
+
+
+constexpr std::array columnsKAes256 = {
+    ColumnDescStatic{"UID",         false, uid                 },
+    ColumnDescStatic{ "Name",       true,  name                },
+    ColumnDescStatic{ "CommonName", true,  name                },
+    ColumnDescStatic{ "Key",        false, key_256             },
+    ColumnDescStatic{ "Mode",       false, symmetric_mode_media},
+};
+
+
 constexpr std::array tableDescs = {
     TableDescStatic{ eTable::Table, "Table", eTableKind::OBJECT, columnsTable },
     TableDescStatic{ eTable::SPInfo, "SPInfo", eTableKind::OBJECT, columnsSPInfo, eTableSingleRows::SPInfo },
-    TableDescStatic{ eTable::SPTemplates, "SPTemplates", eTableKind::OBJECT },
+    TableDescStatic{ eTable::SPTemplates, "SPTemplates", eTableKind::OBJECT, columnsSPTemplates },
     TableDescStatic{ eTable::Column, "Column", eTableKind::OBJECT },
-    TableDescStatic{ eTable::Type, "Type", eTableKind::OBJECT },
+    TableDescStatic{ eTable::Type, "Type", eTableKind::OBJECT, columnsType },
     TableDescStatic{ eTable::MethodID, "MethodID", eTableKind::OBJECT, columnsMethodID },
     TableDescStatic{ eTable::AccessControl, "AccessControl", eTableKind::OBJECT, columnsAccessControl },
     TableDescStatic{ eTable::ACE, "ACE", eTableKind::OBJECT, columnsACE },
@@ -202,7 +248,7 @@ constexpr std::array tableDescs = {
     TableDescStatic{ eTable::SecretProtect, "SecretProtect", eTableKind::OBJECT, columnsSecretProtect },
     TableDescStatic{ eTable::TPerInfo, "TPerInfo", eTableKind::OBJECT, columnsTPerInfo, eTableSingleRows::TPerInfo },
     TableDescStatic{ eTable::CryptoSuite, "CryptoSuite", eTableKind::OBJECT },
-    TableDescStatic{ eTable::Template, "Template", eTableKind::OBJECT },
+    TableDescStatic{ eTable::Template, "Template", eTableKind::OBJECT, columnsTemplate },
     TableDescStatic{ eTable::SP, "SP", eTableKind::OBJECT, columnsSP },
     TableDescStatic{ eTable::ClockTime, "ClockTime", eTableKind::OBJECT },
     TableDescStatic{ eTable::H_SHA_1, "H_SHA_1", eTableKind::OBJECT },
@@ -215,8 +261,8 @@ constexpr std::array tableDescs = {
     TableDescStatic{ eTable::Locking, "Locking", eTableKind::OBJECT, columnsLocking },
     TableDescStatic{ eTable::MBRControl, "MBRControl", eTableKind::OBJECT, columnsMBRControl, eTableSingleRows::MBRControl },
     TableDescStatic{ eTable::MBR, "MBR", eTableKind::BYTE },
-    TableDescStatic{ eTable::K_AES_128, "K_AES_128", eTableKind::OBJECT },
-    TableDescStatic{ eTable::K_AES_256, "K_AES_256", eTableKind::OBJECT },
+    TableDescStatic{ eTable::K_AES_128, "K_AES_128", eTableKind::OBJECT, columnsKAes128 },
+    TableDescStatic{ eTable::K_AES_256, "K_AES_256", eTableKind::OBJECT, columnsKAes256 },
 };
 
 } // namespace core

@@ -173,6 +173,19 @@ void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
 }
 
 
+void AddCmdFind(SEDManager& app, CLI::App& cli) {
+    static std::string objectName;
+    auto cmd = cli.add_subcommand("find", "Finds the name and UID of an object given as name or UID.");
+    cmd->add_option("object", objectName);
+    cmd->callback([&app] {
+        const auto objectUid = Unwrap(FindOrParseUid(app, objectName, currentSP), "cannot find object");
+        const auto maybeName = app.GetModules().FindName(objectUid);
+        std::cout << "UID:  " << to_string(objectUid) << std::endl;
+        std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
+    });
+}
+
+
 void AddCmdStackReset(SEDManager& app, CLI::App& cli) {
     auto cmd = cli.add_subcommand("stack-reset", "Reset the current communication stream.");
     cmd->callback([&app] {
@@ -250,6 +263,7 @@ void AddCommands(SEDManager& app, CLI::App& cli) {
     AddCmdGetSet(app, cli);
     AddCmdGenMEK(app, cli);
     AddCmdGenPIN(app, cli);
+    AddCmdFind(app, cli);
 
     AddCmdRevert(app, cli);
     AddCmdActivate(app, cli);
