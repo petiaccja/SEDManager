@@ -3,11 +3,13 @@
 #include "Logging.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenArchive.hpp>
+#include <Archive/TokenBinaryArchive.hpp>
 #include <Archive/TokenDebugArchive.hpp>
-#include <RPC/Exception.hpp>
-#include <RPC/Packet.hpp>
-#include <Specification/Names.hpp>
+#include <Archive/Types/ValueToToken.hpp>
+#include <Data/ComPacket.hpp>
+#include <Error/Exception.hpp>
+#include <Specification/Core/CoreModule.hpp>
+
 
 
 template <class Struct, class... Args>
@@ -23,7 +25,7 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
     -> PropertiesResult {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(eMethod::Properties, hostProperties));
+    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(core::eMethod::Properties, hostProperties));
 }
 
 
@@ -50,7 +52,7 @@ auto SessionManager::StartSession(
         std::optional<uint32_t>,
         std::optional<uint32_t>,
         std::optional<std::vector<std::byte>>>;
-    auto results = InvokeMethod<OutArgs>(eMethod::StartSession,
+    auto results = InvokeMethod<OutArgs>(core::eMethod::StartSession,
                                          hostSessionID,
                                          spId,
                                          write,
@@ -127,11 +129,12 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 
 
 Method SessionManager::InvokeMethod(const Method& method) {
+    const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
         const Value requestStream = MethodToValue(INVOKING_ID, method);
-        Log(std::format("Call '{}' [SessionManager]", GetNameOrUid(method.methodId)), requestStream);
+        Log(std::format("Call '{}' [SessionManager]", methodIdStr), requestStream);
         std::stringstream requestSs(std::ios::binary | std::ios::out);
-        TokenOutputArchive requestAr(requestSs);
+        TokenBinaryOutputArchive requestAr(requestSs);
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = std::as_bytes(std::span(requestSs.view()));
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
@@ -142,14 +145,19 @@ Method SessionManager::InvokeMethod(const Method& method) {
         FromTokens(responseTokens, responseStream);
 
         auto response = MethodFromValue(responseStream);
-        Log(std::format("Result '{}' [SessionManager]", GetNameOrUid(response.methodId)), responseStream);
-        MethodStatusToException(GetNameOrUid(method.methodId), response.status);
+        Log(std::format("Result '{}' [SessionManager]", methodIdStr), responseStream);
+        MethodStatusToException(methodIdStr, response.status);
         return response;
     }
     catch (InvocationError&) {
         throw;
     }
     catch (std::exception& ex) {
-        throw InvocationError(GetNameOrUid(method.methodId), ex.what());
+        throw InvocationError(methodIdStr, ex.what());
     }
+}
+
+
+const TPerModules& SessionManager::GetModules() const {
+    return m_tper->GetModules();
 }

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Discovery.hpp"
-#include "Setup.hpp"
+#include "TPerModules.hpp"
 
+#include <Data/SetupPackets.hpp>
 #include <StorageDevice/NvmeDevice.hpp>
 
 #include <chrono>
@@ -13,12 +14,14 @@ struct ComPacket;
 
 class TrustedPeripheral {
 public:
-    TrustedPeripheral(std::shared_ptr<NvmeDevice> storageDevice);
+    TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice);
     ~TrustedPeripheral();
+
+    const TPerDesc& GetDesc() const;
+    const TPerModules& GetModules() const;
 
     uint16_t GetComId() const;
     uint16_t GetComIdExtension() const;
-    const TPerDesc& GetDesc() const;
     eComIdState VerifyComId();
     void StackReset();
     void Reset();
@@ -34,8 +37,9 @@ private:
     std::pair<uint16_t, uint16_t> RequestComId();
 
 private:
-    std::shared_ptr<NvmeDevice> m_storageDevice;
+    std::shared_ptr<StorageDevice> m_storageDevice;
     uint16_t m_comId;
     uint16_t m_comIdExtension;
     TPerDesc m_desc;
+    TPerModules m_modules;
 };

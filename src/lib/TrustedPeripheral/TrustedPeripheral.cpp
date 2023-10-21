@@ -1,10 +1,13 @@
 #include "TrustedPeripheral.hpp"
 
-#include "Exception.hpp"
-#include "Setup.hpp"
+#include "Method.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <RPC/Packet.hpp>
+#include <Data/ComPacket.hpp>
+#include <Data/SetupPackets.hpp>
+#include <Error/Exception.hpp>
+#include <Specification/Core/CoreModule.hpp>
+#include <Specification/Opal/OpalModule.hpp>
 
 #include <array>
 #include <stdexcept>
@@ -12,35 +15,47 @@
 
 
 
-std::pair<uint16_t, uint16_t> ExtractBaseComId(const auto& desc) {
-    if constexpr (!std::is_convertible_v<decltype(desc), std::monostate>) {
-        return { desc.baseComId, 0 };
+void LoadModules(const TPerDesc& desc, TPerModules& modules) {
+    if (desc.tperDesc && desc.lockingDesc) {
+        const auto coreModule = CoreModule::Get();
+        modules.Load(coreModule);
     }
-    throw std::invalid_argument("invalid SSC descriptor");
-};
+    for (const auto& sscDesc : desc.sscDescs) {
+        const auto featureCode = std::visit([](auto& desc) { return desc.featureCode; }, sscDesc);
+        switch (featureCode) {
+            case Opal1FeatureDesc::featureCode: modules.Load(Opal1Module::Get()); break;
+            case Opal2FeatureDesc::featureCode: modules.Load(Opal2Module::Get()); break;
+        }
+    }
+}
 
 
-
-TrustedPeripheral::TrustedPeripheral(std::shared_ptr<NvmeDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
+TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
     m_desc = Discovery();
     if (m_desc.tperDesc) {
-        try {
-            if (m_desc.tperDesc->comIdMgmtSupported) {
+        if (m_desc.tperDesc->comIdMgmtSupported) {
+            try {
                 std::tie(m_comId, m_comIdExtension) = RequestComId();
             }
-            else {
-                std::tie(m_comId, m_comIdExtension) = std::visit(
-                    [](const auto& desc) { return ExtractBaseComId(desc); },
-                    m_desc.sscDesc);
+            catch (std::exception& ex) {
+                throw std::runtime_error(std::format("dynamically allocating ComID failed: ", ex.what()));
             }
         }
-        catch (std::exception& ex) {
-            throw std::runtime_error("could not acquire or determine ComID");
+        else {
+            if (!m_desc.sscDescs.empty()) {
+                std::tie(m_comId, m_comIdExtension) = std::visit(
+                    [](const auto& desc) { return std::pair{ desc.baseComId, uint16_t(0) }; },
+                    m_desc.sscDescs[0]);
+            }
+            else {
+                throw std::runtime_error("no statically allocated ComIDs available");
+            }
         }
     }
     else {
-        throw std::runtime_error("no TPer description in level 0 discovery");
+        throw std::runtime_error("level 0 discovery did not return a TPer description -- not a TCG-compliant device?");
     }
+    LoadModules(m_desc, m_modules);
 }
 
 
@@ -69,6 +84,11 @@ const TPerDesc& TrustedPeripheral::GetDesc() const {
 }
 
 
+const TPerModules& TrustedPeripheral::GetModules() const {
+    return m_modules;
+}
+
+
 eComIdState TrustedPeripheral::VerifyComId() {
     // Send VERIFY_COMID_VALID command.
     VerifyComIdValidRequest payload{
@@ -87,7 +107,7 @@ eComIdState TrustedPeripheral::VerifyComId() {
         FromBytes(responseBytes, response);
 
         if (response.requestCode == 0) {
-            throw std::runtime_error("verify comid valid failed: no response available");
+            throw NoResponseError("VERIFY_COMID_VALID");
         }
         if (response.availableDataLength == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -225,7 +245,7 @@ void TrustedPeripheral::StackReset() {
         FromBytes(responseBytes, response);
 
         if (response.requestCode == 0) {
-            throw std::runtime_error("stack reset failed: no response available");
+            throw NoResponseError("STACK_RESET");
         }
         if (response.availableDataLength == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -233,6 +253,6 @@ void TrustedPeripheral::StackReset() {
     } while (response.availableDataLength == 0);
 
     if (response.success != eStackResetStatus::SUCCESS) {
-        throw std::runtime_error("stack reset failed with failure code");
+        throw InvocationError("STACK_RESET", "failed");
     }
 }

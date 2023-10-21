@@ -27,3 +27,4 @@ else()
 endif()
 
 target_include_directories(StorageDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
+target_link_libraries(StorageDevice Error)

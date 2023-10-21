@@ -1,8 +1,9 @@
 #pragma once
 
-#include <Specification/Names.hpp>
-#include <RPC/Exception.hpp>
+#include "Method.hpp"
 #include "SessionManager.hpp"
+
+#include <Error/Exception.hpp>
 
 #include <memory>
 
@@ -21,6 +22,8 @@ protected:
 
     template <class OutArgs = std::tuple<>, class... InArgs>
     OutArgs InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
+
+    const TPerModules& GetModules() const;
 
 private:
     ComPacket CreatePacket(std::vector<std::byte> payload);
@@ -112,7 +115,7 @@ OutArgs Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... in
         std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
-        throw InvalidResponseError(GetNameOrUid(methodId), ex.what());
+        throw InvalidResponseError(GetModules().FindName(methodId).value_or(to_string(methodId)), ex.what());
     }
     return outArgs;
 }

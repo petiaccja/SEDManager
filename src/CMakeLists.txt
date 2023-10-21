@@ -1,2 +1,3 @@
-add_subdirectory(SEDManager)
 add_subdirectory(lib)
+add_subdirectory(SEDManager)
+add_subdirectory(SEDManagerCLI)

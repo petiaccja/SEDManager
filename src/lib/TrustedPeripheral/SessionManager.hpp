@@ -1,11 +1,9 @@
 #pragma once
 
+#include "Method.hpp"
 #include "TrustedPeripheral.hpp"
 
-#include <RPC/Exception.hpp>
-#include <RPC/Method.hpp>
-#include <Specification/Identifiers.hpp>
-#include <Specification/Names.hpp>
+#include <Error/Exception.hpp>
 
 #include <vector>
 
@@ -65,7 +63,9 @@ private:
     Method InvokeMethod(const Method& method);
 
     template <class OutArgs, class... InArgs>
-    OutArgs InvokeMethod(eMethod methodId, const InArgs&... inArgs);
+    OutArgs InvokeMethod(Uid methodId, const InArgs&... inArgs);
+
+    const TPerModules& GetModules() const;
 
 private:
     static constexpr Uid INVOKING_ID = 0xFF;
@@ -75,7 +75,7 @@ private:
 
 
 template <class OutArgs, class... InArgs>
-OutArgs SessionManager::InvokeMethod(eMethod methodId, const InArgs&... inArgs) {
+OutArgs SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
     const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
 
@@ -84,7 +84,7 @@ OutArgs SessionManager::InvokeMethod(eMethod methodId, const InArgs&... inArgs) 
         std::apply([&result](auto&... outArgs) { ArgsFromValues(result.args, outArgs...); }, outArgs);
     }
     catch (std::exception& ex) {
-        throw InvalidResponseError(GetNameOrUid(methodId), ex.what());
+        throw InvalidResponseError(GetModules().FindName(methodId).value_or(to_string(methodId)), ex.what());
     }
     return outArgs;
 }

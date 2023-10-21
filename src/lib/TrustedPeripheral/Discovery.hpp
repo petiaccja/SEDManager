@@ -9,16 +9,6 @@
 #include <variant>
 
 
-enum class eDiscoveryFeatureCode {
-    TPER = 0x0001,
-    LOCKING = 0x0002,
-    OPAL2 = 0x0203,
-    OPALITE = 0x0301,
-    PYRITE1 = 0x302,
-    PYRITE2 = 0x0303,
-};
-
-
 struct DiscoveryHeader {
     uint32_t lengthOfData;
     uint16_t versionMajor;
@@ -34,7 +24,12 @@ struct FeatureDescHeader {
 };
 
 
+//------------------------------------------------------------------------------
+// Device features
+//------------------------------------------------------------------------------
 struct TPerFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0001;
+
     bool comIdMgmtSupported;
     bool streamingSupported;
     bool bufferMgmtSupported;
@@ -45,6 +40,8 @@ struct TPerFeatureDesc {
 
 
 struct LockingFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0002;
+
     bool mbrSupported;
     bool mbrDone;
     bool mbrEnabled;
@@ -55,54 +52,99 @@ struct LockingFeatureDesc {
 };
 
 
-struct Opal2FeatureDesc {
+//------------------------------------------------------------------------------
+// SSC features
+//------------------------------------------------------------------------------
+
+struct BasicSSCFeatureDesc {
     uint16_t baseComId;
     uint16_t numComIds;
+};
+
+struct EnterpriseFeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0100;
+
+    bool crossingRangeBehavior;
+};
+
+
+struct Opal1FeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0200;
+
+    bool crossingRangeBehavior;
+};
+
+struct Opal2FeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0203;
+
     bool crossingRangeBehavior;
     uint16_t numAdminsSupported;
     uint16_t numUsersSupported;
-    uint8_t initialCPinSidIndicator;
-    uint8_t cPinSidRevertBehavior;
+    bool initialCPinSidIndicator;
+    bool cPinSidRevertBehavior;
+};
+
+struct OpaliteFeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0301;
+
+    bool initialCPinSidIndicator;
+    bool cPinSidRevertBehavior;
+};
+
+struct Pyrite1FeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0302;
+
+    bool initialCPinSidIndicator;
+    bool cPinSidRevertBehavior;
+};
+
+struct Pyrite2FeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0303;
+
+    bool initialCPinSidIndicator;
+    bool cPinSidRevertBehavior;
+};
+
+struct RubyFeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0304;
+
+    bool crossingRangeBehavior;
+    uint16_t numAdminsSupported;
+    uint16_t numUsersSupported;
+    bool initialCPinSidIndicator;
+    bool cPinSidRevertBehavior;
+};
+
+struct KeyPerIOFeatureDesc : BasicSSCFeatureDesc {
+    static constexpr uint16_t featureCode = 0x0305;
 };
 
 
-struct OpaliteFeatureDesc {
-    uint16_t baseComId;
-    uint16_t numComIds;
-    uint8_t initialCPinSidIndicator;
-    uint8_t cPinSidRevertBehavior;
-};
+using SSCFeatureDesc = std::variant<
+    EnterpriseFeatureDesc,
+    Opal1FeatureDesc,
+    Opal2FeatureDesc,
+    OpaliteFeatureDesc,
+    Pyrite1FeatureDesc,
+    Pyrite2FeatureDesc,
+    RubyFeatureDesc,
+    KeyPerIOFeatureDesc>;
 
 
-struct Pyrite1FeatureDesc {
-    uint16_t baseComId;
-    uint16_t numComIds;
-    uint8_t initialCPinSidIndicator;
-    uint8_t cPinSidRevertBehavior;
-};
-
-
-struct Pyrite2FeatureDesc {
-    uint16_t baseComId;
-    uint16_t numComIds;
-    uint8_t initialCPinSidIndicator;
-    uint8_t cPinSidRevertBehavior;
-};
-
-
-using StorageClassFeatureDesc = std::variant<std::monostate,
-                                             Opal2FeatureDesc,
-                                             OpaliteFeatureDesc,
-                                             Pyrite1FeatureDesc,
-                                             Pyrite2FeatureDesc>;
-
+//------------------------------------------------------------------------------
+// Device description
+//------------------------------------------------------------------------------
 
 struct TPerDesc {
     std::optional<TPerFeatureDesc> tperDesc;
     std::optional<LockingFeatureDesc> lockingDesc;
-    StorageClassFeatureDesc sscDesc;
+    std::vector<SSCFeatureDesc> sscDescs;
 };
 
+
+//------------------------------------------------------------------------------
+// Serialization
+//------------------------------------------------------------------------------
 
 template <class Archive>
 void load(Archive& ar, DiscoveryHeader& obj) {
@@ -173,61 +215,47 @@ void load(Archive& ar, LockingFeatureDesc& obj) {
 }
 
 
-template <class Archive>
-void load(Archive& ar, Opal2FeatureDesc& obj) {
-    uint8_t reserved1 = 0;
-    std::array<uint8_t, 5> reserved2 = { 0 };
-
+template <class Archive, std::derived_from<BasicSSCFeatureDesc> ConcreteSSCFeatureDesc>
+void load(Archive& ar, ConcreteSSCFeatureDesc& obj) {
+    // Always present
     ar(obj.baseComId);
     ar(obj.numComIds);
-    ar(reserved1);
-    ar(obj.numAdminsSupported);
-    ar(obj.numUsersSupported);
-    ar(obj.initialCPinSidIndicator);
-    ar(obj.cPinSidRevertBehavior);
-    ar(reserved2);
-}
 
+    // Key Per I/O has a completely different layout.
+    if constexpr (!std::is_base_of_v<ConcreteSSCFeatureDesc, KeyPerIOFeatureDesc>) {
+        uint8_t byte8;
+        uint16_t numAdminsSupported;
+        uint16_t numUsersSupported;
+        uint8_t initialCPinSidIndicator;
+        uint8_t cPinSidRevertBehavior;
+        std::array<uint8_t, 5> reserved;
 
-template <class Archive>
-void load(Archive& ar, OpaliteFeatureDesc& obj) {
-    std::array<uint8_t, 5> reserved1 = { 0 };
-    std::array<uint8_t, 5> reserved2 = { 0 };
+        ar(byte8);
+        ar(numAdminsSupported);
+        ar(numUsersSupported);
+        ar(initialCPinSidIndicator);
+        ar(cPinSidRevertBehavior);
+        ar(reserved);
 
-    ar(obj.baseComId);
-    ar(obj.numComIds);
-    ar(reserved1);
-    ar(obj.initialCPinSidIndicator);
-    ar(obj.cPinSidRevertBehavior);
-    ar(reserved2);
-}
-
-
-template <class Archive>
-void load(Archive& ar, Pyrite1FeatureDesc& obj) {
-    std::array<uint8_t, 5> reserved1 = { 0 };
-    std::array<uint8_t, 5> reserved2 = { 0 };
-
-    ar(obj.baseComId);
-    ar(obj.numComIds);
-    ar(reserved1);
-    ar(obj.initialCPinSidIndicator);
-    ar(obj.cPinSidRevertBehavior);
-    ar(reserved2);
-}
-
-
-template <class Archive>
-void load(Archive& ar, Pyrite2FeatureDesc& obj) {
-    std::array<uint8_t, 5> reserved1 = { 0 };
-    std::array<uint8_t, 5> reserved2 = { 0 };
-
-    ar(obj.baseComId);
-    ar(obj.numComIds);
-    ar(reserved1);
-    ar(obj.initialCPinSidIndicator);
-    ar(obj.cPinSidRevertBehavior);
-    ar(reserved2);
+        if constexpr (requires { obj.crossingRangeBehavior; }) {
+            obj.crossingRangeBehavior = byte8 & 0x01;
+        }
+        if constexpr (requires { obj.numAdminsSupported; }) {
+            obj.numAdminsSupported = numAdminsSupported;
+        }
+        if constexpr (requires { obj.numUsersSupported; }) {
+            obj.numUsersSupported = numUsersSupported;
+        }
+        if constexpr (requires { obj.initialCPinSidIndicator; }) {
+            obj.initialCPinSidIndicator = 0x00 != initialCPinSidIndicator;
+        }
+        if constexpr (requires { obj.cPinSidRevertBehavior; }) {
+            obj.cPinSidRevertBehavior = 0x00 != cPinSidRevertBehavior;
+        }
+    }
+    else {
+        // Key Per I/O is not supported beyond detecting it as a feature.
+    }
 }
 
 

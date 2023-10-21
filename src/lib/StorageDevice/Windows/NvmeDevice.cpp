@@ -1,6 +1,6 @@
 #include "NvmeDevice.hpp"
 
-#include "../Exception.hpp"
+#include <Error/Exception.hpp>
 #include "NvmeDevice.hpp"
 
 #include <Windows.h>

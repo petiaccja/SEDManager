@@ -11,12 +11,20 @@ target_sources(Archive
         Token.hpp
         TokenDebugArchive.cpp
         TokenDebugArchive.hpp
-        TokenArchive.cpp
-        TokenArchive.hpp
-        TokenTextArchive.cpp
-        TokenTextArchive.hpp
+        TokenBinaryArchive.cpp
+        TokenBinaryArchive.hpp
+)
+
+target_sources(Archive
+    PRIVATE
+        Types/ValueToJSON.cpp
+        Types/ValueToJSON.hpp
+        Types/ValueToToken.cpp
+        Types/ValueToToken.hpp
+        Types/ValueToNative.hpp
 )
 
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 find_package(cereal REQUIRED)
-target_link_libraries(Archive cereal::cereal)
+find_package(nlohmann_json REQUIRED)
+target_link_libraries(Archive Data Error cereal::cereal nlohmann_json::nlohmann_json)
