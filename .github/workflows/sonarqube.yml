@@ -78,15 +78,15 @@ jobs:
 
       - name: Run build-wrapper
         run: |
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{runner.workspace}}/build --clean-first --config Debug
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{runner.workspace}}/build/build/Debug --clean-first
 
       - name: Generate Test and Code Coverage
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |
-          ./Bin/UnitTest --reporter junit --out ${{runner.workspace}}/build/tests.xml
+          ./build/build/Debug/bin/Test --reporter junit --out ${{runner.workspace}}/build/tests.xml
           llvm-profdata merge -sparse default.profraw -o coverage.profdata
-          llvm-cov show ./Bin/UnitTest -instr-profile=coverage.profdata > ${{runner.workspace}}/build/coverage.txt
+          llvm-cov show ./Bin/Test -instr-profile=coverage.profdata > ${{runner.workspace}}/build/coverage.txt
   
       - name: Run sonar-scanner
         env:

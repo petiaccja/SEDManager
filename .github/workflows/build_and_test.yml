@@ -88,9 +88,9 @@ jobs:
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build .
+      run: cmake --build ./build/${{ matrix.build_type }}
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: ./bin/UnitTest
+      run: ./build/${{ matrix.build_type }}/bin/UnitTest
