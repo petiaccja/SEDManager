@@ -93,9 +93,9 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |
-          ./build/build/Debug/bin/Test --reporter junit --out ${{runner.workspace}}/build/tests.xml
+          ./build/Debug/bin/Test --reporter junit --out ${{runner.workspace}}/build/tests.xml
           llvm-profdata merge -sparse default.profraw -o coverage.profdata
-          llvm-cov show ./Bin/Test -instr-profile=coverage.profdata > ${{runner.workspace}}/build/coverage.txt
+          llvm-cov show ./build/Debug/bin/Test -instr-profile=coverage.profdata > ${{runner.workspace}}/build/coverage.txt
   
       - name: Run sonar-scanner
         env:
