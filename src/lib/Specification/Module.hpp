@@ -27,8 +27,8 @@ public:
     virtual std::string_view ModuleName() const = 0;
     virtual eModuleKind ModuleKind() const = 0;
 
-    virtual std::optional<std::string> FindName(Uid uid) const;
-    virtual std::optional<Uid> FindUid(std::string_view name) const;
+    virtual std::optional<std::string> FindName(Uid uid, std::optional<Uid> sp = std::nullopt) const;
+    virtual std::optional<Uid> FindUid(std::string_view name, std::optional<Uid> sp = std::nullopt) const;
     virtual std::optional<TableDesc> FindTable(Uid table) const;
     virtual std::optional<Type> FindType(Uid uid) const;
 

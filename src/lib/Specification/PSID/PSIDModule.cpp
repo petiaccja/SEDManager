@@ -34,14 +34,14 @@ eModuleKind PSIDModule::ModuleKind() const {
 }
 
 
-std::optional<std::string> PSIDModule::FindName(Uid uid) const {
+std::optional<std::string> PSIDModule::FindName(Uid uid, std::optional<Uid>) const {
     static const auto lookupTable = MakeNameLookup({ names });
     const auto it = lookupTable.find(uid);
     return it != lookupTable.end() ? std::optional(std::string(it->second)) : std::nullopt;
 }
 
 
-std::optional<Uid> PSIDModule::FindUid(std::string_view name) const {
+std::optional<Uid> PSIDModule::FindUid(std::string_view name, std::optional<Uid>) const {
     static const auto lookupTable = MakeUidLookup({ names });
     const auto it = lookupTable.find(name);
     return it != lookupTable.end() ? std::optional(it->second) : std::nullopt;

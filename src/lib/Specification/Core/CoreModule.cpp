@@ -171,7 +171,7 @@ eModuleKind CoreModule::ModuleKind() const {
 }
 
 
-std::optional<std::string> CoreModule::FindName(Uid uid) const {
+std::optional<std::string> CoreModule::FindName(Uid uid, std::optional<Uid>) const {
     using namespace core;
     static const auto lookupTable = MakeNameLookup({ tables, methods, singleRowTables, authorities });
     const auto it = lookupTable.find(uid);
@@ -179,7 +179,7 @@ std::optional<std::string> CoreModule::FindName(Uid uid) const {
 }
 
 
-std::optional<Uid> CoreModule::FindUid(std::string_view name) const {
+std::optional<Uid> CoreModule::FindUid(std::string_view name, std::optional<Uid>) const {
     using namespace core;
     static const auto lookupTable = MakeUidLookup({ tables, methods, singleRowTables, authorities });
     const auto it = lookupTable.find(name);

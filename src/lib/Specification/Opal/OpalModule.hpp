@@ -18,8 +18,8 @@ class OpalModule : public Module {
 public:
     eModuleKind ModuleKind() const override;
 
-    std::optional<std::string> FindName(Uid uid) const override;
-    std::optional<Uid> FindUid(std::string_view name) const override;
+    std::optional<std::string> FindName(Uid uid, std::optional<Uid> sp = {}) const override;
+    std::optional<Uid> FindUid(std::string_view name, std::optional<Uid> sp = {}) const override;
     std::optional<TableDesc> FindTable(Uid table) const override;
     std::optional<Type> FindType(Uid uid) const override;
 

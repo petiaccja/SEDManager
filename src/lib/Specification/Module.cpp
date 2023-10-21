@@ -7,12 +7,12 @@ std::span<const std::shared_ptr<Module>> Module::Features() const {
 }
 
 
-std::optional<std::string> Module::FindName(Uid uid) const {
+std::optional<std::string> Module::FindName(Uid uid, std::optional<Uid> sp) const {
     return std::nullopt;
 }
 
 
-std::optional<Uid> Module::FindUid(std::string_view name) const {
+std::optional<Uid> Module::FindUid(std::string_view name, std::optional<Uid> sp) const {
     return std::nullopt;
 }
 
