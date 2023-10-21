@@ -4,7 +4,6 @@
 
 #include <Data/NativeTypes.hpp>
 #include <Data/Value.hpp>
-
 #include <Error/Exception.hpp>
 
 #include <concepts>
@@ -126,7 +125,7 @@ struct ValueCast<Range> {
         return Value(b);
     }
     static Range From(const Value& v) {
-        if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
+        if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
             Range r;
             for (const auto byte : v.Get<std::span<const std::byte>>()) {
                 r.push_back(std::bit_cast<std::ranges::range_value_t<Range>>(byte));
@@ -151,7 +150,7 @@ struct ValueCast<Range> {
         return Value(std::move(values));
     }
     static Range From(const Value& v) {
-        if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
+        if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
             Range r;
             for (auto& item : v.AsList()) {
                 r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));

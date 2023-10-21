@@ -85,7 +85,9 @@ void CEREAL_SAVE_FUNCTION_NAME(TokenBinaryOutputArchive& ar, const T& t) {
     constexpr uint8_t isSigned = std::is_signed_v<T>;
     const auto bytes = ToFlatBinary(t);
 
-    CEREAL_SAVE_FUNCTION_NAME(ar, Token{ tag, isByte, isSigned, { bytes.begin(), bytes.end() } });
+    CEREAL_SAVE_FUNCTION_NAME(ar, Token{
+                                      tag, isByte, isSigned, {bytes.begin(), bytes.end()}
+    });
 }
 
 

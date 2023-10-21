@@ -179,7 +179,7 @@ void AddCmdFind(SEDManager& app, CLI::App& cli) {
     cmd->add_option("object", objectName);
     cmd->callback([&app] {
         const auto objectUid = Unwrap(FindOrParseUid(app, objectName, currentSP), "cannot find object");
-        const auto maybeName = app.GetModules().FindName(objectUid);
+        const auto maybeName = app.GetModules().FindName(objectUid, currentSP);
         std::cout << "UID:  " << to_string(objectUid) << std::endl;
         std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
     });

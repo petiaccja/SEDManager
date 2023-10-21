@@ -6,7 +6,7 @@
 TEST_CASE("Method - parse roundtrip", "[Method]") {
     const Method input = {
         .methodId = 0xDEADBEEF,
-        .args = { 1, 2, 3 },
+        .args = {1, 2, 3},
         .status = eMethodStatus::FAIL,
     };
 

@@ -90,7 +90,7 @@ TEST_CASE("Serialize data SubPacket empty", "[Packets]") {
 TEST_CASE("Serialize ComPacket", "[Packets]") {
     SubPacket sp{
         .kind = 0,
-        .payload = { 0xBE_b, 0xEF_b },
+        .payload = {0xBE_b, 0xEF_b},
     };
 
     Packet p{
