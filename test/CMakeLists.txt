@@ -5,6 +5,7 @@ target_sources(Test
         Archive/TestTokenArchive.cpp
         Archive/TestValueToJSON.cpp
         Archive/TestValueToNative.cpp
+        Archive/TestValueToToken.cpp
         Data/TestComPacket.cpp
         Data/TestType.cpp
         Data/TestValue.cpp

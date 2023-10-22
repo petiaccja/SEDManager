@@ -14,7 +14,7 @@
 
 template <class Archive>
 void SaveInteger(Archive& ar, const Value& value) {
-    std::optional<bool> r = ForEachType<Value::IntTypes>([&]<class T>(T* ptr) -> std::optional<bool> {
+    std::optional<bool> r = impl::ForEachType<Value::IntTypes>([&]<class T>(T* ptr) -> std::optional<bool> {
         if (value.Type() == typeid(T)) {
             const auto bytes = ToFlatBinary(value.Get<T>());
             const Token token{
@@ -36,7 +36,7 @@ template <class Archive>
 void SaveList(Archive& ar, const Value& stream) {
     ar(Token{ .tag = eTag::START_LIST });
     size_t idx = 0;
-    for (const auto& item : stream.AsList()) {
+    for (const auto& item : stream.GetList()) {
         SaveDispatch(ar, item);
     }
     ar(Token{ .tag = eTag::END_LIST });
@@ -45,7 +45,7 @@ void SaveList(Archive& ar, const Value& stream) {
 
 template <class Archive>
 void SaveBytes(Archive& ar, const Value& stream) {
-    const auto bytes = stream.AsBytes();
+    const auto bytes = stream.GetBytes();
     Token token{
         .tag = GetTagForData(bytes.size_bytes()),
         .isByte = true,
@@ -59,15 +59,15 @@ void SaveBytes(Archive& ar, const Value& stream) {
 template <class Archive>
 void SaveNamed(Archive& ar, const Value& stream) {
     ar(Token{ .tag = eTag::START_NAME });
-    SaveDispatch(ar, stream.AsNamed().name);
-    SaveDispatch(ar, stream.AsNamed().value);
+    SaveDispatch(ar, stream.GetNamed().name);
+    SaveDispatch(ar, stream.GetNamed().value);
     ar(Token{ .tag = eTag::END_NAME });
 }
 
 
 template <class Archive>
 void SaveCommand(Archive& ar, const Value& stream) {
-    ar(Token{ .tag = static_cast<eTag>(stream.AsCommand()) });
+    ar(Token{ .tag = static_cast<eTag>(stream.GetCommand()) });
 }
 
 
@@ -94,7 +94,7 @@ void SaveDispatch(Archive& ar, const Value& stream) {
 template <class Archive>
 void save_strip_list(Archive& ar, const Value& stream) {
     if (stream.IsList()) {
-        for (const auto& item : stream.AsList()) {
+        for (const auto& item : stream.GetList()) {
             SaveDispatch(ar, item);
         }
     }

@@ -143,14 +143,14 @@ std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t 
     auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
     std::vector<Value> values(endColumn - startColumn);
     for (auto& nvp : nameValuePairs) {
-        const auto idx = nvp.AsNamed().name.Get<size_t>();
+        const auto idx = nvp.GetNamed().name.Get<size_t>();
         if (size_t(idx - startColumn) > values.size()) {
             throw InvalidResponseError("Get", "too many columns");
         }
-        values[idx - startColumn] = nvp.AsNamed().value;
+        values[idx - startColumn] = nvp.GetNamed().value;
     }
     std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
-        return std::move(value.AsNamed().value);
+        return std::move(value.GetNamed().value);
     });
     return values;
 }

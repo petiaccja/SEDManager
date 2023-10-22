@@ -49,19 +49,19 @@ Value ConvertToData(const Token& token) {
 
 void InsertItem(Value& target, Value item) {
     if (target.IsList()) {
-        target.AsList().push_back(std::move(item));
+        target.GetList().push_back(std::move(item));
     }
     else if (target.IsNamed()) {
-        const bool doName = !target.AsNamed().value.HasValue();
+        const bool doName = !target.GetNamed().value.HasValue();
         if (doName) {
-            target.AsNamed().name = item;
-            target.AsNamed().value = eCommand::EMPTY;
+            target.GetNamed().name = item;
+            target.GetNamed().value = eCommand::EMPTY;
         }
         else {
-            if (!target.AsNamed().value.IsCommand() || target.AsNamed().value.Get<eCommand>() != eCommand::EMPTY) {
+            if (!target.GetNamed().value.IsCommand() || target.GetNamed().value.Get<eCommand>() != eCommand::EMPTY) {
                 throw std::invalid_argument("named items expect a single item as value");
             }
-            target.AsNamed().value = std::move(item);
+            target.GetNamed().value = std::move(item);
         }
     }
     else {

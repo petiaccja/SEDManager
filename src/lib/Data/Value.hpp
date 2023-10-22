@@ -26,18 +26,6 @@ enum class eCommand : uint8_t {
 
 struct Named;
 
-template <class T>
-struct is_std_span : std::bool_constant<false> {};
-
-template <class T>
-struct is_std_span<std::span<T>> : std::bool_constant<true> {};
-
-template <class T>
-struct is_const_std_span : std::bool_constant<false> {};
-
-template <class T>
-struct is_const_std_span<std::span<const T>> : std::bool_constant<true> {};
-
 
 class Value {
     struct AsBytesType {};
@@ -50,10 +38,6 @@ public:
 
 public:
     Value() = default;
-
-    //----------------------------------
-    // Construction
-    //----------------------------------
 
     Value(std::integral auto value);
 
@@ -71,16 +55,25 @@ public:
         requires std::same_as<std::ranges::range_value_t<R>, std::byte>
     Value(R&& bytes);
 
-    //----------------------------------
-    // Get
-    //----------------------------------
 
-    bool operator==(const Value& rhs) const;
-    bool operator!=(const Value& rhs) const { return !operator==(rhs); }
+    template <std::integral T>
+    T GetInt() const;
 
-    //----------------------------------
-    // Get
-    //----------------------------------
+    eCommand GetCommand() const;
+
+    const Named& GetNamed() const;
+
+    std::span<const Value> GetList() const;
+
+    std::span<const std::byte> GetBytes() const;
+
+
+    std::vector<Value>& GetList();
+
+    Named& GetNamed();
+
+    std::vector<std::byte>& GetBytes();
+
 
     template <std::integral T>
     T Get() const;
@@ -113,28 +106,6 @@ public:
     template <std::same_as<std::span<std::byte>> T>
     std::span<std::byte> Get();
 
-    //----------------------------------
-    // Get specific
-    //----------------------------------
-
-    // Integers.
-    template <std::integral T>
-    T AsInt() const;
-
-    eCommand AsCommand() const;
-
-    const Named& AsNamed() const;
-    Named& AsNamed();
-
-    std::span<const Value> AsList() const;
-    std::vector<Value>& AsList();
-
-    std::span<const std::byte> AsBytes() const;
-    std::vector<std::byte>& AsBytes();
-
-    //----------------------------------
-    // Query type
-    //----------------------------------
 
     bool IsInteger() const;
     bool IsBytes() const;
@@ -145,7 +116,9 @@ public:
     const std::type_info& Type() const;
     std::string GetTypeStr() const;
 
-private:
+    bool operator==(const Value& rhs) const;
+    bool operator!=(const Value& rhs) const { return !operator==(rhs); }
+
 private:
     std::any m_value;
 };
@@ -156,9 +129,8 @@ struct Named {
     Value value;
 };
 
-//------------------------------------------------------------------------------
-// Utility
-//------------------------------------------------------------------------------
+
+namespace impl {
 
 template <class Func, class P, class... Ps>
 decltype(auto) ForEachTypeHelper(Func func, const P* ptr, const Ps*... ptrs) {
@@ -189,38 +161,28 @@ decltype(auto) ForEachType(Func func) {
     return ForEachTypeHelper<TupleType>(std::move(func), std::make_index_sequence<std::tuple_size_v<TupleType>>());
 }
 
+} // namespace impl
 
-//------------------------------------------------------------------------------
-// Construction
-//------------------------------------------------------------------------------
 
-// Integers.
 Value::Value(std::integral auto value)
     : m_value(value) {}
 
 
-// Lists.
 template <std::ranges::range R>
     requires std::convertible_to<std::ranges::range_value_t<R>, Value>
 Value::Value(R&& values)
     : m_value(ListType(std::ranges::begin(values), std::ranges::end(values))) {}
 
 
-// Bytes.
 template <std::ranges::range R>
     requires std::same_as<std::ranges::range_value_t<R>, std::byte>
 Value::Value(R&& values) {
     m_value = BytesType(std::ranges::begin(values), std::ranges::end(values));
 }
 
-//------------------------------------------------------------------------------
-// Lookup
-//------------------------------------------------------------------------------
-
-
 template <std::integral T>
-T Value::AsInt() const {
-    const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<T> {
+T Value::GetInt() const {
+    const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<T> {
         using Q = std::decay_t<decltype(*ptr)>;
         if (m_value.type() == typeid(Q)) {
             return static_cast<T>(std::any_cast<const Q&>(m_value));
@@ -238,51 +200,51 @@ T Value::AsInt() const {
 
 template <std::integral T>
 T Value::Get() const {
-    return AsInt<T>();
+    return GetInt<T>();
 }
 
 template <std::same_as<std::vector<std::byte>> T>
 std::vector<std::byte>& Value::Get() {
-    return AsBytes();
+    return GetBytes();
 }
 
 template <std::same_as<std::span<std::byte>> T>
 std::span<std::byte> Value::Get() {
-    return AsBytes();
+    return GetBytes();
 }
 
 template <std::same_as<std::span<const std::byte>> T>
 std::span<const std::byte> Value::Get() const {
-    return AsBytes();
+    return GetBytes();
 }
 
 template <std::same_as<std::span<const Value>> T>
 std::span<const Value> Value::Get() const {
-    return AsList();
+    return GetList();
 }
 
 template <std::same_as<Named> T>
 const Named& Value::Get() const {
-    return AsNamed();
+    return GetNamed();
 }
 
 template <std::same_as<eCommand> T>
 eCommand Value::Get() const {
-    return AsCommand();
+    return GetCommand();
 }
 
 template <std::same_as<std::vector<Value>> T>
 std::vector<Value>& Value::Get() {
-    return AsList();
+    return GetList();
 }
 
 
 template <std::same_as<std::span<Value>> T>
 std::span<Value> Value::Get() {
-    return AsList();
+    return GetList();
 }
 
 template <std::same_as<Named> T>
 Named& Value::Get() {
-    return AsNamed();
+    return GetNamed();
 }

@@ -60,7 +60,7 @@ template <>
 struct ValueCast<std::string_view> {
     static Value To(const std::string_view& v) { return Value(std::as_bytes(std::span(v))); }
     static std::string_view From(const Value& v) {
-        const auto bytes = v.AsBytes();
+        const auto bytes = v.GetBytes();
         const auto ptr = reinterpret_cast<const char*>(bytes.data());
         return { ptr, ptr + bytes.size() };
     };
@@ -72,7 +72,7 @@ struct ValueCast<Uid> {
     static Value To(const Uid& v) { return Value(ToBytes(uint64_t(v))); }
     static Uid From(const Value& v) {
         uint64_t uid;
-        FromBytes(v.AsBytes(), uid);
+        FromBytes(v.GetBytes(), uid);
         return Uid(uid);
     };
 };
@@ -152,7 +152,7 @@ struct ValueCast<Range> {
     static Range From(const Value& v) {
         if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
             Range r;
-            for (auto& item : v.AsList()) {
+            for (auto& item : v.GetList()) {
                 r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));
             }
             return r;
@@ -177,7 +177,7 @@ struct ValueCast<std::unordered_map<K, V>> {
         const auto& nameds = v.Get<std::span<const Value>>();
         std::unordered_map<K, V> mapped = {};
         for (auto& named : nameds) {
-            mapped.insert_or_assign(value_cast<K>(named.AsNamed().name), value_cast<V>(named.AsNamed().value));
+            mapped.insert_or_assign(value_cast<K>(named.GetNamed().name), value_cast<V>(named.GetNamed().value));
         }
         return mapped;
     }
