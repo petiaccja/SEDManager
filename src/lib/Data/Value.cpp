@@ -40,6 +40,9 @@ bool Value::operator==(const Value& rhs) const {
     else if (IsNamed()) {
         return GetNamed().name == rhs.GetNamed().name && GetNamed().value == rhs.GetNamed().value;
     }
+    else if (!HasValue() && !rhs.HasValue()) {
+        return true;
+    }
     return false;
 }
 
