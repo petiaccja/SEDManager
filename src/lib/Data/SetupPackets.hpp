@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cereal/types/array.hpp>
+
 #include <cstdint>
 
 
@@ -53,19 +55,15 @@ struct StackResetResponse {
 
 template <class Archive>
 void save(Archive& ar, const StackResetRequest& obj) {
-    uint8_t reserved = 0;
-
     ar(obj.comId);
     ar(obj.comIdExtension);
     ar(obj.requestCode);
-    ar(reserved);
 }
 
 
 template <class Archive>
 void load(Archive& ar, StackResetResponse& obj) {
     uint16_t reserved1 = 0;
-    uint8_t reserved2 = 0;
     uint32_t success;
 
     ar(obj.comId);
@@ -75,7 +73,6 @@ void load(Archive& ar, StackResetResponse& obj) {
     ar(obj.availableDataLength);
     ar(success);
     obj.success = static_cast<eStackResetStatus>(success);
-    ar(reserved2);
 }
 
 

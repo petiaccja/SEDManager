@@ -8,6 +8,7 @@ target_sources(Test
         Archive/TestValueToToken.cpp
         Data/TestComPacket.cpp
         Data/TestType.cpp
+        Data/TestSetupPackets.cpp
         Data/TestValue.cpp
         main.cpp
         Specification/TestUtility.cpp
