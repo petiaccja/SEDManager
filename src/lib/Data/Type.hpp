@@ -47,7 +47,7 @@ private:
 
 
 struct TypeIdentifier {
-    virtual ~TypeIdentifier() {}
+    virtual ~TypeIdentifier() = default;
 
     struct Storage {
         virtual uint64_t Id() const { return 0; }
@@ -61,14 +61,14 @@ public:
     struct Storage : BaseType::Storage, TypeIdentifier::Storage {
         template <class... Args>
             requires std::is_constructible_v<typename BaseType::Storage, Args...>
-        Storage(Args&&... args) : BaseType::Storage(std::forward<Args>(args)...) {}
+        explicit Storage(Args&&... args) : BaseType::Storage(std::forward<Args>(args)...) {}
 
         constexpr uint64_t Id() const override { return Identifier; }
     };
 
     template <class... Args>
         requires std::is_constructible_v<Storage, Args...>
-    IdentifiedType(Args&&... args) : BaseType(std::make_shared<Storage>(std::forward<Args>(args)...)) {}
+    explicit IdentifiedType(Args&&... args) : BaseType(std::make_shared<Storage>(std::forward<Args>(args)...)) {}
 };
 
 
@@ -161,7 +161,7 @@ public:
 class UnsignedIntType : public IntegerType {
 public:
     struct Storage : IntegerType::Storage {
-        Storage(size_t width) : IntegerType::Storage(width, false) {}
+        explicit Storage(size_t width) : IntegerType::Storage(width, false) {}
     };
 
     explicit UnsignedIntType(size_t width) : IntegerType(std::make_shared<Storage>(width)) {}
@@ -173,7 +173,7 @@ public:
 class SignedIntType : public IntegerType {
 public:
     struct Storage : IntegerType::Storage {
-        Storage(size_t width) : IntegerType::Storage(width, true) {}
+        explicit Storage(size_t width) : IntegerType::Storage(width, true) {}
     };
 
     explicit SignedIntType(size_t width) : IntegerType(std::make_shared<Storage>(width)) {}
@@ -185,7 +185,7 @@ public:
 class CappedBytesType : public BytesType {
 public:
     struct Storage : BytesType::Storage {
-        Storage(size_t maxLength) : BytesType::Storage(maxLength, false) {}
+        explicit Storage(size_t maxLength) : BytesType::Storage(maxLength, false) {}
     };
 
     explicit CappedBytesType(size_t maxLength) : BytesType(std::make_shared<Storage>(maxLength)) {}
@@ -197,7 +197,7 @@ public:
 class FixedBytesType : public BytesType {
 public:
     struct Storage : BytesType::Storage {
-        Storage(size_t length) : BytesType::Storage(length, true) {}
+        explicit Storage(size_t length) : BytesType::Storage(length, true) {}
     };
 
     explicit FixedBytesType(size_t length) : BytesType(std::make_shared<Storage>(length)) {}
@@ -213,8 +213,8 @@ public:
 class EnumerationType : public UnsignedIntType {
 public:
     struct Storage : UnsignedIntType::Storage {
-        Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {}
-        Storage(std::pair<uint16_t, uint16_t> range) : Storage(std::vector{ range }) {}
+        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {}
+        explicit Storage(std::pair<uint16_t, uint16_t> range) : Storage(std::vector{ range }) {}
         Storage(uint16_t lower, uint16_t upper) : Storage(std::pair{ lower, upper }) {}
         std::vector<std::pair<uint16_t, uint16_t>> ranges;
     };
@@ -231,9 +231,9 @@ public:
 class AlternativeType : public Type {
 public:
     struct Storage : Type::Storage {
-        Storage(std::vector<Type> types) : types(std::move(types)) {}
+        explicit Storage(std::vector<Type> types) : types(std::move(types)) {}
         template <std::convertible_to<Type>... Types>
-        Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
+        explicit Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
         std::vector<Type> types;
     };
 
@@ -249,7 +249,7 @@ public:
 class ListType : public Type {
 public:
     struct Storage : Type::Storage {
-        Storage(const Type& elementType) : elementType(elementType) {}
+        explicit Storage(const Type& elementType) : elementType(elementType) {}
         Type elementType;
     };
 
@@ -263,9 +263,9 @@ public:
 class StructType : public Type {
 public:
     struct Storage : Type::Storage {
-        Storage(std::vector<Type> elementTypes) : elementTypes(std::move(elementTypes)) {}
+        explicit Storage(std::vector<Type> elementTypes) : elementTypes(std::move(elementTypes)) {}
         template <std::convertible_to<Type>... Types>
-        Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
+        explicit Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
         std::vector<Type> elementTypes;
     };
 
@@ -282,7 +282,7 @@ class SetType : public ListType {
 public:
     struct Storage : ListType::Storage {
         using ListType::Storage::Storage;
-        Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : ListType::Storage(UnsignedIntType(2)), ranges(std::move(ranges)) {}
+        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : ListType::Storage(UnsignedIntType(2)), ranges(std::move(ranges)) {}
         explicit Storage(std::pair<uint16_t, uint16_t> range) : Storage(std::vector{ range }) {}
         Storage(uint16_t lower, uint16_t upper) : Storage(std::pair{ lower, upper }) {}
         std::vector<std::pair<uint16_t, uint16_t>> ranges;
@@ -305,8 +305,8 @@ public:
 class RestrictedReferenceType : public Type {
 public:
     struct Storage : Type::Storage {
-        Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
-        Storage(uint64_t table) : Storage(std::vector{ table }) {}
+        explicit Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
+        explicit Storage(uint64_t table) : Storage(std::vector{ table }) {}
         std::vector<uint64_t> tables;
     };
 
