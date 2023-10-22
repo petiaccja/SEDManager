@@ -336,7 +336,14 @@ namespace {
 
 
     nlohmann::json ValueToJSON(const Value& value, const NameValueUintegerType& type) {
-        if (!value.IsNamed()) {
+        if (value.IsNamed()) {
+            const auto& name = value.GetNamed().name;
+            if (!name.IsInteger()) {
+                throw UnexpectedTypeError("integer", name.GetTypeStr());
+            }
+            if (name.GetInt<uint16_t>() != type.Name()) {
+                throw InvalidTypeError(std::format("name encoded in Value ({}) does not match name encoded in Type ({})", name.GetInt<uint16_t>(), type.Name()));
+            }
             return nlohmann::json({
                 { "name", type.Name() },
                 { "value", ValueToJSON(value.GetNamed().value, type.ValueType()) },

@@ -169,3 +169,22 @@ TEST_CASE("JSON from GeneralReferenceType", "[ValueToJSON]") {
         REQUIRE(conv == value);
     }
 }
+
+
+TEST_CASE("JSON from NameValueUintegerType", "[ValueToJSON]") {
+    const Type type = NameValueUintegerType(6, IntegerType(4, true));
+    const Value value = Named(uint16_t(6), int32_t(748));
+    const nlohmann::json json = {
+        {"name",   6  },
+        { "value", 748},
+    };
+
+    SECTION("Value to JSON") {
+        const auto conv = ValueToJSON(value, type);
+        REQUIRE(conv == json);
+    }
+    SECTION("JSON to Value") {
+        const auto conv = JSONToValue(json, type);
+        REQUIRE(conv == value);
+    }
+}
