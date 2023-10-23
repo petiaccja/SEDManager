@@ -6,6 +6,7 @@ target_sources(Specification
     PRIVATE
         Module.cpp
         Module.hpp
+        Common/Utility.cpp
         Common/Utility.hpp
         Common/TableDesc.hpp
         Opal/OpalModule.cpp

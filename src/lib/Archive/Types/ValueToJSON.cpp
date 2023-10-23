@@ -208,7 +208,7 @@ namespace {
 
     nlohmann::json ValueToJSON(const Value& value, const BytesType& type) {
         if (value.IsBytes()) {
-            return BytesToJSON(value.AsBytes(), "", InterpretAsString(type));
+            return BytesToJSON(value.GetBytes(), "", InterpretAsString(type));
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
@@ -217,12 +217,12 @@ namespace {
         if (value.IsNamed()) {
             const auto& alts = type.Types();
             const auto currentTypeType = BytesType(4, true);
-            const Value& currentType = value.AsNamed().name;
-            const Value& currentValue = value.AsNamed().value;
+            const Value& currentType = value.GetNamed().name;
+            const Value& currentValue = value.GetNamed().value;
             if (!currentType.IsBytes()) {
                 throw UnexpectedTypeError(GetTypeStr(currentTypeType), value.GetTypeStr());
             }
-            const auto& typeIdBytes = currentType.AsBytes();
+            const auto& typeIdBytes = currentType.GetBytes();
             uint64_t altId = 0;
             for (const auto& byte : typeIdBytes) {
                 altId <<= 8;
@@ -251,7 +251,7 @@ namespace {
     nlohmann::json ValueToJSON(const Value& value, const ListType& type) {
         if (value.IsList()) {
             std::vector<nlohmann::json> jsons;
-            const auto& items = value.AsList();
+            const auto& items = value.GetList();
             for (auto& item : items) {
                 jsons.push_back(ValueToJSON(item, type.ElementType()));
             }
@@ -284,7 +284,7 @@ namespace {
 
     nlohmann::json ValueToJSON(const Value& value, const StructType& type) {
         if (value.IsList()) {
-            const auto& elements = value.AsList();
+            const auto& elements = value.GetList();
 
             const auto [mandatoryTypes, optionalTypeLookup] = ReduceStructType(type);
             auto mandatoryElements = elements | std::views::filter([](const Value& v) { return !v.IsNamed(); });
@@ -301,7 +301,7 @@ namespace {
             }
 
             for (const auto& optionalElement : optionalElements) {
-                const auto& named = optionalElement.AsNamed();
+                const auto& named = optionalElement.GetNamed();
                 if (!named.name.IsInteger()) {
                     throw InvalidTypeError(std::format("optional element of struct type must have integer key: got '{}'", named.name.GetTypeStr()));
                 }
@@ -322,24 +322,31 @@ namespace {
 
     nlohmann::json ValueToJSON(const Value& value, const RestrictedReferenceType& type) {
         if (value.IsBytes()) {
-            return BytesToJSON(value.AsBytes(), "ref:", false);
+            return BytesToJSON(value.GetBytes(), "ref:", false);
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
     nlohmann::json ValueToJSON(const Value& value, const GeneralReferenceType& type) {
         if (value.IsBytes()) {
-            return BytesToJSON(value.AsBytes(), "ref:", false);
+            return BytesToJSON(value.GetBytes(), "ref:", false);
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
 
     nlohmann::json ValueToJSON(const Value& value, const NameValueUintegerType& type) {
-        if (!value.IsNamed()) {
+        if (value.IsNamed()) {
+            const auto& name = value.GetNamed().name;
+            if (!name.IsInteger()) {
+                throw UnexpectedTypeError("integer", name.GetTypeStr());
+            }
+            if (name.GetInt<uint16_t>() != type.Name()) {
+                throw InvalidTypeError(std::format("name encoded in Value ({}) does not match name encoded in Type ({})", name.GetInt<uint16_t>(), type.Name()));
+            }
             return nlohmann::json({
                 { "name", type.Name() },
-                { "value", ValueToJSON(value.AsNamed().value, type.ValueType()) },
+                { "value", ValueToJSON(value.GetNamed().value, type.ValueType()) },
             });
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());

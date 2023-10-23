@@ -36,34 +36,6 @@ struct TableDescStatic {
 };
 
 
-template <class Range>
-    requires std::convertible_to<std::ranges::range_value_t<Range>, std::pair<Uid, std::string_view>>
-std::unordered_map<Uid, std::string_view> MakeNameLookup(std::initializer_list<Range> pairings) {
-    std::unordered_map<Uid, std::string_view> lut;
-    for (const auto& pairing : pairings) {
-        for (const auto& item : pairing) {
-            const auto [it, newlyInserted] = lut.insert({ item.first, item.second });
-            assert(newlyInserted);
-        }
-    }
-    return lut;
-}
-
-
-template <class Range>
-    requires std::convertible_to<std::ranges::range_value_t<Range>, std::pair<Uid, std::string_view>>
-std::unordered_map<std::string_view, Uid> MakeUidLookup(std::initializer_list<Range> pairings) {
-    std::unordered_map<std::string_view, Uid> lut;
-    for (const auto& pairing : pairings) {
-        for (const auto& item : pairing) {
-            const auto [it, newlyInserted] = lut.insert({ item.second, item.first });
-            assert(newlyInserted);
-        }
-    }
-    return lut;
-}
-
-
 constexpr Uid TableToDescriptor(Uid table) {
     return (uint64_t(table) >> 32) | (1ull << 32);
 }
@@ -74,11 +46,17 @@ constexpr Uid DescriptorToTable(Uid descriptor) {
 }
 
 
-struct NameSequence {
+class NameSequence {
+public:
     NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
         : base(base), start(start), count(count), format(format), parse(std::regex_replace(format.get().data(), std::regex(R"(\{\})"), "([0-9]*)")) {
         assert(format.get().find("{}") != format.get().npos);
     }
+
+    std::optional<std::string> Find(Uid uid) const;
+    std::optional<Uid> Find(std::string_view name) const;
+
+private:
     Uid base;
     uint64_t start;
     uint64_t count;
@@ -87,31 +65,50 @@ struct NameSequence {
 };
 
 
-inline std::optional<std::string> FindNameSequence(Uid uid, const NameSequence& desc) {
-    const auto index = int64_t(uid) - int64_t(desc.base);
-    if (0 <= index && index < int64_t(desc.count)) {
-        const auto number = index + desc.start;
-        return std::format(desc.format, uint64_t(number));
-    }
-    return std::nullopt;
-}
+class NameAndUidFinder {
+public:
+    template <class PairRanges = std::initializer_list<std::initializer_list<std::pair<Uid, std::string_view>>>,
+              class SequenceRanges = std::initializer_list<NameSequence>>
+    NameAndUidFinder(PairRanges&& pairs, SequenceRanges&& sequences);
+
+    std::optional<std::string> Find(Uid uid) const;
+    std::optional<Uid> Find(std::string_view name) const;
+
+private:
+    std::unordered_map<Uid, std::string_view> m_uidToName;
+    std::unordered_map<std::string_view, Uid> m_nameToUid;
+    std::vector<NameSequence> m_sequences;
+};
 
 
-inline std::optional<Uid> FindUidSequence(std::string_view name, const NameSequence& desc) {
-    std::match_results<std::string_view::iterator> matches;
-    const bool success = std::regex_match(name.begin(), name.end(), matches, desc.parse);
-    if (success) {
-        assert(matches.size() == 2);
-        try {
-            const auto number = std::stoll(matches[1].str());
-            const auto index = number - int64_t(desc.start);
-            if (0 <= index && index < int64_t(desc.count)) {
-                return Uid(uint64_t(desc.base) + index);
+template <class PairRanges,
+          class SequenceRange>
+NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequences) {
+    for (auto& pairRange : pairRanges) {
+        for (auto& pair : pairRange) {
+            const auto [it1, ins1] = m_uidToName.insert({ pair.first, pair.second });
+            const auto [it2, ins2] = m_nameToUid.insert({ pair.second, pair.first });
+            if (!ins1) {
+                throw std::invalid_argument("all UIDs must be unique");
+            }
+            if (!ins2) {
+                throw std::invalid_argument("all names must be unique");
             }
         }
-        catch (std::exception&) {
-            return std::nullopt;
-        }
     }
-    return std::nullopt;
+    for (auto&& seq : sequences) {
+        m_sequences.push_back(seq);
+    }
 }
+
+
+class SPNameAndUidFinder {
+public:
+    SPNameAndUidFinder(std::unordered_map<Uid, NameAndUidFinder> finders) : m_finders(std::move(finders)) {}
+
+    std::optional<std::string> Find(Uid uid, Uid sp) const;
+    std::optional<Uid> Find(std::string_view name, Uid sp) const;
+
+private:
+    std::unordered_map<Uid, NameAndUidFinder> m_finders;
+};

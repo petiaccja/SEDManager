@@ -70,21 +70,6 @@ namespace preconf {
             { eSP::Locking, "SP::Locking"},
         };
 
-        const auto allNames = {
-            spInfo,
-            spTemplates,
-            ace,
-            authority,
-            cPin,
-            template_,
-            sp,
-        };
-
-        const auto allSeqs = {
-            authoritySeq,
-            cPinSeq,
-        };
-
     } // namespace admin
 
     namespace locking {
@@ -171,29 +156,60 @@ namespace preconf {
             {0x0000'0806'0003'0001, 1, 32, "K_AES_256::Range{}"},
         };
 
-        const auto allNames = {
-            spInfo,
-            spTemplates,
-            ace,
-            authority,
-            secretProtect,
-            locking,
-            kAes128,
-            kAes256,
-        };
-
-        const auto allSeqs = {
-            aceSeq,
-            authoritySeq,
-            cPinSeq,
-            lockingSeq,
-            kAes128Seq,
-            kAes256Seq,
-        };
-
     } // namespace locking
 
 } // namespace preconf
+
+
+const SPNameAndUidFinder& GetFinder() {
+    const auto globalPairs = {
+        methods,
+        preconf::admin::sp
+    };
+
+    const auto lockingPairs = {
+        preconf::locking::spInfo,
+        preconf::locking::spTemplates,
+        preconf::locking::ace,
+        preconf::locking::authority,
+        preconf::locking::secretProtect,
+        preconf::locking::locking,
+        preconf::locking::kAes128,
+        preconf::locking::kAes256,
+    };
+
+    const auto lockingSequences = {
+        preconf::locking::aceSeq,
+        preconf::locking::authoritySeq,
+        preconf::locking::cPinSeq,
+        preconf::locking::lockingSeq,
+        preconf::locking::kAes128Seq,
+        preconf::locking::kAes256Seq,
+    };
+
+    const auto adminPairs = {
+        preconf::admin::spInfo,
+        preconf::admin::spTemplates,
+        preconf::admin::ace,
+        preconf::admin::authority,
+        preconf::admin::cPin,
+        preconf::admin::template_,
+        preconf::admin::sp,
+    };
+
+    const auto adminSequences = {
+        preconf::admin::authoritySeq,
+        preconf::admin::cPinSeq,
+    };
+
+    static SPNameAndUidFinder finder({
+        {Uid(0),                      NameAndUidFinder(globalPairs,  {})                                 },
+        { Uid(preconf::eSP::Admin),   NameAndUidFinder(adminPairs,   adminSequences | std::views::join)  },
+        { Uid(preconf::eSP::Locking), NameAndUidFinder(lockingPairs, lockingSequences | std::views::join)},
+    });
+    return finder;
+}
+
 
 } // namespace opal
 
@@ -226,72 +242,20 @@ eModuleKind OpalModule::ModuleKind() const {
 
 
 std::optional<std::string> OpalModule::FindName(Uid uid, std::optional<Uid> sp) const {
-    using namespace opal;
-
-    static const auto lut = MakeNameLookup({ methods, preconf::admin::sp });
-    static const auto lutAdmin = MakeNameLookup(preconf::admin::allNames);
-    static const auto lutLocking = MakeNameLookup(preconf::locking::allNames);
-
-    {
-        const auto it = lut.find(uid);
-        if (it != lut.end()) {
-            return std::string(it->second);
-        }
+    auto result = opal::GetFinder().Find(uid, sp.value_or(0));
+    if (result) {
+        return result;
     }
-
-    if (sp && (*sp == Uid(preconf::eSP::Admin) || *sp == Uid(preconf::eSP::Locking))) {
-        const auto& lutSp = *sp == Uid(preconf::eSP::Admin) ? lutAdmin : lutLocking;
-        const auto& seqSp = *sp == Uid(preconf::eSP::Admin) ? preconf::admin::allSeqs : preconf::locking::allSeqs;
-
-        const auto it = lutSp.find(uid);
-        if (it != lutSp.end()) {
-            return std::string(it->second);
-        }
-
-        for (const auto& seq : seqSp | std::views::join) {
-            const auto result = FindNameSequence(uid, seq);
-            if (result) {
-                return *result;
-            }
-        }
-    }
-
-    return std::nullopt;
+    return opal::GetFinder().Find(uid, Uid(0));
 }
 
 
 std::optional<Uid> OpalModule::FindUid(std::string_view name, std::optional<Uid> sp) const {
-    using namespace opal;
-
-    static const auto lut = MakeUidLookup({ methods, preconf::admin::sp });
-    static const auto lutAdmin = MakeUidLookup(preconf::admin::allNames);
-    static const auto lutLocking = MakeUidLookup(preconf::locking::allNames);
-
-    {
-        const auto it = lut.find(name);
-        if (it != lut.end()) {
-            return it->second;
-        }
+    auto result = opal::GetFinder().Find(name, sp.value_or(0));
+    if (result) {
+        return result;
     }
-
-    if (sp && (*sp == Uid(preconf::eSP::Admin) || *sp == Uid(preconf::eSP::Locking))) {
-        const auto& lutSp = *sp == Uid(preconf::eSP::Admin) ? lutAdmin : lutLocking;
-        const auto& seqSp = *sp == Uid(preconf::eSP::Admin) ? preconf::admin::allSeqs : preconf::locking::allSeqs;
-
-        const auto it = lutSp.find(name);
-        if (it != lutSp.end()) {
-            return it->second;
-        }
-
-        for (const auto& seq : seqSp | std::views::join) {
-            const auto result = FindUidSequence(name, seq);
-            if (result) {
-                return *result;
-            }
-        }
-    }
-
-    return std::nullopt;
+    return opal::GetFinder().Find(name, Uid(0));
 }
 
 

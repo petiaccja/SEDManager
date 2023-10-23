@@ -202,6 +202,13 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> authorities = 
     { 0x0000'0009'0000'0208, "Authority::Reserve3" }, // Admin
 };
 
+
+const NameAndUidFinder& GetFinder() {
+    static NameAndUidFinder finder({ tables, tablesDescriptors, methods, singleRowTables, authorities }, {});
+    return finder;
+}
+
+
 } // namespace core
 
 
@@ -222,18 +229,12 @@ eModuleKind CoreModule::ModuleKind() const {
 
 
 std::optional<std::string> CoreModule::FindName(Uid uid, std::optional<Uid>) const {
-    using namespace core;
-    static const auto lookupTable = MakeNameLookup({ tables, tablesDescriptors, methods, singleRowTables, authorities });
-    const auto it = lookupTable.find(uid);
-    return it != lookupTable.end() ? std::optional(std::string(it->second)) : std::nullopt;
+    return core::GetFinder().Find(uid);
 }
 
 
 std::optional<Uid> CoreModule::FindUid(std::string_view name, std::optional<Uid>) const {
-    using namespace core;
-    static const auto lookupTable = MakeUidLookup({ tables, methods, singleRowTables, authorities });
-    const auto it = lookupTable.find(name);
-    return it != lookupTable.end() ? std::optional(it->second) : std::nullopt;
+    return core::GetFinder().Find(name);
 }
 
 

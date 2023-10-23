@@ -5,43 +5,48 @@
 // Construction
 //------------------------------------------------------------------------------
 
-// Lists.
 Value::Value(std::initializer_list<Value> values)
     : m_value(ListType(values)) {}
 
 
-// Named.
 Value::Value(Named value)
     : m_value(std::move(value)) {}
 
 
-// Commands.
 Value::Value(eCommand command)
     : m_value(command) {}
 
 
 
 bool Value::operator==(const Value& rhs) const {
-    if (Type() != rhs.Type()) {
-        return false;
+    if (IsInteger() && rhs.IsInteger()) {
+        if (Type() != rhs.Type()) {
+            return false;
+        }
+        const auto cmpResult = impl::ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
+            if (Type() == typeid(T)) {
+                const auto lhsv = Get<T>();
+                const auto rhsv = rhs.Get<T>();
+                return lhsv == rhsv;
+            }
+            return std::nullopt;
+        });
+        return cmpResult.value_or(false);
     }
-    if (IsInteger()) {
-        return ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
-                   return Type() == typeid(T) ? std::optional(Get<T>() == rhs.Get<T>()) : std::nullopt;
-               })
-            .value_or(false);
+    else if (IsBytes() && rhs.IsBytes()) {
+        return std::ranges::equal(GetBytes(), rhs.GetBytes());
     }
-    else if (IsBytes()) {
-        return std::ranges::equal(AsBytes(), rhs.AsBytes());
+    else if (IsCommand() && rhs.IsCommand()) {
+        return GetCommand() == rhs.GetCommand();
     }
-    else if (IsCommand()) {
-        return AsCommand() == rhs.AsCommand();
+    else if (IsList() && rhs.IsList()) {
+        return std::ranges::equal(GetList(), rhs.GetList());
     }
-    else if (IsList()) {
-        return std::ranges::equal(AsList(), rhs.AsList());
+    else if (IsNamed() && rhs.IsNamed()) {
+        return GetNamed().name == rhs.GetNamed().name && GetNamed().value == rhs.GetNamed().value;
     }
-    else if (IsNamed()) {
-        return AsNamed().name == rhs.AsNamed().name && AsNamed().value == rhs.AsNamed().value;
+    else if (!HasValue() && !rhs.HasValue()) {
+        return true;
     }
     return false;
 }
@@ -51,8 +56,7 @@ bool Value::operator==(const Value& rhs) const {
 // Get specific
 //------------------------------------------------------------------------------
 
-// Lists.
-std::span<const Value> Value::AsList() const {
+std::span<const Value> Value::GetList() const {
     try {
         return std::any_cast<const ListType&>(m_value);
     }
@@ -61,7 +65,7 @@ std::span<const Value> Value::AsList() const {
     }
 }
 
-std::vector<Value>& Value::AsList() {
+std::vector<Value>& Value::GetList() {
     try {
         return std::any_cast<std::vector<Value>&>(m_value);
     }
@@ -70,8 +74,7 @@ std::vector<Value>& Value::AsList() {
     }
 }
 
-// Bytes
-std::vector<std::byte>& Value::AsBytes() {
+std::vector<std::byte>& Value::GetBytes() {
     try {
         return std::any_cast<BytesType&>(m_value);
     }
@@ -80,7 +83,7 @@ std::vector<std::byte>& Value::AsBytes() {
     }
 }
 
-std::span<const std::byte> Value::AsBytes() const {
+std::span<const std::byte> Value::GetBytes() const {
     try {
         return { std::any_cast<const BytesType&>(m_value) };
     }
@@ -89,8 +92,7 @@ std::span<const std::byte> Value::AsBytes() const {
     }
 }
 
-// Named.
-const Named& Value::AsNamed() const {
+const Named& Value::GetNamed() const {
     try {
         return std::any_cast<const Named&>(m_value);
     }
@@ -99,7 +101,7 @@ const Named& Value::AsNamed() const {
     }
 }
 
-Named& Value::AsNamed() {
+Named& Value::GetNamed() {
     try {
         return std::any_cast<Named&>(m_value);
     }
@@ -108,8 +110,7 @@ Named& Value::AsNamed() {
     }
 }
 
-// Commands.
-eCommand Value::AsCommand() const {
+eCommand Value::GetCommand() const {
     try {
         return std::any_cast<eCommand>(m_value);
     }
@@ -120,11 +121,11 @@ eCommand Value::AsCommand() const {
 
 
 //------------------------------------------------------------------------------
-// Query
+// Querystd::optional(Get<T>() == )
 //------------------------------------------------------------------------------
 
 bool Value::IsInteger() const {
-    const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<bool> {
+    const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<bool> {
         if (m_value.type() == typeid(decltype(*ptr))) {
             return true;
         }
@@ -155,7 +156,7 @@ const std::type_info& Value::Type() const {
 
 std::string Value::GetTypeStr() const {
     if (IsInteger()) {
-        const auto v = ForEachType<IntTypes>([this](auto* ptr) -> std::optional<std::pair<size_t, bool>> {
+        const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<std::pair<size_t, bool>> {
             using Q = std::decay_t<decltype(*ptr)>;
             if (m_value.type() == typeid(Q)) {
                 return std::pair{ sizeof(Q), std::is_signed_v<Q> };

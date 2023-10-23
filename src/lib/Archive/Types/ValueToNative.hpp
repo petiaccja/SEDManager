@@ -60,10 +60,10 @@ template <>
 struct ValueCast<std::string_view> {
     static Value To(const std::string_view& v) { return Value(std::as_bytes(std::span(v))); }
     static std::string_view From(const Value& v) {
-        const auto bytes = v.AsBytes();
+        const auto bytes = v.GetBytes();
         const auto ptr = reinterpret_cast<const char*>(bytes.data());
         return { ptr, ptr + bytes.size() };
-    };
+    }
 };
 
 
@@ -72,9 +72,9 @@ struct ValueCast<Uid> {
     static Value To(const Uid& v) { return Value(ToBytes(uint64_t(v))); }
     static Uid From(const Value& v) {
         uint64_t uid;
-        FromBytes(v.AsBytes(), uid);
+        FromBytes(v.GetBytes(), uid);
         return Uid(uid);
-    };
+    }
 };
 
 
@@ -84,16 +84,16 @@ struct ValueCast<CellBlock> {
         std::vector<Value> fields;
         if (v.startRow.has_value()) {
             auto valOfNamed = std::visit([](const auto& v) { return value_cast(v); }, *v.startRow);
-            fields.emplace_back(Named{ 1u, std::move(valOfNamed) });
+            fields.emplace_back(Named{ uint16_t(1), std::move(valOfNamed) });
         }
         if (v.endRow.has_value()) {
-            fields.emplace_back(Named{ 2u, v.endRow.value() });
+            fields.emplace_back(Named{ uint16_t(2), v.endRow.value() });
         }
         if (v.startColumn) {
-            fields.emplace_back(Named{ 3u, v.startColumn.value() });
+            fields.emplace_back(Named{ uint16_t(3), v.startColumn.value() });
         }
         if (v.endColumn) {
-            fields.emplace_back(Named{ 4u, v.endColumn.value() });
+            fields.emplace_back(Named{ uint16_t(4), v.endColumn.value() });
         }
         return fields;
     }
@@ -102,7 +102,7 @@ struct ValueCast<CellBlock> {
         CellBlock parsed;
         for (const auto& field : fields) {
             const auto& named = field.Get<Named>();
-            const auto id = named.name.Get<uint32_t>();
+            const auto id = named.name.Get<uint16_t>();
             switch (id) {
                 case 0: break; // Table name
                 case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<Uid>(named.value); break;
@@ -152,7 +152,7 @@ struct ValueCast<Range> {
     static Range From(const Value& v) {
         if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
             Range r;
-            for (auto& item : v.AsList()) {
+            for (auto& item : v.GetList()) {
                 r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));
             }
             return r;
@@ -177,7 +177,7 @@ struct ValueCast<std::unordered_map<K, V>> {
         const auto& nameds = v.Get<std::span<const Value>>();
         std::unordered_map<K, V> mapped = {};
         for (auto& named : nameds) {
-            mapped.insert_or_assign(value_cast<K>(named.AsNamed().name), value_cast<V>(named.AsNamed().value));
+            mapped.insert_or_assign(value_cast<K>(named.GetNamed().name), value_cast<V>(named.GetNamed().value));
         }
         return mapped;
     }

@@ -4,7 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 
-TEST_CASE("Serialize ComPacket empty", "[Packets]") {
+TEST_CASE("ComPacket: ComPacket empty", "[ComPacket]") {
     ComPacket packet{
         .comId = 0xABCD,
         .comIdExtension = 0x1234,
@@ -33,7 +33,7 @@ TEST_CASE("Serialize ComPacket empty", "[Packets]") {
 }
 
 
-TEST_CASE("Serialize Packet empty", "[Packets]") {
+TEST_CASE("ComPacket: Packet empty", "[ComPacket]") {
     Packet packet{
         .tperSessionNumber = 0x12345678,
         .hostSessionNumber = 0x23456789,
@@ -64,7 +64,7 @@ TEST_CASE("Serialize Packet empty", "[Packets]") {
 }
 
 
-TEST_CASE("Serialize data SubPacket empty", "[Packets]") {
+TEST_CASE("ComPacket: SubPacket empty", "[ComPacket]") {
     SubPacket packet{
         .kind = 0xBEEF,
     };
@@ -87,7 +87,7 @@ TEST_CASE("Serialize data SubPacket empty", "[Packets]") {
 }
 
 
-TEST_CASE("Serialize ComPacket", "[Packets]") {
+TEST_CASE("ComPacket: filled", "[ComPacket]") {
     SubPacket sp{
         .kind = 0,
         .payload = {0xBE_b, 0xEF_b},

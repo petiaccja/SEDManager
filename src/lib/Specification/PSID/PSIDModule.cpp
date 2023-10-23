@@ -15,7 +15,12 @@ constexpr std::initializer_list<std::pair<Uid, std::string_view>> names = {
     { 0x0000'0008'0001'00E0, "ACE::SP_PSID"             },
 };
 
+const NameAndUidFinder& GetFinder() {
+    static NameAndUidFinder finder({ names }, {});
+    return finder;
 }
+
+} // namespace
 
 
 std::shared_ptr<Module> PSIDModule::Get() {
@@ -35,14 +40,10 @@ eModuleKind PSIDModule::ModuleKind() const {
 
 
 std::optional<std::string> PSIDModule::FindName(Uid uid, std::optional<Uid>) const {
-    static const auto lookupTable = MakeNameLookup({ names });
-    const auto it = lookupTable.find(uid);
-    return it != lookupTable.end() ? std::optional(std::string(it->second)) : std::nullopt;
+    return GetFinder().Find(uid);
 }
 
 
 std::optional<Uid> PSIDModule::FindUid(std::string_view name, std::optional<Uid>) const {
-    static const auto lookupTable = MakeUidLookup({ names });
-    const auto it = lookupTable.find(name);
-    return it != lookupTable.end() ? std::optional(it->second) : std::nullopt;
+    return GetFinder().Find(name);
 }

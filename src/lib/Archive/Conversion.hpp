@@ -9,7 +9,7 @@
 #include <vector>
 
 
-inline std::byte operator""_b(unsigned long long value) {
+constexpr std::byte operator""_b(unsigned long long value) {
     return std::byte(value);
 }
 

@@ -3,15 +3,15 @@
 #include <catch2/catch_test_macros.hpp>
 
 
-TEST_CASE("Method - parse roundtrip", "[Method]") {
+TEST_CASE("Method: parse method roundtrip", "[Method]") {
     const Method input = {
         .methodId = 0xDEADBEEF,
         .args = {1, 2, 3},
         .status = eMethodStatus::FAIL,
     };
 
-    const auto stream = MethodToValue(0xFF, input);
-    const Method output = MethodFromValue(stream);
+    const auto value = MethodToValue(0xFF, input);
+    const Method output = MethodFromValue(value);
 
     REQUIRE(output.methodId == input.methodId);
     REQUIRE(output.args.size() == 3);
@@ -22,7 +22,28 @@ TEST_CASE("Method - parse roundtrip", "[Method]") {
 }
 
 
-TEST_CASE("Method - parse args roundtrip", "[Method]") {
+TEST_CASE("Method: parse results", "[Method]") {
+    const Value value = {
+        {1,                                          2,          3         },
+        eCommand::END_OF_DATA,
+        { static_cast<uint8_t>(eMethodStatus::FAIL), uint8_t(0), uint8_t(0)},
+    };
+    const MethodResult expected = {
+        .values = {1, 2, 3},
+        .status = eMethodStatus::FAIL,
+    };
+
+    const MethodResult output = MethodResultFromValue(value);
+
+    REQUIRE(output.values.size() == 3);
+    REQUIRE(output.values[0].Get<int>() == 1);
+    REQUIRE(output.values[1].Get<int>() == 2);
+    REQUIRE(output.values[2].Get<int>() == 3);
+    REQUIRE(output.status == eMethodStatus::FAIL);
+}
+
+
+TEST_CASE("Method: parse args roundtrip", "[Method]") {
     const auto streams = ArgsToValues(3, 4, std::optional<int>{}, std::optional<int>{ 5 }, std::optional<int>{});
     int arg0 = 0;
     int arg1 = 0;

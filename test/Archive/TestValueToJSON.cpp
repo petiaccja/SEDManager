@@ -15,7 +15,7 @@ const Type optional_bytes_2 = IdentifiedType<NameValueUintegerType, id_optional_
 const Type optional_uinteger_4 = IdentifiedType<NameValueUintegerType, id_optional_uinteger_4>(1, uinteger_4);
 
 
-TEST_CASE("JSON from IntegerType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON: IntegerType", "[ValueToJSON]") {
     const Type type = IntegerType(4, false);
     const Value value = uint32_t(37);
     const nlohmann::json json = uint32_t(37);
@@ -30,7 +30,7 @@ TEST_CASE("JSON from IntegerType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from BytesType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON: BytesType", "[ValueToJSON]") {
     const Type type = bytes_2;
     const Value value = std::vector{ 0xFF_b, 0x78_b };
     const auto json = nlohmann::json("FF'78");
@@ -45,7 +45,7 @@ TEST_CASE("JSON from BytesType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from ListType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON: ListType", "[ValueToJSON]") {
     const Type type = ListType(uinteger_4);
     const Value value = std::vector<unsigned>{ 2, 3 };
     const auto json = nlohmann::json(std::vector<unsigned>{ 2, 3 });
@@ -60,7 +60,7 @@ TEST_CASE("JSON from ListType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from AlternativeType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON: AlternativeType", "[ValueToJSON]") {
     const Type type = AlternativeType(uinteger_4, bytes_2);
     const Value value = Named(ToBytes(uint32_t(id_uinteger_4)), uint32_t(37));
     const auto json = nlohmann::json({
@@ -78,7 +78,7 @@ TEST_CASE("JSON from AlternativeType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from StructType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON:StructType", "[ValueToJSON]") {
     const Type type = StructType(uinteger_4, bytes_2, optional_bytes_2, optional_uinteger_4);
 
     const unsigned field1 = uint32_t(5);
@@ -139,7 +139,7 @@ TEST_CASE("JSON from StructType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from RestrictedReferenceType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
     const Type type = RestrictedReferenceType(0x201);
     const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
     const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
@@ -155,10 +155,29 @@ TEST_CASE("JSON from RestrictedReferenceType", "[ValueToJSON]") {
 }
 
 
-TEST_CASE("JSON from GeneralReferenceType", "[ValueToJSON]") {
+TEST_CASE("ValueToJSON:GeneralReferenceType", "[ValueToJSON]") {
     const Type type = GeneralReferenceType();
     const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
     const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
+
+    SECTION("Value to JSON") {
+        const auto conv = ValueToJSON(value, type);
+        REQUIRE(conv == json);
+    }
+    SECTION("JSON to Value") {
+        const auto conv = JSONToValue(json, type);
+        REQUIRE(conv == value);
+    }
+}
+
+
+TEST_CASE("ValueToJSON: NameValueUintegerType", "[ValueToJSON]") {
+    const Type type = NameValueUintegerType(6, IntegerType(4, true));
+    const Value value = Named(uint16_t(6), int32_t(748));
+    const nlohmann::json json = {
+        {"name",   6  },
+        { "value", 748},
+    };
 
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);
