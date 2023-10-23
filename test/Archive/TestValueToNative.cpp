@@ -167,7 +167,10 @@ TEST_CASE("value_cast: unordered_map", "[ValueToNative]") {
         REQUIRE(conv == native);
     }
     SECTION("native to Value") {
-        const auto conv = value_cast(native);
+        auto conv = value_cast(native);
+        std::ranges::sort(conv.GetList(), [](const Value& lhs, const Value& rhs) {
+            return lhs.GetNamed().name.Get<uint16_t>() < rhs.GetNamed().name.Get<uint16_t>();
+        });
         REQUIRE(conv == value);
     }
 }

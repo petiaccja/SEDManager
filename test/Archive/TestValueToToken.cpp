@@ -1,8 +1,8 @@
-#include <cereal/archives/json.hpp>
-
+#include <Archive/Conversion.hpp>
 #include <Archive/TokenBinaryArchive.hpp>
 #include <Archive/Types/ValueToToken.hpp>
-#include <Archive/Conversion.hpp>
+
+#include <cereal/archives/json.hpp>
 
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>

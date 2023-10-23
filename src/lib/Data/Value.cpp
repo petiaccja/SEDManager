@@ -19,14 +19,19 @@ Value::Value(eCommand command)
 
 
 bool Value::operator==(const Value& rhs) const {
-    if (Type() != rhs.Type()) {
-        return false;
-    }
     if (IsInteger()) {
-        return impl::ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
-                   return Type() == typeid(T) ? std::optional(Get<T>() == rhs.Get<T>()) : std::nullopt;
-               })
-            .value_or(false);
+        if (Type() != rhs.Type()) {
+            return false;
+        }
+        const auto cmpResult = impl::ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
+            if (Type() == typeid(T)) {
+                const auto lhsv = Get<T>();
+                const auto rhsv = rhs.Get<T>();
+                return lhsv == rhsv;
+            }
+            return std::nullopt;
+        });
+        return cmpResult.value_or(false);
     }
     else if (IsBytes()) {
         return std::ranges::equal(GetBytes(), rhs.GetBytes());
@@ -116,7 +121,7 @@ eCommand Value::GetCommand() const {
 
 
 //------------------------------------------------------------------------------
-// Query
+// Querystd::optional(Get<T>() == )
 //------------------------------------------------------------------------------
 
 bool Value::IsInteger() const {
