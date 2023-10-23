@@ -18,6 +18,10 @@ struct NamedObject {
 class SEDManager {
 public:
     SEDManager(std::shared_ptr<StorageDevice> device);
+    SEDManager(const SEDManager&) = delete;
+    SEDManager& operator=(const SEDManager&) = delete;
+    SEDManager(SEDManager&&) = default;
+    SEDManager& operator=(SEDManager&&) = default;
 
     const TPerDesc& GetCapabilities() const;
     std::unordered_map<std::string, uint32_t> GetProperties();
@@ -36,7 +40,6 @@ public:
 
     void StackReset();
     void Reset();
-
 
 private:
     std::vector<NamedObject> GetNamedRows(const Table& table);

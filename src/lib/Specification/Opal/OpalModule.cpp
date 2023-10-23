@@ -1,6 +1,8 @@
 #include "OpalModule.hpp"
 
 #include "../Common/Utility.hpp"
+#include "../Core/CoreModule.hpp"
+#include "../Core/Defs/Types.hpp"
 #include "../PSID/PSIDModule.hpp"
 
 #include <ranges>
@@ -260,7 +262,11 @@ std::optional<Uid> OpalModule::FindUid(std::string_view name, std::optional<Uid>
 
 
 std::optional<TableDesc> OpalModule::FindTable(Uid table) const {
-    // TODO: TPerInfo has an additional column.
+    if (table == Uid(core::eTable::TPerInfo)) {
+        auto desc = CoreModule::Get()->FindTable(table);
+        desc->columns.push_back({ "ProgrammaticResetEnable", false, core::boolean });
+        return desc;
+    }
     return std::nullopt;
 }
 
