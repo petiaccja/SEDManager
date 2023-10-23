@@ -9,7 +9,7 @@
 
 class Interactive {
 public:
-    Interactive(SEDManager& manager, CLI::App& cli);
+    Interactive(SEDManager& manager);
     Interactive(const Interactive&) = delete;
     Interactive(Interactive&&) = delete;
     Interactive& operator=(const Interactive&) = delete;
@@ -17,8 +17,12 @@ public:
 
     std::optional<Uid> GetCurrentSecurityProvider() const;
     std::unordered_set<Uid> GetCurrentAuthorities() const;
+    int Run();
 
 private:
+    void RegisterCallbackExit();
+    void RegisterCallbackHelp();
+
     void RegisterCallbackStart();
     void RegisterCallbackAuthenticate();
     void RegisterCallbackEnd();
@@ -39,11 +43,14 @@ private:
     void RegisterCallbackReset();
 
     void ClearCurrents();
-    auto ParseGetSet(std::string rowName, int32_t column) -> std::optional<std::tuple<Uid, Uid, int32_t>>;
+    auto ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<Uid, Uid, int32_t>>;
+    void PrintCaret() const;
+    void PrintHelp(const std::string& command) const;
 
 private:
     SEDManager& m_manager;
-    CLI::App& m_cli;
+    CLI::App m_cli;
     std::optional<Uid> m_currentSecurityProvider;
     std::unordered_set<Uid> m_currentAuthorities;
+    bool m_finished = false;
 };

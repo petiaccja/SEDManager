@@ -6,13 +6,21 @@
 
 #include <CLI/App.hpp>
 #include <SEDManager/SEDManager.hpp>
+#include <rang.hpp>
 
 #include <iostream>
 #include <ostream>
 
 
 
-Interactive::Interactive(SEDManager& manager, CLI::App& cli) : m_manager(manager), m_cli(cli) {
+Interactive::Interactive(SEDManager& manager) : m_manager(manager) {
+    m_cli.set_help_flag();
+    m_cli.set_help_all_flag();
+    m_cli.set_version_flag();
+
+    RegisterCallbackExit();
+    RegisterCallbackHelp();
+
     RegisterCallbackStart();
     RegisterCallbackAuthenticate();
     RegisterCallbackEnd();
@@ -44,13 +52,32 @@ std::unordered_set<Uid> Interactive::GetCurrentAuthorities() const {
 }
 
 
+int Interactive::Run() {
+    std::string command;
+    while (!m_finished && std::cin.good()) {
+        try {
+            PrintCaret();
+            std::getline(std::cin, command);
+            m_cli.parse(command, false);
+        }
+        catch (CLI::CallForHelp&) {
+            PrintHelp(command);
+        }
+        catch (std::exception& ex) {
+            std::cout << rang::fg::red << "Error: " << rang::style::reset << ex.what() << std::endl;
+        }
+    }
+    return 0;
+}
+
+
 void Interactive::ClearCurrents() {
     m_currentSecurityProvider = std::nullopt;
     m_currentAuthorities.clear();
 }
 
 
-auto Interactive::ParseGetSet(std::string rowName, int32_t column) -> std::optional<std::tuple<Uid, Uid, int32_t>> {
+auto Interactive::ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<Uid, Uid, int32_t>> {
     const auto& rowNameSections = SplitName(rowName);
     if (rowNameSections.size() != 2) {
         throw std::invalid_argument("specify object as 'Table::Object'");
@@ -65,6 +92,65 @@ auto Interactive::ParseGetSet(std::string rowName, int32_t column) -> std::optio
     column = -1;
     return std::tuple{ tableUid, maybeRowUid, copy };
 };
+
+
+void Interactive::PrintCaret() const {
+    std::string currentSPName = "<no session>";
+    std::vector<std::string> currentAuthNames;
+    const auto currentSP = GetCurrentSecurityProvider();
+    if (currentSP) {
+        currentSPName = m_manager.GetModules().FindName(*currentSP).value_or(to_string(*currentSP));
+        for (auto auth : GetCurrentAuthorities()) {
+            const std::string n = m_manager.GetModules().FindName(auth, *currentSP).value_or(to_string(auth));
+            currentAuthNames.push_back(std::string(SplitName(n).back()));
+        }
+    }
+
+    std::cout << rang::fg::cyan << SplitName(currentSPName).back() << rang::style::reset;
+    if (currentSP) {
+        std::cout << "[ ";
+        if (currentAuthNames.empty()) {
+            std::cout << rang::fg::green << "Anybody" << rang::style::reset;
+        }
+        else {
+            std::cout << rang::fg::green << Join(currentAuthNames, ", ") << rang::style::reset;
+        }
+        std::cout << " ]";
+    }
+    std::cout << "> ";
+}
+
+
+void Interactive::PrintHelp(const std::string& command) const {
+    const auto tokens = CLI::detail::split_up(command);
+    assert(!tokens.empty()); // "help" must be the first token if we got here.
+    auto subcommand = &m_cli;
+    try {
+        for (auto& token : tokens | std::views::drop(1)) {
+            subcommand = subcommand->get_subcommand(token);
+        }
+    }
+    catch (...) {
+        // Empty
+    }
+    std::cout << subcommand->help() << std::endl;
+}
+
+
+void Interactive::RegisterCallbackExit() {
+    auto cmdExit = m_cli.add_subcommand("exit", "Exit the application.");
+    cmdExit->callback([&] {
+        m_finished = true;
+    });
+}
+
+
+void Interactive::RegisterCallbackHelp() {
+    auto cmd = m_cli.add_subcommand("help", "Print this help message.")->silent()->allow_extras();
+    cmd->parse_complete_callback([] {
+        throw CLI::CallForHelp();
+    });
+}
 
 
 void Interactive::RegisterCallbackStart() {

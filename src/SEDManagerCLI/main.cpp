@@ -10,94 +10,63 @@
 #include <iostream>
 
 
-void AddCmdHelp(CLI::App& cli) {
-    auto cmd = cli.add_subcommand("help", "Print this help message.")->silent()->allow_extras();
-    cmd->parse_complete_callback([&cli] {
-        throw CLI::CallForHelp();
-    });
-}
+class MainApp {
+public:
+    MainApp() {
+        m_guided = m_cli.add_option("-g,--guided", m_guidedName, "Guided sessions walk you through the configuration process step by step.");
+        m_guided->default_val(std::string{});
+        m_interactive = m_cli.add_flag("-i,--interactive", "Interactive sessions allow you to manually inspect and configure tables.")->excludes(m_guided);
+        m_device = m_cli.add_option("device", m_devicePath, "The path to the device you want to configure.")->required();
+    }
+    MainApp(const MainApp&) = delete;
+    MainApp(MainApp&) = delete;
+    MainApp& operator=(const MainApp&) = delete;
+    MainApp& operator=(MainApp&) = delete;
 
-void AddCmdExit(CLI::App& cli, volatile bool& hasExited) {
-    auto cmdExit = cli.add_subcommand("exit", "Exit the application.");
-    cmdExit->callback([&] {
-        hasExited = true;
-    });
-}
+    int Run(int argc, char* argv[]) {
+        try {
+            m_cli.parse(argc, argv);
+
+            if (!*m_guided && !*m_interactive) {
+                throw CLI::CallForHelp();
+            }
+
+            if (*m_guided) {
+                std::cout << "No guided sessions available yet." << std::endl;
+                return 0;
+            }
+            else {
+                const auto device = std::make_shared<NvmeDevice>(m_devicePath);
+                const auto identity = device->IdentifyController();
+                std::cout << rang::fg::yellow << "Drive: "
+                          << rang::fg::reset << identity.modelNumber
+                          << rang::style::reset << std::endl;
+                SEDManager manager(device);
+                Interactive session(manager);
+                return session.Run();
+            }
+        }
+        catch (CLI::CallForHelp&) {
+            std::cout << m_cli.help() << std::endl;
+        }
+        catch (std::exception& ex) {
+            std::cout << "Error: " << ex.what() << std::endl;
+        }
+        return -1;
+    }
+
+private:
+    CLI::App m_cli;
+    std::string m_guidedName;
+    std::string m_devicePath;
+    CLI::Option* m_guided;
+    CLI::Option* m_interactive;
+    CLI::Option* m_device;
+};
+
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cout << "Usage: SEDManager <device>" << std::endl;
-        return 1;
-    }
-    std::string_view devicePath = argv[1];
-    try {
-        const auto device = std::make_shared<NvmeDevice>(devicePath);
-        const auto identity = device->IdentifyController();
-        SEDManager app{ device };
-
-        CLI::App cli;
-        cli.set_help_flag();
-        cli.set_help_all_flag();
-        cli.set_version_flag();
-        bool hasExited = false;
-
-        AddCmdHelp(cli);
-        AddCmdExit(cli, hasExited);
-        Interactive interactive(app, cli);
-
-        std::string command;
-        while (!hasExited && std::cin.good()) {
-            try {
-                std::string currentSPName = "<no session>";
-                std::vector<std::string> currentAuthNames;
-                const auto currentSP = interactive.GetCurrentSecurityProvider();
-                if (currentSP) {
-                    currentSPName = app.GetModules().FindName(*currentSP).value_or(to_string(*currentSP));
-                    for (auto auth : interactive.GetCurrentAuthorities()) {
-                        const std::string n = app.GetModules().FindName(auth, *currentSP).value_or(to_string(auth));
-                        currentAuthNames.push_back(std::string(SplitName(n).back()));
-                    }
-                }
-
-                std::cout << rang::fg::cyan << SplitName(currentSPName).back() << rang::style::reset;
-                if (currentSP) {
-                    std::cout << "[ ";
-                    if (currentAuthNames.empty()) {
-                        std::cout << rang::fg::green << "Anybody" << rang::style::reset;
-                    }
-                    else {
-                        std::cout << rang::fg::green << Join(currentAuthNames, ", ") << rang::style::reset;
-                    }
-                    std::cout << " ]";
-                }
-                std::cout << "> ";
-                std::getline(std::cin, command);
-                cli.clear();
-                cli.parse(command, false);
-            }
-            catch (CLI::CallForHelp& ex) {
-                const auto tokens = CLI::detail::split_up(command);
-                assert(!tokens.empty()); // "help" must be the first token if we got here.
-                auto subcommand = &cli;
-                try {
-                    for (auto& token : tokens | std::views::drop(1)) {
-                        subcommand = subcommand->get_subcommand(token);
-                    }
-                }
-                catch (...) {
-                    // Empty
-                }
-                std::cout << subcommand->help() << std::endl;
-            }
-            catch (std::exception& ex) {
-                std::cout << rang::fg::red << "Error: " << rang::style::reset << ex.what() << std::endl;
-            }
-        }
-    }
-    catch (std::exception& ex) {
-        std::cout << ex.what() << std::endl;
-        return 1;
-    }
-    return 0;
+    MainApp mainApp;
+    return mainApp.Run(argc, argv);
 }
