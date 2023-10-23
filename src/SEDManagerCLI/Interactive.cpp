@@ -6,11 +6,20 @@
 
 #include <CLI/App.hpp>
 #include <SEDManager/SEDManager.hpp>
-#include <rang.hpp>
 
 #include <iostream>
 #include <ostream>
 
+
+// DO NOT REORDER THIS. Includes <Windows.h>
+// clang-format: off
+#include <rang.hpp>
+// clang-format: on
+
+// I swear to god this is the second most retarded API I've seen after OpenGL.
+#ifdef GetObject
+    #undef GetObject
+#endif
 
 
 Interactive::Interactive(SEDManager& manager) : m_manager(manager) {
