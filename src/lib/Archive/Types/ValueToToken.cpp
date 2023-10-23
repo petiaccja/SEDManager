@@ -122,6 +122,9 @@ void ValueToTokens(const Value& value, std::vector<Token>& out) {
         ValueToTokens(value.GetNamed().value, out);
         out.push_back(Token{ .tag = eTag::END_NAME });
     }
+    else if (!value.HasValue()) {
+        return;
+    }
     else {
         assert(false);
     }

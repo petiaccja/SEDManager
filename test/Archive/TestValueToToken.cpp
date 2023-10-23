@@ -8,6 +8,20 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+TEST_CASE("ValueToToken: empty", "[ValueToToken]") {
+    const Value value;
+    const std::vector<Token> tokens = {};
+    SECTION("Value to native") {
+        const auto conv = ValueToTokens(value);
+        REQUIRE(conv == tokens);
+    }
+    SECTION("native to Value") {
+        const auto conv = TokensToValue(tokens);
+        REQUIRE(conv.GetList().empty());
+    }
+}
+
+
 TEST_CASE("ValueToToken: integer", "[ValueToToken]") {
     const Value value = uint32_t(1);
     const std::vector<Token> tokens = {
