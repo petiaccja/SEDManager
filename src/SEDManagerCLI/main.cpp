@@ -6,13 +6,14 @@
 #include <SEDManager/SEDManager.hpp>
 #include <rang.hpp>
 
+#include <algorithm>
 #include <iostream>
 
 
 void AddCmdHelp(CLI::App& cli) {
-    auto cmd = cli.add_subcommand("help", "Print this help message.");
-    cmd->callback([&] {
-        std::cout << cli.get_formatter()->make_help(&cli, "", CLI::AppFormatMode::Normal) << std::endl;
+    auto cmd = cli.add_subcommand("help", "Print this help message.")->silent()->allow_extras();
+    cmd->parse_complete_callback([&cli] {
+        throw CLI::CallForHelp();
     });
 }
 
@@ -36,20 +37,24 @@ int main(int argc, char* argv[]) {
         SEDManager app{ device };
 
         CLI::App cli;
+        cli.set_help_flag();
+        cli.set_help_all_flag();
+        cli.set_version_flag();
         bool hasExited = false;
 
         AddCmdHelp(cli);
         AddCmdExit(cli, hasExited);
-        interactive::AddCommands(app, cli);
+        Interactive interactive(app, cli);
 
+        std::string command;
         while (!hasExited && std::cin.good()) {
             try {
                 std::string currentSPName = "<no session>";
                 std::vector<std::string> currentAuthNames;
-                const auto currentSP = interactive::GetCurrentSP();
+                const auto currentSP = interactive.GetCurrentSecurityProvider();
                 if (currentSP) {
                     currentSPName = app.GetModules().FindName(*currentSP).value_or(to_string(*currentSP));
-                    for (auto auth : interactive::GetCurrentAuthorities()) {
+                    for (auto auth : interactive.GetCurrentAuthorities()) {
                         const std::string n = app.GetModules().FindName(auth, *currentSP).value_or(to_string(auth));
                         currentAuthNames.push_back(std::string(SplitName(n).back()));
                     }
@@ -67,9 +72,23 @@ int main(int argc, char* argv[]) {
                     std::cout << " ]";
                 }
                 std::cout << "> ";
-                std::string command;
                 std::getline(std::cin, command);
+                cli.clear();
                 cli.parse(command, false);
+            }
+            catch (CLI::CallForHelp& ex) {
+                const auto tokens = CLI::detail::split_up(command);
+                assert(!tokens.empty()); // "help" must be the first token if we got here.
+                auto subcommand = &cli;
+                try {
+                    for (auto& token : tokens | std::views::drop(1)) {
+                        subcommand = subcommand->get_subcommand(token);
+                    }
+                }
+                catch (...) {
+                    // Empty
+                }
+                std::cout << subcommand->help() << std::endl;
             }
             catch (std::exception& ex) {
                 std::cout << rang::fg::red << "Error: " << rang::style::reset << ex.what() << std::endl;

@@ -11,78 +11,157 @@
 #include <ostream>
 
 
-namespace {
 
-std::optional<Uid> currentSP;
-std::unordered_set<Uid> currentAuthorities;
+Interactive::Interactive(SEDManager& manager, CLI::App& cli) : m_manager(manager), m_cli(cli) {
+    RegisterCallbackStart();
+    RegisterCallbackAuthenticate();
+    RegisterCallbackEnd();
 
+    RegisterCallbackInfo();
+    RegisterCallbackFind();
+    RegisterCallbackRows();
+    RegisterCallbackColumns();
+    RegisterCallbackGet();
+    RegisterCallbackSet();
+    RegisterCallbackPasswd();
+    RegisterCallbackGenMEK();
+    RegisterCallbackGenPIN();
+    RegisterCallbackActivate();
+    RegisterCallbackRevert();
 
-void ClearCurrents() {
-    currentSP = std::nullopt;
-    currentAuthorities.clear();
+    RegisterCallbackStackReset();
+    RegisterCallbackReset();
 }
 
 
-void AddCmdStart(SEDManager& app, CLI::App& cli) {
+std::optional<Uid> Interactive::GetCurrentSecurityProvider() const {
+    return m_currentSecurityProvider;
+}
+
+
+std::unordered_set<Uid> Interactive::GetCurrentAuthorities() const {
+    return m_currentAuthorities;
+}
+
+
+void Interactive::ClearCurrents() {
+    m_currentSecurityProvider = std::nullopt;
+    m_currentAuthorities.clear();
+}
+
+
+auto Interactive::ParseGetSet(std::string rowName, int32_t column) -> std::optional<std::tuple<Uid, Uid, int32_t>> {
+    const auto& rowNameSections = SplitName(rowName);
+    if (rowNameSections.size() != 2) {
+        throw std::invalid_argument("specify object as 'Table::Object'");
+    }
+
+    const auto tableUid = Unwrap(FindOrParseUid(m_manager, rowNameSections[0], m_currentSecurityProvider), "cannot find table");
+    const auto maybeRowUid = FindOrParseUid(m_manager, rowName, m_currentSecurityProvider).value_or(FindOrParseUid(m_manager, rowNameSections[1], m_currentSecurityProvider).value_or(0));
+    if (maybeRowUid == Uid(0)) {
+        throw std::invalid_argument("cannot find object");
+    }
+    auto copy = column;
+    column = -1;
+    return std::tuple{ tableUid, maybeRowUid, copy };
+};
+
+
+void Interactive::RegisterCallbackStart() {
     static std::string spName;
 
-    auto cmd = cli.add_subcommand("start", "Start a session with a service provider.");
-    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
-    cmd->callback([&app] {
-        const auto spUid = Unwrap(FindOrParseUid(app, "SP::" + spName, currentSP), "cannot find security provider");
-        app.Start(spUid);
-        currentSP = spUid;
+    auto cmd = m_cli.add_subcommand("start", "Start a session with a service provider.");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
+    cmd->callback([this] {
+        const auto spUid = Unwrap(FindOrParseUid(m_manager, "SP::" + spName, m_currentSecurityProvider), "cannot find security provider");
+        m_manager.Start(spUid);
+        m_currentSecurityProvider = spUid;
     });
 }
 
 
-void AddCmdAuth(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackAuthenticate() {
     static std::string authName;
 
-    auto cmd = cli.add_subcommand("auth", "Authenticate with an authority.");
-    cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.");
-    cmd->callback([&app] {
-        const auto authUid = Unwrap(FindOrParseUid(app, "Authority::" + authName, currentSP), "cannot find authority");
+    auto cmd = m_cli.add_subcommand("auth", "Authenticate with an authority.");
+    cmd->add_option("authority", authName, "The name or UID (in hex) of the security provider.")->required();
+    cmd->callback([this] {
+        const auto authUid = Unwrap(FindOrParseUid(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
         const auto password = GetPassword("Password: ");
-        app.Authenticate(authUid, password);
-        currentAuthorities.insert(authUid);
+        m_manager.Authenticate(authUid, password);
+        m_currentAuthorities.insert(authUid);
     });
 }
 
 
-void AddCmdEnd(SEDManager& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("end", "End session with current service provider.");
-    cmd->callback([&app] {
-        app.End();
+void Interactive::RegisterCallbackEnd() {
+    auto cmd = m_cli.add_subcommand("end", "End session with current service provider.");
+    cmd->callback([this] {
+        m_manager.End();
         ClearCurrents();
     });
 }
 
 
-void AddCmdTable(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackInfo() {
+    auto cmd = m_cli.add_subcommand("info", "Print information about the device.");
+    cmd->callback([this] {
+        const auto& desc = m_manager.GetCapabilities();
+        const auto& mods = m_manager.GetModules();
+        std::vector<std::string_view> sscNames;
+        for (auto& sscDesc : desc.sscDescs) {
+            sscNames.push_back(std::visit([](auto& d) { return d.featureName; }, sscDesc));
+        }
+        std::vector<std::string_view> modNames;
+        for (auto& mod : mods) {
+            modNames.push_back(mod->ModuleName());
+        }
+        std::cout << "TCG storage subsystem classes: " << Join(sscNames, ", ") << std::endl;
+        std::cout << "Modules loaded: " << Join(modNames, ", ") << std::endl;
+    });
+}
+
+
+void Interactive::RegisterCallbackFind() {
+    static std::string objectName;
+    auto cmd = m_cli.add_subcommand("find", "Finds the name and UID of an object given as name or UID.");
+    cmd->add_option("object", objectName)->required();
+    cmd->callback([this] {
+        const auto objectUid = Unwrap(FindOrParseUid(m_manager, objectName, m_currentSecurityProvider), "cannot find object");
+        const auto maybeName = m_manager.GetModules().FindName(objectUid, m_currentSecurityProvider);
+        std::cout << "UID:  " << to_string(objectUid) << std::endl;
+        std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
+    });
+}
+
+
+void Interactive::RegisterCallbackRows() {
     static std::string tableName;
 
-    auto cmdColumns = cli.add_subcommand("columns", "List the columns of the table.");
-    auto cmdRows = cli.add_subcommand("rows", "List the rows of the table.");
-
-    cmdRows->add_option("table", tableName, "The table to list the rows of.");
-    cmdColumns->add_option("table", tableName, "The table to list the columns of.");
-
-    cmdRows->callback([&app] {
-        const auto tableUid = Unwrap(FindOrParseUid(app, tableName, currentSP), "cannot find table");
-        const auto table = app.GetTable(tableUid);
+    auto cmdRows = m_cli.add_subcommand("rows", "List the rows of the table.");
+    cmdRows->add_option("table", tableName, "The table to list the rows of.")->required();
+    cmdRows->callback([this] {
+        const auto tableUid = Unwrap(FindOrParseUid(m_manager, tableName, m_currentSecurityProvider), "cannot find table");
+        const auto table = m_manager.GetTable(tableUid);
 
         const std::vector<std::string> columnNames = { "UID", "Name" };
         std::vector<std::vector<std::string>> rows;
         for (const auto& row : table) {
-            rows.push_back({ to_string(row.Id()), app.GetModules().FindName(row.Id(), currentSP).value_or("") });
+            rows.push_back({ to_string(row.Id()), m_manager.GetModules().FindName(row.Id(), m_currentSecurityProvider).value_or("") });
         }
         std::cout << FormatTable(columnNames, rows);
     });
+}
 
-    cmdColumns->callback([&app] {
-        const auto tableUid = Unwrap(FindOrParseUid(app, tableName, currentSP), "cannot find table");
-        const auto table = app.GetTable(tableUid);
+
+void Interactive::RegisterCallbackColumns() {
+    static std::string tableName;
+
+    auto cmdColumns = m_cli.add_subcommand("columns", "List the columns of the table.");
+    cmdColumns->add_option("table", tableName, "The table to list the columns of.")->required();
+    cmdColumns->callback([this] {
+        const auto tableUid = Unwrap(FindOrParseUid(m_manager, tableName, m_currentSecurityProvider), "cannot find table");
+        const auto table = m_manager.GetTable(tableUid);
 
         size_t columnNumber = 0;
         const std::vector<std::string> columnNames = { "Number", "Name", "IsUnique", "Type" };
@@ -95,44 +174,22 @@ void AddCmdTable(SEDManager& app, CLI::App& cli) {
 }
 
 
-void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackGet() {
     static std::string rowName;
     static int32_t column = 0;
     static std::string jsonValue;
 
-    auto cmdGet = cli.add_subcommand("get", "Get a cell from a table.");
-    auto cmdSet = cli.add_subcommand("set", "Set a cell in a table to new value.");
+    auto cmdGet = m_cli.add_subcommand("get", "Get a cell from a table.");
 
-    cmdGet->add_option("object", rowName, "The object to get the cells of. Format as 'Table::Object'.");
+    cmdGet->add_option("object", rowName, "The object to get the cells of. Format as 'Table::Object'.")->required();
     cmdGet->add_option("column", column, "The column to get.")->default_val(-1);
-    cmdSet->add_option("object", rowName, "The object to set the cells of. Format as 'Table::Object'.");
-    cmdSet->add_option("column", column, "The column to set.");
-    cmdSet->add_option("value", jsonValue, "The new value of the cell.");
-
-
-    static const auto parse = [&]() -> std::optional<std::tuple<Uid, Uid, int32_t>> {
-        const auto& rowNameSections = SplitName(rowName);
-        if (rowNameSections.size() != 2) {
-            throw std::invalid_argument("specify object as 'Table::Object'");
-        }
-
-        const auto tableUid = Unwrap(FindOrParseUid(app, rowNameSections[0], currentSP), "cannot find table");
-        const auto maybeRowUid = FindOrParseUid(app, rowName, currentSP).value_or(FindOrParseUid(app, rowNameSections[1], currentSP).value_or(0));
-        if (maybeRowUid == Uid(0)) {
-            throw std::invalid_argument("cannot find object");
-        }
-        auto copy = column;
-        column = -1;
-        return std::tuple{ tableUid, maybeRowUid, copy };
-    };
-
-    cmdGet->callback([&app] {
-        const auto parsed = parse();
+    cmdGet->callback([this] {
+        const auto parsed = ParseGetSet(rowName, column);
         if (!parsed) {
             return;
         }
         const auto& [tableUid, rowUid, column] = *parsed;
-        const auto object = app.GetObject(tableUid, rowUid);
+        const auto object = m_manager.GetObject(tableUid, rowUid);
         if (column < 0) {
             const std::vector<std::string> outColumns = { "Column", "Value" };
             std::vector<std::vector<std::string>> outData;
@@ -159,121 +216,113 @@ void AddCmdGetSet(SEDManager& app, CLI::App& cli) {
             std::cout << (value.HasValue() ? ValueToJSON(value, object.GetDesc()[column].type).dump() : "<empty>") << std::endl;
         }
     });
+}
 
-    cmdSet->callback([&app] {
-        const auto parsed = parse();
+
+void Interactive::RegisterCallbackSet() {
+    static std::string rowName;
+    static int32_t column = 0;
+    static std::string jsonValue;
+
+    auto cmdSet = m_cli.add_subcommand("set", "Set a cell in a table to new value.");
+
+    cmdSet->add_option("object", rowName, "The object to set the cells of. Format as 'Table::Object'.")->required();
+    cmdSet->add_option("column", column, "The column to set.")->required();
+    cmdSet->add_option("value", jsonValue, "The new value of the cell.")->required();
+    cmdSet->callback([this] {
+        const auto parsed = ParseGetSet(rowName, column);
         if (!parsed) {
             return;
         }
         const auto [tableUid, rowUid, column] = *parsed;
-        const auto object = app.GetObject(tableUid, rowUid);
+        const auto object = m_manager.GetObject(tableUid, rowUid);
         const auto value = JSONToValue(nlohmann::json::parse(jsonValue), object.GetDesc()[column].type);
         object[column] = value;
     });
 }
 
 
-void AddCmdFind(SEDManager& app, CLI::App& cli) {
-    static std::string objectName;
-    auto cmd = cli.add_subcommand("find", "Finds the name and UID of an object given as name or UID.");
-    cmd->add_option("object", objectName);
-    cmd->callback([&app] {
-        const auto objectUid = Unwrap(FindOrParseUid(app, objectName, currentSP), "cannot find object");
-        const auto maybeName = app.GetModules().FindName(objectUid, currentSP);
-        std::cout << "UID:  " << to_string(objectUid) << std::endl;
-        std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
+void Interactive::RegisterCallbackPasswd() {
+    static std::string authName;
+
+    auto cmd = m_cli.add_subcommand("passwd", "Change the password of an authority.");
+    cmd->add_option("authority", authName, "The name or UID (in hex) of the authority.")->required();
+    cmd->callback([this] {
+        const auto authTable = Unwrap(FindOrParseUid(m_manager, "Authority", m_currentSecurityProvider), "cannot find Authority table");
+        const auto cPinTable = Unwrap(FindOrParseUid(m_manager, "C_PIN", m_currentSecurityProvider), "cannot find C_PIN table");
+        const auto authUid = Unwrap(FindOrParseUid(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
+        const auto authority = m_manager.GetObject(authTable, authUid);
+        const auto credentialUid = value_cast<Uid>(*authority[10]);
+        const auto credential = m_manager.GetObject(cPinTable, credentialUid);
+        const std::vector<std::byte> password = GetPassword("New password: ");
+        const std::vector<std::byte> passwordAgain = GetPassword("Retype password: ");
+        if (password != passwordAgain) {
+            throw std::invalid_argument("the two passwords do not match");
+        }
+        credential[3] = value_cast(password);
     });
 }
 
 
-void AddCmdStackReset(SEDManager& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("stack-reset", "Reset the current communication stream.");
-    cmd->callback([&app] {
-        app.StackReset();
-        ClearCurrents();
-    });
-}
-
-
-void AddCmdReset(SEDManager& app, CLI::App& cli) {
-    auto cmd = cli.add_subcommand("reset", "Reset the device as if power-cycled.");
-    cmd->callback([&app] {
-        app.Reset();
-        ClearCurrents();
-    });
-}
-
-
-void AddCmdGenMEK(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackGenMEK() {
     static std::string rangeName;
-    auto cmd = cli.add_subcommand("gen-mek", "Creates a new Media Encryption Key for a locking range. ERASES RANGE!");
-    cmd->add_option("range", rangeName, "The locking range.");
+    auto cmd = m_cli.add_subcommand("gen-mek", "Creates a new Media Encryption Key for a locking range. ERASES RANGE!");
+    cmd->add_option("range", rangeName, "The locking range.")->required();
     cmd->callback([&] {
-        const auto rangeUid = Unwrap(FindOrParseUid(app, rangeName, currentSP), "cannot find locking range");
-        app.GenMEK(rangeUid);
+        const auto rangeUid = Unwrap(FindOrParseUid(m_manager, rangeName, m_currentSecurityProvider), "cannot find locking range");
+        m_manager.GenMEK(rangeUid);
     });
 }
 
 
-void AddCmdGenPIN(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackGenPIN() {
     static std::string credentialObj;
     static uint32_t length = 32;
-    auto cmd = cli.add_subcommand("gen-pin", "Creates a new random password for an authority.");
-    cmd->add_option("c-pin-obj", credentialObj, "The authority's credential object in C_PIN.");
+    auto cmd = m_cli.add_subcommand("gen-pin", "Creates a new random password for an authority.");
+    cmd->add_option("c-pin-obj", credentialObj, "The authority's credential object in C_PIN.")->required();
     cmd->callback([&] {
-        const auto credentialUid = Unwrap(FindOrParseUid(app, credentialObj, currentSP), "cannot find credential object");
-        app.GenMEK(credentialUid);
+        const auto credentialUid = Unwrap(FindOrParseUid(m_manager, credentialObj, m_currentSecurityProvider), "cannot find credential object");
+        m_manager.GenMEK(credentialUid);
     });
 }
 
 
-void AddCmdRevert(SEDManager& app, CLI::App& cli) {
+void Interactive::RegisterCallbackActivate() {
     static std::string spName;
-    auto cmd = cli.add_subcommand("revert", "Revert an SP to Original Manufacturing State. MAY ERASE DRIVE!");
-    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
+    auto cmd = m_cli.add_subcommand("activate", "Activate an SP that's been disabled the manufacturer.");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
     cmd->callback([&] {
-        const auto spUid = Unwrap(FindOrParseUid(app, spName, currentSP), "cannot find security provider");
-        app.Revert(spUid);
+        const auto spUid = Unwrap(FindOrParseUid(m_manager, spName, m_currentSecurityProvider), "cannot find security provider");
+        m_manager.Activate(spUid);
+    });
+}
+
+
+void Interactive::RegisterCallbackRevert() {
+    static std::string spName;
+    auto cmd = m_cli.add_subcommand("revert", "Revert an SP to Original Manufacturing State. MAY ERASE DRIVE!");
+    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
+    cmd->callback([&] {
+        const auto spUid = Unwrap(FindOrParseUid(m_manager, spName, m_currentSecurityProvider), "cannot find security provider");
+        m_manager.Revert(spUid);
         ClearCurrents();
     });
 }
 
 
-void AddCmdActivate(SEDManager& app, CLI::App& cli) {
-    static std::string spName;
-    auto cmd = cli.add_subcommand("activate", "Activate an SP that's been disabled the manufacturer.");
-    cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.");
-    cmd->callback([&] {
-        const auto spUid = Unwrap(FindOrParseUid(app, spName, currentSP), "cannot find security provider");
-        app.Activate(spUid);
+void Interactive::RegisterCallbackStackReset() {
+    auto cmd = m_cli.add_subcommand("stack-reset", "Reset the current communication stream.");
+    cmd->callback([this] {
+        m_manager.StackReset();
+        ClearCurrents();
     });
 }
 
-} // namespace
 
-
-namespace interactive {
-
-void AddCommands(SEDManager& app, CLI::App& cli) {
-    AddCmdStart(app, cli);
-    AddCmdAuth(app, cli);
-    AddCmdEnd(app, cli);
-
-    AddCmdTable(app, cli);
-    AddCmdGetSet(app, cli);
-    AddCmdGenMEK(app, cli);
-    AddCmdGenPIN(app, cli);
-    AddCmdFind(app, cli);
-
-    AddCmdRevert(app, cli);
-    AddCmdActivate(app, cli);
-
-    AddCmdStackReset(app, cli);
-    AddCmdReset(app, cli);
+void Interactive::RegisterCallbackReset() {
+    auto cmd = m_cli.add_subcommand("reset", "Reset the device as if power-cycled.");
+    cmd->callback([this] {
+        m_manager.Reset();
+        ClearCurrents();
+    });
 }
-
-
-std::optional<Uid> GetCurrentSP() { return currentSP; }
-const std::unordered_set<Uid>& GetCurrentAuthorities() { return currentAuthorities; }
-
-} // namespace interactive

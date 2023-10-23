@@ -63,6 +63,7 @@ struct BasicSSCFeatureDesc {
 
 struct EnterpriseFeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0100;
+    static constexpr std::string_view featureName = "Enterprise";
 
     bool crossingRangeBehavior;
 };
@@ -70,12 +71,14 @@ struct EnterpriseFeatureDesc : BasicSSCFeatureDesc {
 
 struct Opal1FeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0200;
+    static constexpr std::string_view featureName = "Opal v1";
 
     bool crossingRangeBehavior;
 };
 
 struct Opal2FeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0203;
+    static constexpr std::string_view featureName = "Opal v2";
 
     bool crossingRangeBehavior;
     uint16_t numAdminsSupported;
@@ -86,6 +89,7 @@ struct Opal2FeatureDesc : BasicSSCFeatureDesc {
 
 struct OpaliteFeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0301;
+    static constexpr std::string_view featureName = "Opalite";
 
     bool initialCPinSidIndicator;
     bool cPinSidRevertBehavior;
@@ -93,6 +97,7 @@ struct OpaliteFeatureDesc : BasicSSCFeatureDesc {
 
 struct Pyrite1FeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0302;
+    static constexpr std::string_view featureName = "Pyrite v1";
 
     bool initialCPinSidIndicator;
     bool cPinSidRevertBehavior;
@@ -100,6 +105,7 @@ struct Pyrite1FeatureDesc : BasicSSCFeatureDesc {
 
 struct Pyrite2FeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0303;
+    static constexpr std::string_view featureName = "Pyrite v2";
 
     bool initialCPinSidIndicator;
     bool cPinSidRevertBehavior;
@@ -107,6 +113,7 @@ struct Pyrite2FeatureDesc : BasicSSCFeatureDesc {
 
 struct RubyFeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0304;
+    static constexpr std::string_view featureName = "Ruby";
 
     bool crossingRangeBehavior;
     uint16_t numAdminsSupported;
@@ -117,6 +124,7 @@ struct RubyFeatureDesc : BasicSSCFeatureDesc {
 
 struct KeyPerIOFeatureDesc : BasicSSCFeatureDesc {
     static constexpr uint16_t featureCode = 0x0305;
+    static constexpr std::string_view featureName = "Key Per I/O";
 };
 
 
