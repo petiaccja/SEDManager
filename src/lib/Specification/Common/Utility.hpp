@@ -67,7 +67,8 @@ private:
 
 class NameAndUidFinder {
 public:
-    template <class PairRanges, class SequenceRanges>
+    template <class PairRanges = std::initializer_list<std::initializer_list<std::pair<Uid, std::string_view>>>,
+              class SequenceRanges = std::initializer_list<NameSequence>>
     NameAndUidFinder(PairRanges&& pairs, SequenceRanges&& sequences);
 
     std::optional<std::string> Find(Uid uid) const;
@@ -80,8 +81,8 @@ private:
 };
 
 
-template <class PairRanges = std::initializer_list<std::initializer_list<std::pair<Uid, std::string_view>>>,
-          class SequenceRange = std::initializer_list<NameSequence>>
+template <class PairRanges,
+          class SequenceRange>
 NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequences) {
     for (auto& pairRange : pairRanges) {
         for (auto& pair : pairRange) {
