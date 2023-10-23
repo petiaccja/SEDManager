@@ -19,7 +19,7 @@ Value::Value(eCommand command)
 
 
 bool Value::operator==(const Value& rhs) const {
-    if (IsInteger()) {
+    if (IsInteger() && rhs.IsInteger()) {
         if (Type() != rhs.Type()) {
             return false;
         }
@@ -33,16 +33,16 @@ bool Value::operator==(const Value& rhs) const {
         });
         return cmpResult.value_or(false);
     }
-    else if (IsBytes()) {
+    else if (IsBytes() && rhs.IsBytes()) {
         return std::ranges::equal(GetBytes(), rhs.GetBytes());
     }
-    else if (IsCommand()) {
+    else if (IsCommand() && rhs.IsCommand()) {
         return GetCommand() == rhs.GetCommand();
     }
-    else if (IsList()) {
+    else if (IsList() && rhs.IsList()) {
         return std::ranges::equal(GetList(), rhs.GetList());
     }
-    else if (IsNamed()) {
+    else if (IsNamed() && rhs.IsNamed()) {
         return GetNamed().name == rhs.GetNamed().name && GetNamed().value == rhs.GetNamed().value;
     }
     else if (!HasValue() && !rhs.HasValue()) {

@@ -38,6 +38,8 @@ struct Token {
     bool isByte = false;
     bool isSigned = false;
     std::vector<std::byte> data = {};
+
+    auto operator<=>(const Token&) const noexcept = default;
 };
 
 
