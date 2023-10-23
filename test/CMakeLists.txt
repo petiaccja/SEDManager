@@ -2,6 +2,7 @@ add_executable(Test)
 
 target_sources(Test
     PRIVATE
+        main.cpp
         Archive/TestTokenArchive.cpp
         Archive/TestValueToJSON.cpp
         Archive/TestValueToNative.cpp
@@ -10,10 +11,10 @@ target_sources(Test
         Data/TestType.cpp
         Data/TestSetupPackets.cpp
         Data/TestValue.cpp
-        main.cpp
         Specification/TestUtility.cpp
         Specification/TestModule.cpp
         TrustedPeripheral/TestMethod.cpp
+        TrustedPeripheral/TestDiscovery.cpp
 )
 
 find_package(Catch2 3 REQUIRED)
