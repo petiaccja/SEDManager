@@ -335,10 +335,9 @@ void Interactive::RegisterCallbackGet() {
     auto cmdGet = m_cli.add_subcommand("get", "Get a cell from a table.");
 
     cmdGet->add_option("object", rowName, "The object to get the cells of. Format as 'Table::Object'.")->required();
-    cmdGet->add_option("column", column, "The column to get.")->default_val(-1);
-    cmdGet->callback([this] {
-        const auto parsed = ParseGetSet(rowName, column);
-        column = -1;
+    auto columnOption = cmdGet->add_option("column", column, "The column to get.")->default_val(-1);
+    cmdGet->callback([this, columnOption] {
+        const auto parsed = ParseGetSet(rowName, *columnOption ? column : -1);
         if (!parsed) {
             return;
         }
@@ -382,11 +381,15 @@ void Interactive::RegisterCallbackSet() {
 
     cmdSet->add_option("object", rowName, "The object to set the cells of. Format as 'Table::Object'.")->required();
     cmdSet->add_option("column", column, "The column to set.")->required();
-    cmdSet->add_option("value", jsonValue, "The new value of the cell.")->required();
-    cmdSet->callback([this] {
+    auto valueOption = cmdSet->add_option("value", jsonValue, "The new value of the cell.");
+    cmdSet->callback([this, valueOption] {
         const auto parsed = ParseGetSet(rowName, column);
         if (!parsed) {
             return;
+        }
+        if (!*valueOption) {
+            std::cout << "Reading value until you type 'END' on a new line:" << std::endl;
+            jsonValue = GetUntilMarker("END");
         }
         const auto [tableUid, rowUid, column] = *parsed;
         auto object = m_manager.GetObject(tableUid, rowUid);
