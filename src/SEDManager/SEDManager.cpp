@@ -10,7 +10,7 @@ SEDManager::SEDManager(std::shared_ptr<StorageDevice> device) : m_device(device)
 }
 
 
-const TPerDesc& SEDManager::GetCapabilities() const {
+const TPerDesc& SEDManager::GetDesc() const {
     return m_tper->GetDesc();
 }
 
@@ -131,7 +131,6 @@ void SEDManager::Reset() {
 void SEDManager::LaunchStack() {
     m_session = {};
     m_tper = std::make_shared<TrustedPeripheral>(m_device);
-    m_capabilities = m_tper->GetDesc();
     const auto comIdState = m_tper->VerifyComId();
     if (comIdState != eComIdState::ISSUED && comIdState != eComIdState::ASSOCIATED) {
         throw std::runtime_error("failed to acquire valid ComID");

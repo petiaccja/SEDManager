@@ -199,9 +199,10 @@ void Interactive::RegisterCallbackEnd() {
 
 
 void Interactive::RegisterCallbackInfo() {
-    auto cmd = m_cli.add_subcommand("info", "Print information about the device.");
-    cmd->callback([this] {
-        const auto& desc = m_manager.GetCapabilities();
+    auto cmd = m_cli.add_subcommand("info", "Print TCG support information.");
+    const auto verbose = cmd->add_flag("-v,--verbose", "Print extended information about the device.");
+    cmd->callback([this, verbose] {
+        const auto& desc = m_manager.GetDesc();
         const auto& mods = m_manager.GetModules();
         std::vector<std::string_view> sscNames;
         for (auto& sscDesc : desc.sscDescs) {
@@ -213,6 +214,63 @@ void Interactive::RegisterCallbackInfo() {
         }
         std::cout << "TCG storage subsystem classes: " << Join(sscNames, ", ") << std::endl;
         std::cout << "Modules loaded: " << Join(modNames, ", ") << std::endl;
+
+        if (*verbose) {
+            std::vector<std::string> columns = { "Parameter", "Value" };
+            std::vector<std::vector<std::string>> rows;
+            if (desc.tperDesc) {
+                rows = {
+                    {"ComID management supported",   desc.tperDesc->comIdMgmtSupported ? "yes" : "no" },
+                    { "Streaming supported",         desc.tperDesc->streamingSupported ? "yes" : "no" },
+                    { "Buffer management supported", desc.tperDesc->bufferMgmtSupported ? "yes" : "no"},
+                    { "ACK/NAK supported",           desc.tperDesc->ackNakSupported ? "yes" : "no"    },
+                    { "Async supported",             desc.tperDesc->asyncSupported ? "yes" : "no"     },
+                    { "Sync supported",              desc.tperDesc->syncSupported ? "yes" : "no"      },
+                };
+                std::cout << "\nTPer description:" << std::endl;
+                std::cout << FormatTable(columns, rows);
+            }
+            if (desc.lockingDesc) {
+                rows = {
+                    {"Shadow MBR supported",        desc.lockingDesc->mbrSupported ? "yes" : "no"    },
+                    { "Shadow MBR done",            desc.lockingDesc->mbrDone ? "yes" : "no"         },
+                    { "Shadow MBR enabled",         desc.lockingDesc->mbrEnabled ? "yes" : "no"      },
+                    { "Media encryption supported", desc.lockingDesc->mediaEncryption ? "yes" : "no" },
+                    { "Locked",                     desc.lockingDesc->locked ? "yes" : "no"          },
+                    { "Locking enabled",            desc.lockingDesc->lockingEnabled ? "yes" : "no"  },
+                    { "Locking supported",          desc.lockingDesc->lockingSupported ? "yes" : "no"},
+                };
+                std::cout << "\nLocking description:" << std::endl;
+                std::cout << FormatTable(columns, rows);
+            }
+            for (const auto& sscDesc : desc.sscDescs) {
+                const auto visitor = [&](auto& d) {
+                    rows = {
+                        {"Base ComID",     std::to_string(d.baseComId)},
+                        { "Nr. of ComIDs", std::to_string(d.numComIds)},
+                    };
+                    if constexpr (requires { d.crossingRangeBehavior; }) {
+                        rows.push_back({ "Crossing range behavior", std::to_string(d.crossingRangeBehavior) });
+                    }
+                    if constexpr (requires { d.numAdminsSupported; }) {
+                        rows.push_back({ "Nr. of Admins supported", std::to_string(d.numAdminsSupported) });
+                    }
+                    if constexpr (requires { d.numUsersSupported; }) {
+                        rows.push_back({ "Nr. of Users supported", std::to_string(d.numUsersSupported) });
+                    }
+                    if constexpr (requires { d.initialCPinSidIndicator; }) {
+                        rows.push_back({ "Initial C_PIN::SID indicator", std::to_string(d.initialCPinSidIndicator) });
+                    }
+                    if constexpr (requires { d.cPinSidRevertBehavior; }) {
+                        rows.push_back({ "C_PIN::SID Revert behavior", std::to_string(d.cPinSidRevertBehavior) });
+                    }
+                    std::cout << "\n"
+                              << d.featureName << " feature description:" << std::endl;
+                    std::cout << FormatTable(columns, rows);
+                };
+                std::visit(visitor, sscDesc);
+            }
+        }
     });
 }
 
@@ -271,7 +329,7 @@ void Interactive::RegisterCallbackColumns() {
 
 void Interactive::RegisterCallbackGet() {
     static std::string rowName;
-    static int32_t column = 0;
+    static int32_t column = -1;
     static std::string jsonValue;
 
     auto cmdGet = m_cli.add_subcommand("get", "Get a cell from a table.");
@@ -280,6 +338,7 @@ void Interactive::RegisterCallbackGet() {
     cmdGet->add_option("column", column, "The column to get.")->default_val(-1);
     cmdGet->callback([this] {
         const auto parsed = ParseGetSet(rowName, column);
+        column = -1;
         if (!parsed) {
             return;
         }
@@ -330,7 +389,7 @@ void Interactive::RegisterCallbackSet() {
             return;
         }
         const auto [tableUid, rowUid, column] = *parsed;
-        const auto object = m_manager.GetObject(tableUid, rowUid);
+        auto object = m_manager.GetObject(tableUid, rowUid);
         const auto value = JSONToValue(nlohmann::json::parse(jsonValue), object.GetDesc()[column].type);
         object[column] = value;
     });
@@ -348,7 +407,7 @@ void Interactive::RegisterCallbackPasswd() {
         const auto authUid = Unwrap(FindOrParseUid(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
         const auto authority = m_manager.GetObject(authTable, authUid);
         const auto credentialUid = value_cast<Uid>(*authority[10]);
-        const auto credential = m_manager.GetObject(cPinTable, credentialUid);
+        auto credential = m_manager.GetObject(cPinTable, credentialUid);
         const std::vector<std::byte> password = GetPassword("New password: ");
         const std::vector<std::byte> passwordAgain = GetPassword("Retype password: ");
         if (password != passwordAgain) {
