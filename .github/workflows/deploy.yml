@@ -9,7 +9,7 @@ on:
 jobs:
   create_release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch && github.event.workflow_run.head_branch.match('v[0-9]+.*') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - run: gh release create ${{ github.event.workflow_run.head_branch }}
   
