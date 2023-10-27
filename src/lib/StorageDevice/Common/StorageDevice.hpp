@@ -8,9 +8,12 @@
 
 
 enum class eStorageDeviceInterface {
-    NVME,
+    ATA,
     SATA,
     SCSI,
+    NVME,
+    SD,
+    MMC,
     OTHER,
 };
 

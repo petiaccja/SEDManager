@@ -14,10 +14,9 @@ class TableRow {
     friend class TableRow<!Mutable>;
 
 public:
-    template <bool Mutable_>
-    class cell_reference {
+    class const_cell_reference {
     public:
-        cell_reference(Uid object, uint32_t column, std::shared_ptr<Session> session)
+        const_cell_reference(Uid object, uint32_t column, std::shared_ptr<Session> session)
             : m_row(object), m_column(column), m_session(session) {}
         Value operator*() const { return m_session->base.Get(m_row, m_column); }
 
@@ -27,14 +26,18 @@ public:
         std::shared_ptr<Session> m_session = nullptr;
     };
 
-    template <>
-    class cell_reference<true> : public cell_reference<false> {
+    class mutable_cell_reference : const_cell_reference {
     public:
-        using cell_reference<false>::cell_reference;
-        using cell_reference<false>::operator*;
-        cell_reference& operator=(const Value& value) { return this->m_session->base.Set(this->m_row, this->m_column, value), *this; }
+        using const_cell_reference::const_cell_reference;
+        using const_cell_reference::operator*;
+        mutable_cell_reference& operator=(const Value& value) {
+            this->m_session->base.Set(this->m_row, this->m_column, value);
+            return *this;
+        }
     };
 
+    template <bool Mutable_>
+    using cell_reference = std::conditional_t<Mutable_, mutable_cell_reference, const_cell_reference>;
 
     template <bool Mutable_>
     class column_iterator {
