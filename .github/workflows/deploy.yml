@@ -8,6 +8,9 @@ on:
 
 jobs:
   create_release:
+    permissions:
+      actions: read
+      contents: write  
     env:
       GH_TOKEN: ${{ github.token }}
     runs-on: ubuntu-latest
@@ -17,10 +20,11 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: Create release
-        run: gh release create ${{ github.event.workflow_run.head_branch }}
-
       - name: Download artifacts
         run: |
           gh run download ${{ github.event.workflow_run.id }}
+
+      - name: Create release
+        run: gh release create ${{ github.event.workflow_run.head_branch }}
+
   
