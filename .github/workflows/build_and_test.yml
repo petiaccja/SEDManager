@@ -110,5 +110,5 @@ jobs:
     - name: Upload artifact binary
       uses: actions/upload-artifact@v3
       with:
-        name: SEDManagerCLI
+        name: SEDManagerCLI-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ matrix.cxx_standard }}
         path: ${{runner.workspace}}/build//build/${{ matrix.build_type }}/bin/SEDManagerCLI${{ matrix.binary_ext }}
