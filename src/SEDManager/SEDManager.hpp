@@ -23,7 +23,7 @@ public:
     SEDManager(SEDManager&&) = default;
     SEDManager& operator=(SEDManager&&) = default;
 
-    const TPerDesc& GetCapabilities() const;
+    const TPerDesc& GetDesc() const;
     std::unordered_map<std::string, uint32_t> GetProperties();
     const TPerModules& GetModules() const;
 
@@ -50,5 +50,4 @@ private:
     std::shared_ptr<TrustedPeripheral> m_tper;
     std::shared_ptr<SessionManager> m_sessionManager;
     std::shared_ptr<Session> m_session;
-    TPerDesc m_capabilities;
 };

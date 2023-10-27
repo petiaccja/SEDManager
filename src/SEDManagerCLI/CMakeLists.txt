@@ -7,6 +7,8 @@ target_sources(SEDManagerCLI
         main.cpp
         Interactive.cpp
         Interactive.hpp
+        PBA.cpp
+        PBA.hpp
         Utility.cpp
         Utility.hpp
 )

@@ -15,12 +15,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         PRIVATE
             Windows/NvmeDevice.cpp
             Windows/NvmeDevice.hpp
+            Windows/EnumerateStorageDevices.cpp
     )
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_sources(StorageDevice
         PRIVATE
             Linux/NvmeDevice.cpp
             Linux/NvmeDevice.hpp
+            Linux/EnumerateStorageDevices.cpp
     )
 else()
     message(FATAL_ERROR "Storage devices have no implementation for CMake system ${CMAKE_SYSTEM_NAME}")

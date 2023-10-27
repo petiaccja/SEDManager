@@ -11,21 +11,33 @@
 
 template <bool Mutable>
 class TableRow {
+    friend class TableRow<!Mutable>;
+
 public:
-    template <bool Mutable_>
-    class cell_reference {
+    class const_cell_reference {
     public:
-        cell_reference(Uid object, uint32_t column, std::shared_ptr<Session> session)
+        const_cell_reference(Uid object, uint32_t column, std::shared_ptr<Session> session)
             : m_row(object), m_column(column), m_session(session) {}
         Value operator*() const { return m_session->base.Get(m_row, m_column); }
-        cell_reference& operator=(const Value& value) { return m_session->base.Set(m_row, m_column, value), *this; }
 
-    private:
+    protected:
         Uid m_row = 0;
         uint32_t m_column = 0;
         std::shared_ptr<Session> m_session = nullptr;
     };
 
+    class mutable_cell_reference : const_cell_reference {
+    public:
+        using const_cell_reference::const_cell_reference;
+        using const_cell_reference::operator*;
+        mutable_cell_reference& operator=(const Value& value) {
+            this->m_session->base.Set(this->m_row, this->m_column, value);
+            return *this;
+        }
+    };
+
+    template <bool Mutable_>
+    using cell_reference = std::conditional_t<Mutable_, mutable_cell_reference, const_cell_reference>;
 
     template <bool Mutable_>
     class column_iterator {
@@ -79,6 +91,11 @@ public:
 public:
     TableRow(Uid object, TableDesc desc, std::shared_ptr<Session> session)
         : m_row(object), m_desc(std::move(desc)), m_session(session) {}
+
+    template <bool MutableOther>
+        requires(!Mutable && MutableOther)
+    TableRow(const TableRow<MutableOther>& other)
+        : m_row(other.m_row), m_desc(other.m_desc), m_session(other.m_session) {}
 
     iterator begin() { return iterator{ m_row, 0, m_session }; }
     iterator end() { return iterator{ m_row, m_desc.columns.size(), m_session }; }

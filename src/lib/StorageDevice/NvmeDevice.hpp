@@ -1,6 +1,5 @@
 #pragma once
 
-
 #ifdef _WIN32
     #include "Windows/NvmeDevice.hpp"
 #elif defined(__linux__)

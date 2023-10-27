@@ -1,4 +1,5 @@
 #include "Interactive.hpp"
+#include "PBA.hpp"
 #include "Utility.hpp"
 
 #include <CLI/App.hpp>
@@ -14,9 +15,17 @@ class MainApp {
 public:
     MainApp() {
         m_guided = m_cli.add_option("-g,--guided", m_guidedName, "Guided sessions walk you through the configuration process step by step.");
+        m_interactive = m_cli.add_flag("-i,--interactive", "Interactive sessions allow you to manually inspect and configure tables.");
+        m_pba = m_cli.add_flag("--pba", "Perform pre-boot authentication by finding locked devices and asking for passwords to unlock.");
+
+        m_guided->excludes(m_interactive);
+        m_guided->excludes(m_pba);
+        m_interactive->excludes(m_pba);
+
+        m_device = m_cli.add_option("device", m_devicePath, "The path to the device you want to configure.");
         m_guided->default_val(std::string{});
-        m_interactive = m_cli.add_flag("-i,--interactive", "Interactive sessions allow you to manually inspect and configure tables.")->excludes(m_guided);
-        m_device = m_cli.add_option("device", m_devicePath, "The path to the device you want to configure.")->required();
+        m_guided->needs(m_device);
+        m_interactive->needs(m_device);
     }
     MainApp(const MainApp&) = delete;
     MainApp(MainApp&) = delete;
@@ -27,15 +36,15 @@ public:
         try {
             m_cli.parse(argc, argv);
 
-            if (!*m_guided && !*m_interactive) {
-                throw CLI::CallForHelp();
-            }
-
             if (*m_guided) {
                 std::cout << "No guided sessions available yet." << std::endl;
                 return 0;
             }
-            else {
+            else if (*m_pba) {
+                PBA session;
+                return session.Run();
+            }
+            else if (*m_interactive) {
                 const auto device = std::make_shared<NvmeDevice>(m_devicePath);
                 const auto identity = device->IdentifyController();
                 std::cout << rang::fg::yellow << "Drive: "
@@ -44,6 +53,9 @@ public:
                 SEDManager manager(device);
                 Interactive session(manager);
                 return session.Run();
+            }
+            else {
+                throw CLI::CallForHelp();
             }
         }
         catch (CLI::CallForHelp&) {
@@ -62,6 +74,7 @@ private:
     CLI::Option* m_guided;
     CLI::Option* m_interactive;
     CLI::Option* m_device;
+    CLI::Option* m_pba;
 };
 
 

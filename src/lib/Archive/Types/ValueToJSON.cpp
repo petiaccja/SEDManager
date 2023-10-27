@@ -53,6 +53,12 @@ namespace {
         ss << "typeOr{ ";
         const auto& altTypes = type.Types();
         for (const auto& alt : altTypes) {
+            try {
+                ss << std::format("{:08X}:", uint32_t(uint64_t(type_uid(alt))));
+            }
+            catch (std::exception&) {
+                // Not an identified type: ignore.
+            }
             ss << GetTypeStr(alt);
             if (&alt != &altTypes.back()) {
                 ss << " | ";
@@ -63,7 +69,7 @@ namespace {
     }
 
     std::string GetTypeStr(const ListType& type) {
-        return std::format("list{{ {} }}>", GetTypeStr(type.ElementType()));
+        return std::format("list{{ {} }}", GetTypeStr(type.ElementType()));
     }
 
     std::string GetTypeStr(const StructType& type) {

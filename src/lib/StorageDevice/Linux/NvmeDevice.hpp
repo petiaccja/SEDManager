@@ -1,12 +1,11 @@
 #pragma once
 
 #include "../Common/NvmeStructures.hpp"
-#include "../StorageDevice.hpp"
+#include "../Common/StorageDevice.hpp"
 
 #include <cstdint>
 #include <span>
 #include <string_view>
-
 
 
 class NvmeDevice : public StorageDevice {

@@ -39,6 +39,29 @@ std::vector<std::byte> GetPassword(std::string_view prompt) {
 }
 
 
+void FlushCin() {
+    char ch;
+    while (0 != std::cin.readsome(&ch, 1))
+    {
+        // Empty
+    }
+}
+
+
+std::string GetUntilMarker(std::string_view marker) {
+    std::string text;
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line == marker) {
+            break;
+        }
+        text += line;
+        text += '\n';
+    }
+    return text;
+}
+
+
 std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp) {
     const auto maybeUid = app.GetModules().FindUid(nameOrUid, sp);
     if (maybeUid) {

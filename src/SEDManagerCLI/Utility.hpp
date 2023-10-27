@@ -12,6 +12,8 @@
 
 std::vector<std::byte> GetPassword(std::string_view prompt);
 
+std::string GetUntilMarker(std::string_view marker);
+
 std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp = {});
 
 std::vector<std::string_view> SplitName(std::string_view name);
