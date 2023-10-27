@@ -13,5 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - run: |
+          echo 'Head branch - ${{ github.event.workflow_run.head_branch }}'
+          echo '${{ github.event.workflow_run }}'
+     # - uses: actions/checkout@v4
+     #   with:
       - run: gh release create ${{ github.event.workflow_run.head_branch }}
   
