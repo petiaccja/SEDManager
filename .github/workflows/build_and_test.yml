@@ -3,8 +3,9 @@ name: Build & test
 on:
   push:
     branches:
-      - devel
       - master
+    tags:
+      - v**.**
   pull_request:
     branches:
       - master
@@ -26,9 +27,9 @@ jobs:
           - c_compiler: cl
             cxx_compiler: cl
           - os: windows-latest
-            test_name: .\bin\Test.exe
+            binary_ext: ".exe"
           - os: ubuntu-latest
-            test_name: ./bin/Test
+            binary_ext: ""
           - build_type: Debug
             conan_preset: "conan-debug"
           - build_type: Release
@@ -105,3 +106,9 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: ./build/${{ matrix.build_type }}/bin/Test
+
+    - name: Upload artifact binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: SEDManagerCLI
+        path: ${{runner.workspace}}/build//build/${{ matrix.build_type }}/bin/SEDManagerCLI${{ matrix.binary_ext }}

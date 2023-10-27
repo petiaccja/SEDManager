@@ -1,26 +1,14 @@
 name: Deploy
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_run:
+    types:
+      - completed
 
 jobs:
-  gh-releases:
-    name: Create tagged release
+  create_release:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch && github.event.workflow_run.head_branch.match('v[0-9]+.*') }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Package project
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            For changes, check the commit log.
-          draft: false
-          prerelease: false
+      - run: gh release create ${{ github.event.workflow_run.head_branch }}
+  
