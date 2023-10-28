@@ -103,7 +103,7 @@ jobs:
       run: |
         cmake --build ./build/${{ matrix.build_type }}
         cmake -E make_directory ${{runner.workspace}}/installation/SEDManager
-        cmake --install ./build/${{ matrix.build_type }} --prefix ${{runner.workspace}}/installation/SEDManager
+        cmake --install ./build/${{ matrix.build_type }} --prefix '${{runner.workspace}}/installation/SEDManager'
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
@@ -114,4 +114,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: SEDManager-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ matrix.cxx_standard }}
-        path: ${{runner.workspace}}/installation/SEDManager
+        path: '${{runner.workspace}}/installation/SEDManager'
