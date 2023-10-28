@@ -3,8 +3,9 @@ name: Build & test
 on:
   push:
     branches:
-      - devel
       - master
+    tags:
+      - v**.**
   pull_request:
     branches:
       - master
@@ -26,9 +27,9 @@ jobs:
           - c_compiler: cl
             cxx_compiler: cl
           - os: windows-latest
-            test_name: .\bin\Test.exe
+            binary_ext: ".exe"
           - os: ubuntu-latest
-            test_name: ./bin/Test
+            binary_ext: ""
           - build_type: Debug
             conan_preset: "conan-debug"
           - build_type: Release
@@ -46,8 +47,8 @@ jobs:
     runs-on: ${{matrix.os}}
     
     steps:
-    - uses: actions/checkout@v2
-    - uses: seanmiddleditch/gha-setup-ninja@v3
+    - uses: actions/checkout@v4
+    - uses: seanmiddleditch/gha-setup-ninja@v4
     - uses: seanmiddleditch/gha-setup-vsdevenv@master
     - uses: KyleMayes/install-llvm-action@v1
       with:
@@ -99,9 +100,18 @@ jobs:
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build ./build/${{ matrix.build_type }}
+      run: |
+        cmake --build ./build/${{ matrix.build_type }}
+        cmake -E make_directory ${{runner.workspace}}/installation/SEDManager
+        cmake --install ./build/${{ matrix.build_type }} --prefix '${{runner.workspace}}/installation/SEDManager'
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: ./build/${{ matrix.build_type }}/bin/Test
+
+    - name: Upload artifact binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: SEDManager-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}-${{ matrix.cxx_standard }}
+        path: '${{runner.workspace}}/installation/SEDManager'
