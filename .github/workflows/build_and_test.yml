@@ -47,8 +47,8 @@ jobs:
     runs-on: ${{matrix.os}}
     
     steps:
-    - uses: actions/checkout@v2
-    - uses: seanmiddleditch/gha-setup-ninja@v3
+    - uses: actions/checkout@v4
+    - uses: seanmiddleditch/gha-setup-ninja@v4
     - uses: seanmiddleditch/gha-setup-vsdevenv@master
     - uses: KyleMayes/install-llvm-action@v1
       with:
