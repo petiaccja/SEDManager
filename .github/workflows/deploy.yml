@@ -24,17 +24,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p ./Binaries/Windows_x86_64
-          gh run download ${{ github.event.workflow_run.id }} --dir ./Binaries/Windows_x86_64 -p *windows*cl*Release*20
-          mv ./Binaries/Windows_x86_64/SEDManager* ./Binaries/Windows_x86_64/SEDManager
           mkdir -p ./Binaries/Linux_x86_64
+          gh run download ${{ github.event.workflow_run.id }} --dir ./Binaries/Windows_x86_64 -p *windows*cl*Release*20
           gh run download ${{ github.event.workflow_run.id }} --dir ./Binaries/Linux_x86_64 -p *ubuntu*clang*Release*20
+          mv ./Binaries/Windows_x86_64/SEDManager* ./Binaries/Windows_x86_64/SEDManager
           mv ./Binaries/Linux_x86_64/SEDManager* ./Binaries/Linux_x86_64/SEDManager
+          zip -r ./Binaries/Windows_x86_64/SEDManager.zip ./Binaries/Windows_x86_64/SEDManager
+          zip -r ./Binaries/Linux_x86_64/SEDManager.zip ./Binaries/Linux_x86_64/SEDManager
 
       - name: Create release
         shell: bash
         run: |
           gh release create ${{ github.event.workflow_run.head_branch }}
-          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Windows_x86_64#SEDManager_Windows_x86_64 --clobber
-          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Linux_x86_64#SEDManager_Linux_x86_64 --clobber
+          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Windows_x86_64/SEDManager.zip#SEDManager_Windows_x86_64 --clobber
+          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Linux_x86_64/SEDManager.zip#SEDManager_Linux_x86_64 --clobber
 
   
