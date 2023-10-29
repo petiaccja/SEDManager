@@ -1,5 +1,7 @@
 #include <Specification/Common/Utility.hpp>
 
+#include <array>
+
 #include <catch2/catch_test_macros.hpp>
 
 
@@ -83,6 +85,26 @@ TEST_CASE("Specification: finder", "[Specification]") {
 }
 
 
+TEST_CASE("Specification: finder UID collision", "[Specification]") {
+    const std::initializer_list<std::pair<Uid, std::string_view>> pairs = {
+        {1,  "1"},
+        { 1, "2"},
+    };
+
+    REQUIRE_THROWS(NameAndUidFinder({ pairs }, {}));
+}
+
+
+TEST_CASE("Specification: finder name collision", "[Specification]") {
+    const std::initializer_list<std::pair<Uid, std::string_view>> pairs = {
+        {1,  "1"},
+        { 2, "1"},
+    };
+
+    REQUIRE_THROWS(NameAndUidFinder({ pairs }, {}));
+}
+
+
 TEST_CASE("Specification: sp finder", "[Specification]") {
     SPNameAndUidFinder finder({
         {100,  NameAndUidFinder({ { { 1, "1" } } }, {})},
@@ -101,4 +123,28 @@ TEST_CASE("Specification: sp finder", "[Specification]") {
         REQUIRE(finder.Find("2", 101) == Uid(2));
         REQUIRE(!finder.Find("2", 100));
     }
+}
+
+
+TEST_CASE("Specification: static column desc", "[Specification]") {
+    const auto type = IntegerType(4, false);
+    constexpr ColumnDescStatic staticDesc{ "name", true, type };
+    const ColumnDesc desc = staticDesc;
+    REQUIRE(desc.name == "name");
+    REQUIRE(desc.isUnique == true);
+    REQUIRE(type_isa<IntegerType>(desc.type));
+}
+
+
+TEST_CASE("Specification: static table desc", "[Specification]") {
+    const auto type = IntegerType(4, false);
+    constexpr std::array columns = {
+        ColumnDescStatic{"name", true, type}
+    };
+    constexpr TableDescStatic staticDesc{ 1, "table", eTableKind::OBJECT, columns, 2 };
+    const TableDesc desc = staticDesc;
+    REQUIRE(desc.name == "table");
+    REQUIRE(desc.kind == eTableKind::OBJECT);
+    REQUIRE(desc.columns.size() == 1);
+    REQUIRE(desc.singleRow == Uid(2));
 }
