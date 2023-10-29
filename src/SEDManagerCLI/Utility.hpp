@@ -11,14 +11,14 @@
 
 
 std::vector<std::byte> GetPassword(std::string_view prompt);
+std::string GetMultiline(std::string_view terminator);
 
-std::string GetUntilMarker(std::string_view marker);
-
-std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp = {});
+std::optional<Uid> ParseObjectRef(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp = {});
+std::string FormatObjectRef(SEDManager& app, Uid uid, std::optional<Uid> sp = {});
+std::string FormatTable(std::span<const std::string> columns, std::span<const std::vector<std::string>> rows);
 
 std::vector<std::string_view> SplitName(std::string_view name);
 
-std::string FormatTable(std::span<const std::string> columns, std::span<const std::vector<std::string>> rows);
 
 template <class T>
 const T& Unwrap(const std::optional<T>& maybeValue, std::string_view message = {}) {

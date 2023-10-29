@@ -34,15 +34,6 @@ std::unordered_map<std::string, uint32_t> SEDManager::GetProperties() {
 }
 
 
-std::vector<NamedObject> SEDManager::GetNamedRows(const Table& table) {
-    std::vector<NamedObject> namedRows;
-    for (const auto& row : table) {
-        namedRows.emplace_back(row.Id(), GetModules().FindName(row.Id()).value_or(to_string(row.Id())));
-    }
-    return namedRows;
-}
-
-
 const TPerModules& SEDManager::GetModules() const {
     return m_tper->GetModules();
 }
