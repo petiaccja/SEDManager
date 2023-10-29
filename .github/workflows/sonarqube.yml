@@ -49,6 +49,12 @@ jobs:
           path: ~/.conan2/p
           key: conan-cache-packages-sonarqube
 
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          java-package: jre
+
       - name: Install sonar-scanner and build-wrapper
         uses: SonarSource/sonarcloud-github-c-cpp@v1
 
