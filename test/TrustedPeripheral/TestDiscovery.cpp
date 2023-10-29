@@ -22,6 +22,46 @@ std::vector<std::byte> MakeDiscoveryBytes(std::span<const std::byte> featureByte
 }
 
 
+TEST_CASE("Discovery: TPer features", "[Discovery]") {
+    const std::array<std::byte, 16> featureBytes = {
+        0x00_b, 0x01_b, // Feature code
+        0x10_b, // Version | Reserved
+        0x0C_b, // Length
+        0b0101'0101_b, // Bitmask: Res | ComIDMgmt | Res | Stream | BufMgmt | ACKNAK | Async | Sync
+    };
+    const auto discoveryBytes = MakeDiscoveryBytes(featureBytes);
+    const auto desc = ParseTPerDesc(discoveryBytes);
+
+    REQUIRE(desc.tperDesc);
+    REQUIRE(desc.tperDesc->comIdMgmtSupported == true);
+    REQUIRE(desc.tperDesc->streamingSupported == true);
+    REQUIRE(desc.tperDesc->bufferMgmtSupported == false);
+    REQUIRE(desc.tperDesc->ackNakSupported == true);
+    REQUIRE(desc.tperDesc->asyncSupported == false);
+    REQUIRE(desc.tperDesc->syncSupported == true);
+}
+
+
+TEST_CASE("Discovery: Locking features", "[Discovery]") {
+    const std::array<std::byte, 16> featureBytes = {
+        0x00_b, 0x02_b, // Feature code
+        0x10_b, // Version | Reserved
+        0x0C_b, // Length
+        0b0010'1010_b, // Bitmask: Res | Res | MBDone | MBEnabled | Encr | Locked | LE | LS
+    };
+    const auto discoveryBytes = MakeDiscoveryBytes(featureBytes);
+    const auto desc = ParseTPerDesc(discoveryBytes);
+
+    REQUIRE(desc.lockingDesc);
+    REQUIRE(desc.lockingDesc->mbrDone == true);
+    REQUIRE(desc.lockingDesc->mbrEnabled == false);
+    REQUIRE(desc.lockingDesc->mediaEncryption == true);
+    REQUIRE(desc.lockingDesc->locked == false);
+    REQUIRE(desc.lockingDesc->lockingEnabled == true);
+    REQUIRE(desc.lockingDesc->lockingSupported == false);
+}
+
+
 TEST_CASE("Discovery: Opal v1", "[Discovery]") {
     const std::array<std::byte, 20> featureBytes = {
         0x02_b, 0x00_b, // Feature code
