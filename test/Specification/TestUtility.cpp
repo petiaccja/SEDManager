@@ -127,8 +127,8 @@ TEST_CASE("Specification: sp finder", "[Specification]") {
 
 
 TEST_CASE("Specification: static column desc", "[Specification]") {
-    const auto type = IntegerType(4, false);
-    constexpr ColumnDescStatic staticDesc{ "name", true, type };
+    static const auto type = IntegerType(4, false);
+    static constexpr ColumnDescStatic staticDesc{ "name", true, type };
     const ColumnDesc desc = staticDesc;
     REQUIRE(desc.name == "name");
     REQUIRE(desc.isUnique == true);
@@ -137,11 +137,11 @@ TEST_CASE("Specification: static column desc", "[Specification]") {
 
 
 TEST_CASE("Specification: static table desc", "[Specification]") {
-    const auto type = IntegerType(4, false);
-    constexpr std::array columns = {
+    static const auto type = IntegerType(4, false);
+    static constexpr std::array columns = {
         ColumnDescStatic{"name", true, type}
     };
-    constexpr TableDescStatic staticDesc{ 1, "table", eTableKind::OBJECT, columns, 2 };
+    static constexpr TableDescStatic staticDesc{ 1, "table", eTableKind::OBJECT, columns, 2 };
     const TableDesc desc = staticDesc;
     REQUIRE(desc.name == "table");
     REQUIRE(desc.kind == eTableKind::OBJECT);
