@@ -36,14 +36,6 @@ protected:
         }
     }
 
-    std::byte Peek() const {
-        if (!m_stream.good()) {
-            throw std::invalid_argument(
-                std::format("failed to extract {} bytes, extracted {}", 1, 0));
-        }
-        return std::bit_cast<std::byte>(std::istream::char_type(m_stream.rdbuf()->sgetc()));
-    }
-
 private:
     std::istream& m_stream;
 };

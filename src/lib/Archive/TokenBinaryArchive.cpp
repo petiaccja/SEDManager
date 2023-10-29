@@ -141,8 +141,3 @@ void TokenBinaryInputArchive::Extract(Token& token) {
         token.data = {};
     }
 }
-
-
-eTag TokenBinaryInputArchive::PeekTag() const {
-    return GetTagFromHeader(uint8_t(Peek()));
-}
