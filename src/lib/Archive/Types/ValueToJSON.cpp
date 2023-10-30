@@ -6,6 +6,8 @@
 
 #include <sstream>
 
+#include <Archive/Conversion.hpp>
+
 // Hierarchy of types:
 //
 // IntegerType
@@ -326,20 +328,14 @@ namespace {
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
 
-    nlohmann::json ValueToJSON(const Value& value, const RestrictedReferenceType& type) {
+    nlohmann::json ValueToJSON(const Value& value, const ReferenceType& type) {
         if (value.IsBytes()) {
-            return BytesToJSON(value.GetBytes(), "ref:", false);
+            uint64_t uid;
+            FromBytes(value.GetBytes(), uid);
+            return "ref:" + to_string(Uid(uid));
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
     }
-
-    nlohmann::json ValueToJSON(const Value& value, const GeneralReferenceType& type) {
-        if (value.IsBytes()) {
-            return BytesToJSON(value.GetBytes(), "ref:", false);
-        }
-        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
-    }
-
 
     nlohmann::json ValueToJSON(const Value& value, const NameValueUintegerType& type) {
         if (value.IsNamed()) {
@@ -473,12 +469,16 @@ namespace {
         throw UnexpectedTypeError("list");
     }
 
-    Value JSONToValue(const nlohmann::json& json, const RestrictedReferenceType& type) {
-        return JSONToBytes(json, "ref:", false);
-    }
-
-    Value JSONToValue(const nlohmann::json& json, const GeneralReferenceType& type) {
-        return JSONToBytes(json, "ref:", false);
+    Value JSONToValue(const nlohmann::json& json, const ReferenceType& type) {
+        if (json.is_string()) {
+            const auto& str = json.get<std::string_view>();
+            if (!str.starts_with("ref:")) {
+                throw InvalidFormatError("reference must be prefixed by 'ref:'");
+            }
+            const Uid value = stouid(str.substr(4));
+            return ToBytes(uint64_t(value));
+        }
+        throw UnexpectedTypeError("string");
     }
 
     Value JSONToValue(const nlohmann::json& json, const NameValueUintegerType& type) {
@@ -551,11 +551,8 @@ nlohmann::json ValueToJSON(const Value& value, const Type& type) {
     else if (type_isa<StructType>(type)) {
         return impl::ValueToJSON(value, type_cast<StructType>(type));
     }
-    else if (type_isa<RestrictedReferenceType>(type)) {
-        return impl::ValueToJSON(value, type_cast<RestrictedReferenceType>(type));
-    }
-    else if (type_isa<GeneralReferenceType>(type)) {
-        return impl::ValueToJSON(value, type_cast<GeneralReferenceType>(type));
+    else if (type_isa<ReferenceType>(type)) {
+        return impl::ValueToJSON(value, type_cast<ReferenceType>(type));
     }
     else if (type_isa<NameValueUintegerType>(type)) {
         return impl::ValueToJSON(value, type_cast<NameValueUintegerType>(type));
@@ -580,11 +577,8 @@ Value JSONToValue(const nlohmann::json& value, const Type& type) {
     else if (type_isa<StructType>(type)) {
         return impl::JSONToValue(value, type_cast<StructType>(type));
     }
-    else if (type_isa<RestrictedReferenceType>(type)) {
-        return impl::JSONToValue(value, type_cast<RestrictedReferenceType>(type));
-    }
-    else if (type_isa<GeneralReferenceType>(type)) {
-        return impl::JSONToValue(value, type_cast<GeneralReferenceType>(type));
+    else if (type_isa<ReferenceType>(type)) {
+        return impl::JSONToValue(value, type_cast<ReferenceType>(type));
     }
     else if (type_isa<NameValueUintegerType>(type)) {
         return impl::JSONToValue(value, type_cast<NameValueUintegerType>(type));

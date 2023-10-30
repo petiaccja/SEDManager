@@ -302,20 +302,30 @@ public:
 //------------------------------------------------------------------------------
 
 
-class RestrictedReferenceType : public Type {
+class ReferenceType : public Type {
 public:
-    struct Storage : Type::Storage {
+    struct Storage : Type::Storage {};
+
+    ReferenceType() : Type(std::make_shared<Storage>()) {}
+
+    explicit ReferenceType(std::shared_ptr<Storage> s) : Type(std::move(s)) {}
+};
+
+
+class RestrictedReferenceType : public ReferenceType {
+public:
+    struct Storage : ReferenceType::Storage {
         explicit Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
         explicit Storage(uint64_t table) : Storage(std::vector{ table }) {}
         std::vector<uint64_t> tables;
     };
 
-    explicit RestrictedReferenceType(std::vector<uint64_t> tables) : Type(std::make_shared<Storage>(std::move(tables))) {}
+    explicit RestrictedReferenceType(std::vector<uint64_t> tables) : ReferenceType(std::make_shared<Storage>(std::move(tables))) {}
     explicit RestrictedReferenceType(uint64_t table) : RestrictedReferenceType(std::vector{ table }) {}
 
     std::span<const uint64_t> Tables() const { return GetStorage<RestrictedReferenceType>().tables; }
 
-    explicit RestrictedReferenceType(std::shared_ptr<Storage> s) : Type(std::move(s)) {}
+    explicit RestrictedReferenceType(std::shared_ptr<Storage> s) : ReferenceType(std::move(s)) {}
 };
 
 
@@ -345,13 +355,13 @@ public:
 };
 
 
-class GeneralReferenceType : public Type {
+class GeneralReferenceType : public ReferenceType {
 public:
-    struct Storage : Type::Storage {};
+    struct Storage : ReferenceType::Storage {};
 
-    GeneralReferenceType() : Type(std::make_shared<Storage>()) {}
+    GeneralReferenceType() : ReferenceType(std::make_shared<Storage>()) {}
 
-    explicit GeneralReferenceType(std::shared_ptr<Storage> s) : Type(std::move(s)) {}
+    explicit GeneralReferenceType(std::shared_ptr<Storage> s) : ReferenceType(std::move(s)) {}
 };
 
 class GeneralByteReferenceType : public GeneralReferenceType {

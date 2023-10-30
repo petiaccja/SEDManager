@@ -141,8 +141,8 @@ TEST_CASE("ValueToJSON:StructType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
     const Type type = RestrictedReferenceType(0x201);
-    const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
-    const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);
@@ -157,8 +157,8 @@ TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON:GeneralReferenceType", "[ValueToJSON]") {
     const Type type = GeneralReferenceType();
-    const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
-    const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);

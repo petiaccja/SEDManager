@@ -353,7 +353,11 @@ void Interactive::RegisterCallbackGet() {
                 const auto label = std::format("{}: {}", idx, columnDesc.name);
                 try {
                     const auto value = *object[idx];
-                    const auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type).dump() : "<empty>";
+                    auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type).dump() : "<empty>";
+                    if (valueStr.size() > 55) {
+                        valueStr.resize(51);
+                        valueStr += " ...";
+                    }
                     outData.push_back({ label, valueStr });
                 }
                 catch (std::exception& ex) {
@@ -368,7 +372,7 @@ void Interactive::RegisterCallbackGet() {
                 throw std::invalid_argument("column index is out of bounds.");
             }
             const auto value = *object[column];
-            std::cout << (value.HasValue() ? ValueToJSON(value, object.GetDesc()[column].type).dump() : "<empty>") << std::endl;
+            std::cout << (value.HasValue() ? ValueToJSON(value, object.GetDesc()[column].type).dump(4) : "<empty>") << std::endl;
         }
     });
 }
