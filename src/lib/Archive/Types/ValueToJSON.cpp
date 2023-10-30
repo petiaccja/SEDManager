@@ -1,12 +1,11 @@
 #include "ValueToJSON.hpp"
 
+#include <Archive/Conversion.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Core/Defs/Types.hpp>
 
 #include <sstream>
-
-#include <Archive/Conversion.hpp>
 
 // Hierarchy of types:
 //
@@ -230,27 +229,23 @@ namespace {
             if (!currentType.IsBytes()) {
                 throw UnexpectedTypeError(GetTypeStr(currentTypeType), value.GetTypeStr());
             }
-            const auto& typeIdBytes = currentType.GetBytes();
-            uint64_t altId = 0;
-            for (const auto& byte : typeIdBytes) {
-                altId <<= 8;
-                altId |= uint8_t(byte);
-            }
-            const auto altIter = std::ranges::find_if(alts, [&altId](const Type& alt) {
+            uint32_t altUidLower = 0;
+            FromBytes(currentType.GetBytes(), altUidLower);
+            const Uid altUid = uint64_t(altUidLower) | baseTypeUid;
+            const auto altIter = std::ranges::find_if(alts, [&altUid](const Type& alt) {
                 try {
-                    return uint32_t(uint64_t(type_uid(alt))) == altId;
+                    return type_uid(alt) == altUid;
                 }
                 catch (std::bad_cast&) {
                     throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));
                 }
             });
             if (altIter == alts.end()) {
-                throw UnexpectedTypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
+                throw UnexpectedTypeError(GetTypeStr(type), "uid:" + to_string(altUid));
             }
 
             return nlohmann::json({
-                {"type",   ValueToJSON(currentType,  currentTypeType)},
-                { "value", ValueToJSON(currentValue, *altIter)       },
+                {ValueToJSON(ToBytes(uint64_t(altUid)), ReferenceType{}), ValueToJSON(currentValue, *altIter)}
             });
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
@@ -384,33 +379,30 @@ namespace {
     }
 
     Value JSONToValue(const nlohmann::json& json, const AlternativeType& type) {
-        if (!json.is_object() || !json.contains("type") || !json.contains("value")) {
-            throw UnexpectedTypeError(R"(object: { "type": ..., "value": ... })");
+        if (!json.is_object() || json.empty()) {
+            throw UnexpectedTypeError("object: { type: value }", json.type_name());
         }
-        const auto& altJson = json["type"];
-        const auto& valueJson = json["value"];
-        const auto altBytes = JSONToBytes(altJson, {}, false);
-        uint32_t altId = 0;
-        for (auto byte : altBytes) {
-            altId <<= 8;
-            altId |= static_cast<uint8_t>(byte);
-        }
+        const auto& altJson = json.begin().key();
+        const auto& valueJson = json.begin().value();
+        uint64_t altUidBits = 0;
+        FromBytes(JSONToValue(altJson, ReferenceType{}).GetBytes(), altUidBits);
+        const Uid altUid = altUidBits;
 
         const auto& alts = type.Types();
-        const auto altIter = std::ranges::find_if(alts, [&altId](const Type& alt) {
+        const auto altIter = std::ranges::find_if(alts, [&altUid](const Type& alt) {
             try {
-                return uint32_t(uint64_t(type_uid(alt))) == altId;
+                return type_uid(alt) == altUid;
             }
             catch (std::bad_cast&) {
                 throw UnexpectedTypeError("<any identified type>", GetTypeStr(alt));
             }
         });
         if (altIter == alts.end()) {
-            throw UnexpectedTypeError(GetTypeStr(type), std::format("UID{:08x}", altId));
+            throw UnexpectedTypeError(GetTypeStr(type), "uid:" + to_string(altUid));
         }
 
         return Named{
-            altBytes,
+            ToBytes(uint32_t(uint64_t(altUid))),
             JSONToValue(valueJson, *altIter),
         };
     }

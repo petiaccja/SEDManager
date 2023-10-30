@@ -12,6 +12,9 @@
 #include <vector>
 
 
+constexpr uint64_t baseTypeUid = 0x0000'0005'0000'0000;
+
+
 class Type {
 public:
     struct Storage {
