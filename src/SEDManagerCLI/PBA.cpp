@@ -100,7 +100,7 @@ std::string FormatName(std::string_view name, const std::optional<std::string> c
 
 std::optional<Uid> FindAuthority(SEDManager& manager, std::string_view name) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
-    const auto maybeUid = FindOrParseUid(manager, std::format("Authority::{}", name), lockingSpUid);
+    const auto maybeUid = ParseObjectRef(manager, std::format("Authority::{}", name), lockingSpUid);
     if (maybeUid) {
         return maybeUid;
     }
@@ -170,7 +170,7 @@ void TryUnlockRanges(SEDManager& manager) {
 
     for (auto lockingRange : lockingRanges) {
         const auto uid = lockingRange.Id();
-        const auto name = manager.GetModules().FindName(uid, lockingSp).value_or(to_string(lockingRange.Id()));
+        const auto name = FormatObjectRef(manager, lockingRange.Id(), lockingSp);
         const auto commonName = GetCommonName(lockingRange, 2);
 
         bool rdUnlocked = false;

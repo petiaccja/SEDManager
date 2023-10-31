@@ -42,7 +42,6 @@ public:
     void Reset();
 
 private:
-    std::vector<NamedObject> GetNamedRows(const Table& table);
     void LaunchStack();
 
 private:

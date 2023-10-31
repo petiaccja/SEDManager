@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <variant>
 
 
@@ -43,9 +45,8 @@ struct CellBlock {
 };
 
 
-inline std::string to_string(Uid uid) {
-    return std::format("{:#018x}", uint64_t(uid));
-}
+std::string to_string(Uid uid);
+Uid stouid(std::string_view str);
 
 
 namespace std {

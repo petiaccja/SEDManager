@@ -3,16 +3,40 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-constexpr uint64_t id_bytes_2 = 0x01;
-constexpr uint64_t id_uinteger_4 = 0x02;
-constexpr uint64_t id_optional_bytes_2 = 0x101;
-constexpr uint64_t id_optional_uinteger_4 = 0x102;
+constexpr uint64_t id_bytes_2 = baseTypeUid | 0x01;
+constexpr uint64_t id_uinteger_4 = baseTypeUid | 0x02;
+constexpr uint64_t id_optional_bytes_2 = baseTypeUid | 0x101;
+constexpr uint64_t id_optional_uinteger_4 = baseTypeUid | 0x102;
 
 
 const Type bytes_2 = IdentifiedType<BytesType, id_bytes_2>(2, true);
 const Type uinteger_4 = IdentifiedType<IntegerType, id_uinteger_4>(4, false);
 const Type optional_bytes_2 = IdentifiedType<NameValueUintegerType, id_optional_bytes_2>(0, bytes_2);
 const Type optional_uinteger_4 = IdentifiedType<NameValueUintegerType, id_optional_uinteger_4>(1, uinteger_4);
+
+
+TEST_CASE("ValueToJSON: EnumerationType", "[ValueToJSON]") {
+    const Type type = EnumerationType(0, 3, {
+                                                {0,  "Zero" },
+                                                { 3, "Three"}
+    });
+    const Value value1 = uint16_t(0);
+    const Value value2 = uint16_t(1);
+    const nlohmann::json json1 = "Zero";
+    const nlohmann::json json2 = uint16_t(1);
+    SECTION("Value to JSON") {
+        const auto conv1 = ValueToJSON(value1, type);
+        const auto conv2 = ValueToJSON(value2, type);
+        REQUIRE(conv1 == json1);
+        REQUIRE(conv2 == json2);
+    }
+    SECTION("JSON to Value") {
+        const auto conv1 = JSONToValue(json1, type);
+        const auto conv2 = JSONToValue(json2, type);
+        REQUIRE(conv1 == value1);
+        REQUIRE(conv2 == value2);
+    }
+}
 
 
 TEST_CASE("ValueToJSON: IntegerType", "[ValueToJSON]") {
@@ -64,8 +88,7 @@ TEST_CASE("ValueToJSON: AlternativeType", "[ValueToJSON]") {
     const Type type = AlternativeType(uinteger_4, bytes_2);
     const Value value = Named(ToBytes(uint32_t(id_uinteger_4)), uint32_t(37));
     const auto json = nlohmann::json({
-        {"type",   "00'00'00'02"},
-        { "value", 37           }
+        {"ref:0000'0005'0000'0002", 37}
     });
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);
@@ -139,10 +162,33 @@ TEST_CASE("ValueToJSON:StructType", "[ValueToJSON]") {
 }
 
 
+TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
+    const Type type = ReferenceType();
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:Macilaci";
+
+    const auto uidConverter = [](Uid uid) -> std::optional<std::string> {
+        return uid == Uid(0x1234'5678'9876'5432) ? std::optional<std::string>("Macilaci") : std::nullopt;
+    };
+    const auto nameConverter = [](std::string_view name) -> std::optional<Uid> {
+        return name == "Macilaci" ? std::optional(Uid(0x1234'5678'9876'5432)) : std::nullopt;
+    };
+
+    SECTION("Value to JSON") {
+        const auto conv = ValueToJSON(value, type, uidConverter);
+        REQUIRE(conv == json);
+    }
+    SECTION("JSON to Value") {
+        const auto conv = JSONToValue(json, type, nameConverter);
+        REQUIRE(conv == value);
+    }
+}
+
+
 TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
     const Type type = RestrictedReferenceType(0x201);
-    const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
-    const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);
@@ -157,8 +203,8 @@ TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON:GeneralReferenceType", "[ValueToJSON]") {
     const Type type = GeneralReferenceType();
-    const Value value = ToBytes(0x12'34'56'78'98'76'54'32);
-    const nlohmann::json json = "ref:12'34'56'78'98'76'54'32";
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {
         const auto conv = ValueToJSON(value, type);

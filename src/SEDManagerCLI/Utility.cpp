@@ -48,11 +48,11 @@ void FlushCin() {
 }
 
 
-std::string GetUntilMarker(std::string_view marker) {
+std::string GetMultiline(std::string_view terminator) {
     std::string text;
     std::string line;
     while (std::getline(std::cin, line)) {
-        if (line == marker) {
+        if (line == terminator) {
             break;
         }
         text += line;
@@ -62,22 +62,27 @@ std::string GetUntilMarker(std::string_view marker) {
 }
 
 
-std::optional<Uid> FindOrParseUid(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp) {
+std::optional<Uid> ParseObjectRef(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp) {
     const auto maybeUid = app.GetModules().FindUid(nameOrUid, sp);
     if (maybeUid) {
         return *maybeUid;
     }
     try {
-        size_t index = 0;
-        const uint64_t parsedUid = std::stoull(std::string(nameOrUid), &index, 16);
-        if (index == nameOrUid.size()) {
-            return Uid(parsedUid);
-        }
+        return stouid(nameOrUid);
     }
     catch (...) {
         // Fallthrough
     }
     return std::nullopt;
+}
+
+
+std::string FormatObjectRef(SEDManager& app, Uid uid, std::optional<Uid> sp) {
+    const auto maybeName = app.GetModules().FindName(uid, sp);
+    if (maybeName) {
+        return *maybeName;
+    }
+    return to_string(uid);
 }
 
 

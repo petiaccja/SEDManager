@@ -8,6 +8,7 @@ target_sources(Data
         Value.cpp
         Value.hpp
         Type.hpp
+        NativeTypes.cpp
         NativeTypes.hpp
         SetupPackets.hpp
 )
