@@ -76,6 +76,7 @@ Language: Cpp
 MaxEmptyLinesToKeep: '3'
 NamespaceIndentation: Inner
 PointerAlignment: Left
+PackConstructorInitializers: NextLine
 SortIncludes: 'true'
 SortUsingDeclarations: 'false'
 SpaceAfterCStyleCast: 'false'

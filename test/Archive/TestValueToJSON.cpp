@@ -15,6 +15,30 @@ const Type optional_bytes_2 = IdentifiedType<NameValueUintegerType, id_optional_
 const Type optional_uinteger_4 = IdentifiedType<NameValueUintegerType, id_optional_uinteger_4>(1, uinteger_4);
 
 
+TEST_CASE("ValueToJSON: EnumerationType", "[ValueToJSON]") {
+    const Type type = EnumerationType(0, 3, {
+                                                {0,  "Zero" },
+                                                { 3, "Three"}
+    });
+    const Value value1 = uint16_t(0);
+    const Value value2 = uint16_t(1);
+    const nlohmann::json json1 = "Zero";
+    const nlohmann::json json2 = uint16_t(1);
+    SECTION("Value to JSON") {
+        const auto conv1 = ValueToJSON(value1, type);
+        const auto conv2 = ValueToJSON(value2, type);
+        REQUIRE(conv1 == json1);
+        REQUIRE(conv2 == json2);
+    }
+    SECTION("JSON to Value") {
+        const auto conv1 = JSONToValue(json1, type);
+        const auto conv2 = JSONToValue(json2, type);
+        REQUIRE(conv1 == value1);
+        REQUIRE(conv2 == value2);
+    }
+}
+
+
 TEST_CASE("ValueToJSON: IntegerType", "[ValueToJSON]") {
     const Type type = IntegerType(4, false);
     const Value value = uint32_t(37);

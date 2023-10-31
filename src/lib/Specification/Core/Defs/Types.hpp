@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include <vector>
 
 
@@ -100,7 +101,11 @@ inline const Type mediakey_object_uidref = IdentifiedType<RestrictedObjectRefere
     uint64_t(eTable::K_AES_256),
 });
 
-inline const Type boolean_ACE = IdentifiedType<EnumerationType, 0x0000'0005'0000'040E>(0, 2);
+inline const Type boolean_ACE = IdentifiedType<EnumerationType, 0x0000'0005'0000'040E>(0, 2, std::initializer_list<std::pair<uint16_t, std::string_view>>{
+                                                                                                 {0,  "And"},
+                                                                                                 { 1, "Or" },
+                                                                                                 { 2, "Not"}
+});
 inline const Type ACE_expression = IdentifiedType<AlternativeType, 0x0000'0005'0000'0601>(Authority_object_ref, boolean_ACE);
 inline const Type AC_element = IdentifiedType<ListType, 0x0000'0005'0000'0801>(ACE_expression);
 inline const Type ACE_object_ref = IdentifiedType<RestrictedObjectReferenceType, 0x0000'0005'0000'0C04>(uint64_t(eTable::ACE));

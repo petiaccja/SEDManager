@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 
@@ -216,16 +217,39 @@ public:
 class EnumerationType : public UnsignedIntType {
 public:
     struct Storage : UnsignedIntType::Storage {
-        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {}
-        explicit Storage(std::pair<uint16_t, uint16_t> range) : Storage(std::vector{ range }) {}
-        Storage(uint16_t lower, uint16_t upper) : Storage(std::pair{ lower, upper }) {}
+        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : UnsignedIntType::Storage(2), ranges(std::move(ranges)) {
+            for (const auto& [value, name] : names) {
+                const auto [itById, insById] = lookupByValue.insert({ value, std::string(name) });
+                const auto [itByName, insByName] = lookupByName.insert({ std::string(name), value });
+                if (!insById) {
+                    throw std::invalid_argument("values must be unique");
+                }
+                if (!insByName) {
+                    throw std::invalid_argument("names must be unique");
+                }
+            }
+        }
+        explicit Storage(std::pair<uint16_t, uint16_t> range, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : Storage(std::vector{ range }, names) {}
+        Storage(uint16_t lower, uint16_t upper, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : Storage(std::pair{ lower, upper }, names) {}
+
         std::vector<std::pair<uint16_t, uint16_t>> ranges;
+        std::unordered_map<uint16_t, std::string> lookupByValue;
+        std::unordered_map<std::string, uint16_t> lookupByName;
     };
 
-    explicit EnumerationType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : UnsignedIntType(std::make_shared<Storage>(std::move(ranges))) {}
-    explicit EnumerationType(std::pair<uint16_t, uint16_t> range) : EnumerationType(std::vector{ range }) {}
-    EnumerationType(uint16_t lower, uint16_t upper) : EnumerationType(std::pair{ lower, upper }) {}
-    std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return GetStorage<EnumerationType>().ranges; }
+    explicit EnumerationType(std::vector<std::pair<uint16_t, uint16_t>> ranges, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : UnsignedIntType(std::make_shared<Storage>(std::move(ranges), names)) {}
+    explicit EnumerationType(std::pair<uint16_t, uint16_t> range, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : EnumerationType(std::vector{ range }, names) {}
+    EnumerationType(uint16_t lower, uint16_t upper, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : EnumerationType(std::pair{ lower, upper }, names) {}
+
+    const auto& Ranges() const { return GetStorage<EnumerationType>().ranges; }
+    const auto& ByValue() const { return GetStorage<EnumerationType>().lookupByValue; }
+    const auto& ByName() const { return GetStorage<EnumerationType>().lookupByName; }
 
     explicit EnumerationType(std::shared_ptr<Storage> s) : UnsignedIntType(std::move(s)) {}
 };
@@ -285,16 +309,24 @@ class SetType : public ListType {
 public:
     struct Storage : ListType::Storage {
         using ListType::Storage::Storage;
-        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges) : ListType::Storage(UnsignedIntType(2)), ranges(std::move(ranges)) {}
-        explicit Storage(std::pair<uint16_t, uint16_t> range) : Storage(std::vector{ range }) {}
-        Storage(uint16_t lower, uint16_t upper) : Storage(std::pair{ lower, upper }) {}
-        std::vector<std::pair<uint16_t, uint16_t>> ranges;
+        explicit Storage(std::vector<std::pair<uint16_t, uint16_t>> ranges, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : ListType::Storage(EnumerationType(ranges, names)) {}
+        explicit Storage(std::pair<uint16_t, uint16_t> range, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : Storage(std::vector{ range }, names) {}
+        Storage(uint16_t lower, uint16_t upper, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+            : Storage(std::pair{ lower, upper }, names) {}
     };
 
-    explicit SetType(std::vector<std::pair<uint16_t, uint16_t>> ranges) : ListType(std::make_shared<Storage>(std::move(ranges))) {}
-    explicit SetType(std::pair<uint16_t, uint16_t> range) : SetType(std::vector{ range }) {}
-    SetType(uint16_t lower, uint16_t upper) : SetType(std::pair{ lower, upper }) {}
-    std::span<const std::pair<uint16_t, uint16_t>> Ranges() const { return GetStorage<SetType>().ranges; }
+    explicit SetType(std::vector<std::pair<uint16_t, uint16_t>> ranges, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : ListType(std::make_shared<Storage>(std::move(ranges), names)) {}
+    explicit SetType(std::pair<uint16_t, uint16_t> range, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : SetType(std::vector{ range }, names) {}
+    SetType(uint16_t lower, uint16_t upper, std::initializer_list<std::pair<uint16_t, std::string_view>> names = {})
+        : SetType(std::pair{ lower, upper }, names) {}
+
+    auto Ranges() const { return type_cast<EnumerationType>(GetStorage<SetType>().elementType).Ranges(); }
+    const auto& ByValue() const { return type_cast<EnumerationType>(GetStorage<SetType>().elementType).ByValue(); }
+    const auto& ByName() const { return type_cast<EnumerationType>(GetStorage<SetType>().elementType).ByName(); }
 
     explicit SetType(std::shared_ptr<Storage> s) : ListType(std::move(s)) {}
 };

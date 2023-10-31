@@ -201,6 +201,19 @@ namespace {
         }
     }
 
+    nlohmann::json ValueToJSON(const Value& value, const EnumerationType& type) {
+        if (value.IsInteger()) {
+            const auto enumValue = value.Get<uint16_t>();
+            const auto& lookupByValue = type.ByValue();
+            const auto it = lookupByValue.find(enumValue);
+            if (it != lookupByValue.end()) {
+                return nlohmann::json(it->second);
+            }
+            return nlohmann::json(enumValue);
+        }
+        throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
+    }
+
     nlohmann::json ValueToJSON(const Value& value, const IntegerType& type) {
         if (value.IsInteger()) {
             if (type.Signedness()) {
@@ -347,6 +360,24 @@ namespace {
             });
         }
         throw UnexpectedTypeError(GetTypeStr(type), value.GetTypeStr());
+    }
+
+
+    Value JSONToValue(const nlohmann::json& json, const EnumerationType& type) {
+        if (json.is_string()) {
+            const auto& lookupByName = type.ByName();
+            auto it = lookupByName.find(json.get<std::string>());
+            if (it != lookupByName.end()) {
+                return Value(it->second);
+            }
+            throw InvalidFormatError(std::format("invalid enumeration value '{}'", json.get<std::string>()));
+        }
+        else if (json.is_number_integer()) {
+            return Value(json.get<uint16_t>());
+        }
+        else {
+            throw UnexpectedTypeError("{ string | int }", json.type_name());
+        }
     }
 
 
@@ -528,7 +559,10 @@ std::string GetTypeStr(const Type& type) {
 
 
 nlohmann::json ValueToJSON(const Value& value, const Type& type) {
-    if (type_isa<IntegerType>(type)) {
+    if (type_isa<EnumerationType>(type)) {
+        return impl::ValueToJSON(value, type_cast<EnumerationType>(type));
+    }
+    else if (type_isa<IntegerType>(type)) {
         return impl::ValueToJSON(value, type_cast<IntegerType>(type));
     }
     else if (type_isa<BytesType>(type)) {
@@ -554,7 +588,10 @@ nlohmann::json ValueToJSON(const Value& value, const Type& type) {
 
 
 Value JSONToValue(const nlohmann::json& value, const Type& type) {
-    if (type_isa<IntegerType>(type)) {
+    if (type_isa<EnumerationType>(type)) {
+        return impl::JSONToValue(value, type_cast<EnumerationType>(type));
+    }
+    else if (type_isa<IntegerType>(type)) {
         return impl::JSONToValue(value, type_cast<IntegerType>(type));
     }
     else if (type_isa<BytesType>(type)) {
