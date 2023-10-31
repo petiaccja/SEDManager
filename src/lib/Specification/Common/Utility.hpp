@@ -89,10 +89,10 @@ NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequ
             const auto [it1, ins1] = m_uidToName.insert({ pair.first, pair.second });
             const auto [it2, ins2] = m_nameToUid.insert({ pair.second, pair.first });
             if (!ins1) {
-                throw std::invalid_argument("all UIDs must be unique");
+                throw std::invalid_argument(std::format("all UIDs must be unique, duplicate: {}", to_string(pair.first)));
             }
             if (!ins2) {
-                throw std::invalid_argument("all names must be unique");
+                throw std::invalid_argument(std::format("all names must be unique, duplicate: {}", pair.second));
             }
         }
     }

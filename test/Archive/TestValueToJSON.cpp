@@ -162,6 +162,29 @@ TEST_CASE("ValueToJSON:StructType", "[ValueToJSON]") {
 }
 
 
+TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
+    const Type type = ReferenceType();
+    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const nlohmann::json json = "ref:Macilaci";
+
+    const auto uidConverter = [](Uid uid) -> std::optional<std::string> {
+        return uid == Uid(0x1234'5678'9876'5432) ? std::optional<std::string>("Macilaci") : std::nullopt;
+    };
+    const auto nameConverter = [](std::string_view name) -> std::optional<Uid> {
+        return name == "Macilaci" ? std::optional(Uid(0x1234'5678'9876'5432)) : std::nullopt;
+    };
+
+    SECTION("Value to JSON") {
+        const auto conv = ValueToJSON(value, type, uidConverter);
+        REQUIRE(conv == json);
+    }
+    SECTION("JSON to Value") {
+        const auto conv = JSONToValue(json, type, nameConverter);
+        REQUIRE(conv == value);
+    }
+}
+
+
 TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
     const Type type = RestrictedReferenceType(0x201);
     const Value value = ToBytes(0x1234'5678'9876'5432);

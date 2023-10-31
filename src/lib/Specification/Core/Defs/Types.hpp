@@ -12,19 +12,19 @@
 
 namespace core {
 
-inline const Type unknown_type = IdentifiedType<Type, 0x0000'0005'0000'0000>();
+inline const Type unknown_type = IdentifiedType<Type, 0x0000'0005'FFFF'FFFF>();
 
 inline const Type boolean = IdentifiedType<EnumerationType, 0x0000'0005'0000'0401>(0, 1);
 
 inline const Type integer_1 = IdentifiedType<SignedIntType, 0x0000'0005'0000'0210>(1);
-inline const Type integer_2 = IdentifiedType<SignedIntType, 0x0000'0005'0000'0215>(2);
+inline const Type integer_2 = IdentifiedType<SignedIntType, 0x0000'0005'0000'0213>(2);
 inline const Type uinteger_1 = IdentifiedType<UnsignedIntType, 0x0000'0005'0000'0211>(1);
 inline const Type uinteger_2 = IdentifiedType<UnsignedIntType, 0x0000'0005'0000'0215>(2);
 inline const Type uinteger_4 = IdentifiedType<UnsignedIntType, 0x0000'0005'0000'0220>(4);
 inline const Type uinteger_8 = IdentifiedType<UnsignedIntType, 0x0000'0005'0000'0225>(8);
 
 inline const Type max_bytes_32 = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020D>(32);
-inline const Type max_bytes_64 = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020D>(64);
+inline const Type max_bytes_64 = IdentifiedType<CappedBytesType, 0x0000'0005'0000'020E>(64);
 inline const Type bytes_4 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0238>(4);
 inline const Type bytes_12 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0201>(12);
 inline const Type bytes_16 = IdentifiedType<FixedBytesType, 0x0000'0005'0000'0202>(16);

@@ -332,7 +332,7 @@ void Interactive::RegisterCallbackColumns() {
 void Interactive::RegisterCallbackGet() {
     static std::string rowName;
     static int32_t column = -1;
-    static std::string jsonValue;
+    static std::string jsonStr;
 
     auto cmdGet = m_cli.add_subcommand("get", "Get a cell from a table.");
 
@@ -345,6 +345,7 @@ void Interactive::RegisterCallbackGet() {
         }
         const auto& [tableUid, rowUid, column] = *parsed;
         const auto object = m_manager.GetObject(tableUid, rowUid);
+        const auto nameConverter = [this](Uid uid) { return m_manager.GetModules().FindName(uid, m_currentSecurityProvider); };
         if (column < 0) {
             const std::vector<std::string> outColumns = { "Column", "Value" };
             std::vector<std::vector<std::string>> outData;
@@ -353,7 +354,7 @@ void Interactive::RegisterCallbackGet() {
                 const auto label = std::format("{}: {}", idx, columnDesc.name);
                 try {
                     const auto value = *object[idx];
-                    auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type).dump() : "<empty>";
+                    auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type, nameConverter).dump() : "<empty>";
                     if (valueStr.size() > 55) {
                         valueStr.resize(51);
                         valueStr += " ...";
@@ -372,7 +373,8 @@ void Interactive::RegisterCallbackGet() {
                 throw std::invalid_argument("column index is out of bounds.");
             }
             const auto value = *object[column];
-            std::cout << (value.HasValue() ? ValueToJSON(value, object.GetDesc()[column].type).dump(4) : "<empty>") << std::endl;
+            const auto columnType = object.GetDesc()[column].type;
+            std::cout << (value.HasValue() ? ValueToJSON(value, columnType, nameConverter).dump(4) : "<empty>") << std::endl;
         }
     });
 }
@@ -381,13 +383,13 @@ void Interactive::RegisterCallbackGet() {
 void Interactive::RegisterCallbackSet() {
     static std::string rowName;
     static int32_t column = 0;
-    static std::string jsonValue;
+    static std::string jsonStr;
 
     auto cmdSet = m_cli.add_subcommand("set", "Set a cell in a table to new value.");
 
     cmdSet->add_option("object", rowName, "The object to set the cells of. Format as 'Table::Object'.")->required();
     cmdSet->add_option("column", column, "The column to set.")->required();
-    auto valueOption = cmdSet->add_option("value", jsonValue, "The new value of the cell.");
+    auto valueOption = cmdSet->add_option("value", jsonStr, "The new value of the cell.");
     cmdSet->callback([this, valueOption] {
         const auto parsed = ParseGetSet(rowName, column);
         if (!parsed) {
@@ -395,11 +397,16 @@ void Interactive::RegisterCallbackSet() {
         }
         if (!*valueOption) {
             std::cout << "Reading value until you type 'END' on a new line:" << std::endl;
-            jsonValue = GetMultiline("END");
+            jsonStr = GetMultiline("END");
         }
         const auto [tableUid, rowUid, column] = *parsed;
         auto object = m_manager.GetObject(tableUid, rowUid);
-        const auto value = JSONToValue(nlohmann::json::parse(jsonValue), object.GetDesc()[column].type);
+
+        const auto jsonObject = nlohmann::json::parse(jsonStr);
+        const auto columnType = object.GetDesc()[column].type;
+        const auto nameConverter = [this](std::string_view name) { return m_manager.GetModules().FindUid(name, m_currentSecurityProvider); };
+        const auto value = JSONToValue(jsonObject, columnType, nameConverter);
+
         object[column] = value;
     });
 }
