@@ -1,6 +1,7 @@
 #include "Module.hpp"
 
 
+namespace sedmgr {
 
 std::span<const std::shared_ptr<Module>> Module::Features() const {
     return {};
@@ -25,3 +26,5 @@ std::optional<TableDesc> Module::FindTable(Uid table) const {
 std::optional<Type> Module::FindType(Uid uid) const {
     return std::nullopt;
 }
+
+} // namespace sedmgr

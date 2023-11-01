@@ -3,6 +3,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("value_cast: Value", "[ValueToNative]") {
     const Value value = uint32_t(37);
     const Value native = uint32_t(37);

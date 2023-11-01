@@ -1,6 +1,8 @@
 #include "TokenDebugArchive.hpp"
 
 
+namespace sedmgr {
+
 static std::string_view GetTagName(eTag tag) {
     switch (tag) {
         case eTag::TINY_ATOM: return "TINY_ATOM";
@@ -85,3 +87,5 @@ void TokenDebugArchive::Insert(const Token& token) {
 void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const Token& token) {
     ar.Insert(token);
 }
+
+} // namespace sedmgr

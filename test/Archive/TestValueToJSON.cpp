@@ -3,6 +3,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+
+using namespace sedmgr;
+
+
 constexpr uint64_t id_bytes_2 = baseTypeUid | 0x01;
 constexpr uint64_t id_uinteger_4 = baseTypeUid | 0x02;
 constexpr uint64_t id_optional_bytes_2 = baseTypeUid | 0x101;

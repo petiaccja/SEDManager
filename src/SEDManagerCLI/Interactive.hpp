@@ -9,14 +9,14 @@
 
 class Interactive {
 public:
-    Interactive(SEDManager& manager);
+    Interactive(sedmgr::SEDManager& manager);
     Interactive(const Interactive&) = delete;
     Interactive(Interactive&&) = delete;
     Interactive& operator=(const Interactive&) = delete;
     Interactive& operator=(Interactive&&) = delete;
 
-    std::optional<Uid> GetCurrentSecurityProvider() const;
-    std::unordered_set<Uid> GetCurrentAuthorities() const;
+    std::optional<sedmgr::Uid> GetCurrentSecurityProvider() const;
+    std::unordered_set<sedmgr::Uid> GetCurrentAuthorities() const;
     int Run();
 
 private:
@@ -43,14 +43,14 @@ private:
     void RegisterCallbackReset();
 
     void ClearCurrents();
-    auto ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<Uid, Uid, int32_t>>;
+    auto ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<sedmgr::Uid, sedmgr::Uid, int32_t>>;
     void PrintCaret() const;
     void PrintHelp(const std::string& command) const;
 
 private:
-    SEDManager& m_manager;
+    sedmgr::SEDManager& m_manager;
     CLI::App m_cli;
-    std::optional<Uid> m_currentSecurityProvider;
-    std::unordered_set<Uid> m_currentAuthorities;
+    std::optional<sedmgr::Uid> m_currentSecurityProvider;
+    std::unordered_set<sedmgr::Uid> m_currentAuthorities;
     bool m_finished = false;
 };

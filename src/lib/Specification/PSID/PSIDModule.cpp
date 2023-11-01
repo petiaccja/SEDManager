@@ -5,20 +5,21 @@
 #include <unordered_map>
 
 
+namespace sedmgr {
 
 namespace {
 
-constexpr std::initializer_list<std::pair<Uid, std::string_view>> names = {
-    {0x0000'0009'0001'FF01,  "Authority::PSID"          },
-    { 0x0000'000B'0001'FF01, "C_PIN::PSID"              },
-    { 0x0000'0008'0001'00E1, "ACE::C_PIN_Get_PSID_NoPIN"},
-    { 0x0000'0008'0001'00E0, "ACE::SP_PSID"             },
-};
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> names = {
+        {0x0000'0009'0001'FF01,  "Authority::PSID"          },
+        { 0x0000'000B'0001'FF01, "C_PIN::PSID"              },
+        { 0x0000'0008'0001'00E1, "ACE::C_PIN_Get_PSID_NoPIN"},
+        { 0x0000'0008'0001'00E0, "ACE::SP_PSID"             },
+    };
 
-const NameAndUidFinder& GetFinder() {
-    static NameAndUidFinder finder({ names }, {});
-    return finder;
-}
+    const NameAndUidFinder& GetFinder() {
+        static NameAndUidFinder finder({ names }, {});
+        return finder;
+    }
 
 } // namespace
 
@@ -47,3 +48,5 @@ std::optional<std::string> PSIDModule::FindName(Uid uid, std::optional<Uid>) con
 std::optional<Uid> PSIDModule::FindUid(std::string_view name, std::optional<Uid>) const {
     return GetFinder().Find(name);
 }
+
+} // namespace sedmgr

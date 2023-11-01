@@ -1,6 +1,8 @@
 #include "Token.hpp"
 
 
+namespace sedmgr {
+
 eTag GetTagForData(size_t dataLength) {
     if (dataLength <= 15) {
         return eTag::SHORT_ATOM;
@@ -15,3 +17,5 @@ eTag GetTagForData(size_t dataLength) {
         throw std::invalid_argument("data length too large to fit into any atom");
     }
 }
+
+} // namespace sedmgr

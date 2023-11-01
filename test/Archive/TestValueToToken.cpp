@@ -8,6 +8,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("ValueToToken: empty", "[ValueToToken]") {
     const Value value;
     const std::vector<Token> tokens = {};

@@ -4,6 +4,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("ComPacket: ComPacket empty", "[ComPacket]") {
     ComPacket packet{
         .comId = 0xABCD,

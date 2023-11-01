@@ -7,6 +7,8 @@
 #include <format>
 
 
+namespace sedmgr {
+
 template <class... DescOptions>
 void ParseDesc(std::span<const std::byte> featurePayloadBytes, uint16_t featureCode, std::optional<std::variant<DescOptions...>>& out) {
     const auto parsePayload = [&]<class Desc> {
@@ -18,7 +20,6 @@ void ParseDesc(std::span<const std::byte> featurePayloadBytes, uint16_t featureC
     };
     (..., parsePayload.template operator()<DescOptions>());
 }
-
 
 
 TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
@@ -66,3 +67,5 @@ TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     }
     return tperDesc;
 }
+
+} // namespace sedmgr

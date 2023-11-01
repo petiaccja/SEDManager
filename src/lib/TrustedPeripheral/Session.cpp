@@ -13,6 +13,8 @@
 #include <atomic>
 
 
+namespace sedmgr {
+
 Session::Session(std::shared_ptr<SessionManager> sessionManager,
                  Uid securityProvider,
                  std::optional<std::span<const std::byte>> password,
@@ -77,157 +79,159 @@ void Session::End() {
 
 
 namespace impl {
-Template::Template(std::shared_ptr<SessionManager> sessionManager,
-                   uint32_t tperSessionNumber,
-                   uint32_t hostSessionNumber)
-    : m_sessionManager(sessionManager),
-      m_tperSessionNumber(tperSessionNumber),
-      m_hostSessionNumber(hostSessionNumber) {}
+    Template::Template(std::shared_ptr<SessionManager> sessionManager,
+                       uint32_t tperSessionNumber,
+                       uint32_t hostSessionNumber)
+        : m_sessionManager(sessionManager),
+          m_tperSessionNumber(tperSessionNumber),
+          m_hostSessionNumber(hostSessionNumber) {}
 
 
-const TPerModules& Template::GetModules() const {
-    return m_sessionManager->GetTrustedPeripheral()->GetModules();
-}
-
-
-MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
-    const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
-    try {
-        assert(m_sessionManager);
-
-        const auto request = MethodToValue(invokingId, method);
-        Log(std::format("Call '{}' [Session]", methodIdStr), request);
-        std::stringstream requestSs(std::ios::binary | std::ios::out);
-        TokenBinaryOutputArchive requestAr(requestSs);
-        save_strip_list(requestAr, request);
-        const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
-        const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
-        const auto responsePacket = m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
-        const auto responseBytes = UnwrapPacket(responsePacket);
-        Value response;
-        FromTokens(responseBytes, response);
-        Log(std::format("Result '{}' [Session]", methodIdStr), response);
-
-        MethodResult result = MethodResultFromValue(response);
-        MethodStatusToException(methodIdStr, result.status);
-        return result;
+    const TPerModules& Template::GetModules() const {
+        return m_sessionManager->GetTrustedPeripheral()->GetModules();
     }
-    catch (InvocationError&) {
-        throw;
-    }
-    catch (std::exception& ex) {
-        throw InvocationError(methodIdStr, ex.what());
-    }
-};
 
 
-ComPacket Template::CreatePacket(std::vector<std::byte> payload) {
-    return m_sessionManager->CreatePacket(std::move(payload), m_tperSessionNumber, m_hostSessionNumber);
-}
+    MethodResult Template::InvokeMethod(Uid invokingId, const Method& method) {
+        const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
+        try {
+            assert(m_sessionManager);
 
+            const auto request = MethodToValue(invokingId, method);
+            Log(std::format("Call '{}' [Session]", methodIdStr), request);
+            std::stringstream requestSs(std::ios::binary | std::ios::out);
+            TokenBinaryOutputArchive requestAr(requestSs);
+            save_strip_list(requestAr, request);
+            const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
+            const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
+            const auto responsePacket = m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
+            const auto responseBytes = UnwrapPacket(responsePacket);
+            Value response;
+            FromTokens(responseBytes, response);
+            Log(std::format("Result '{}' [Session]", methodIdStr), response);
 
-std::span<const std::byte> Template::UnwrapPacket(const ComPacket& packet) {
-    return m_sessionManager->UnwrapPacket(packet);
-}
-
-//------------------------------------------------------------------------------
-// Base template
-//------------------------------------------------------------------------------
-
-
-std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t endColumn) {
-    CellBlock cellBlock{
-        .startColumn = startColumn,
-        .endColumn = endColumn - 1,
+            MethodResult result = MethodResultFromValue(response);
+            MethodStatusToException(methodIdStr, result.status);
+            return result;
+        }
+        catch (InvocationError&) {
+            throw;
+        }
+        catch (std::exception& ex) {
+            throw InvocationError(methodIdStr, ex.what());
+        }
     };
-    auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
-    std::vector<Value> values(endColumn - startColumn);
-    for (auto& nvp : nameValuePairs) {
-        const auto idx = nvp.GetNamed().name.Get<size_t>();
-        if (size_t(idx - startColumn) > values.size()) {
-            throw InvalidResponseError("Get", "too many columns");
+
+
+    ComPacket Template::CreatePacket(std::vector<std::byte> payload) {
+        return m_sessionManager->CreatePacket(std::move(payload), m_tperSessionNumber, m_hostSessionNumber);
+    }
+
+
+    std::span<const std::byte> Template::UnwrapPacket(const ComPacket& packet) {
+        return m_sessionManager->UnwrapPacket(packet);
+    }
+
+    //------------------------------------------------------------------------------
+    // Base template
+    //------------------------------------------------------------------------------
+
+
+    std::vector<Value> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t endColumn) {
+        CellBlock cellBlock{
+            .startColumn = startColumn,
+            .endColumn = endColumn - 1,
+        };
+        auto [nameValuePairs] = InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
+        std::vector<Value> values(endColumn - startColumn);
+        for (auto& nvp : nameValuePairs) {
+            const auto idx = nvp.GetNamed().name.Get<size_t>();
+            if (size_t(idx - startColumn) > values.size()) {
+                throw InvalidResponseError("Get", "too many columns");
+            }
+            values[idx - startColumn] = nvp.GetNamed().value;
         }
-        values[idx - startColumn] = nvp.GetNamed().value;
+        std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
+            return std::move(value.GetNamed().value);
+        });
+        return values;
     }
-    std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
-        return std::move(value.GetNamed().value);
-    });
-    return values;
-}
 
 
-Value BaseTemplate::Get(Uid object, uint32_t column) {
-    auto values = Get(object, column, column + 1);
-    if (values.empty()) {
-        throw InvalidResponseError("Get", "zero columns");
+    Value BaseTemplate::Get(Uid object, uint32_t column) {
+        auto values = Get(object, column, column + 1);
+        if (values.empty()) {
+            throw InvalidResponseError("Get", "zero columns");
+        }
+        return std::move(values[0]);
     }
-    return std::move(values[0]);
-}
 
 
-void BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
-    const std::optional<Uid> rowAddress = std::nullopt; // Must be omitted for objects.
-    std::optional<std::vector<Value>> namedValuePairs = std::vector<Value>();
-    for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
-         colIt != columns.end() && valIt != values.end();
-         ++colIt, ++valIt) {
-        namedValuePairs.value().emplace_back(Named{ *colIt, *valIt });
+    void BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
+        const std::optional<Uid> rowAddress = std::nullopt; // Must be omitted for objects.
+        std::optional<std::vector<Value>> namedValuePairs = std::vector<Value>();
+        for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
+             colIt != columns.end() && valIt != values.end();
+             ++colIt, ++valIt) {
+            namedValuePairs.value().emplace_back(Named{ *colIt, *valIt });
+        }
+        InvokeMethod(object, core::eMethod::Set, rowAddress, namedValuePairs);
     }
-    InvokeMethod(object, core::eMethod::Set, rowAddress, namedValuePairs);
-}
 
 
-void BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
-    Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
-}
-
-
-std::vector<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
-    auto [nexts] = InvokeMethod<std::tuple<std::vector<Uid>>>(table, core::eMethod::Next, row, std::optional(count));
-    return nexts;
-}
-
-
-std::optional<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
-    const auto nexts = Next(table, row, 1);
-    if (!nexts.empty()) {
-        return nexts[0];
+    void BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
+        Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
     }
-    return {};
-}
 
 
-void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
-    auto [result] = InvokeMethod<std::tuple<Value>>(THIS_SP, core::eMethod::Authenticate, authority, proof);
-    if (result.IsInteger()) {
-        const auto success = result.Get<uint8_t>();
-        if (!success) {
-            throw PasswordError();
+    std::vector<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
+        auto [nexts] = InvokeMethod<std::tuple<std::vector<Uid>>>(table, core::eMethod::Next, row, std::optional(count));
+        return nexts;
+    }
+
+
+    std::optional<Uid> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
+        const auto nexts = Next(table, row, 1);
+        if (!nexts.empty()) {
+            return nexts[0];
+        }
+        return {};
+    }
+
+
+    void BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
+        auto [result] = InvokeMethod<std::tuple<Value>>(THIS_SP, core::eMethod::Authenticate, authority, proof);
+        if (result.IsInteger()) {
+            const auto success = result.Get<uint8_t>();
+            if (!success) {
+                throw PasswordError();
+            }
+        }
+        else {
+            throw NotImplementedError("challenge protocol for method 'Authenticate' is not implemented");
         }
     }
-    else {
-        throw NotImplementedError("challenge protocol for method 'Authenticate' is not implemented");
+
+
+    void BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
+        InvokeMethod(object, core::eMethod::GenKey, publicExponent, pinLength);
     }
-}
 
 
-void BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
-    InvokeMethod(object, core::eMethod::GenKey, publicExponent, pinLength);
-}
+    //------------------------------------------------------------------------------
+    // Base template
+    //------------------------------------------------------------------------------
+
+    void OpalTemplate::Revert(Uid securityProvider) {
+        InvokeMethod(securityProvider, opal::eMethod::Revert);
+    }
 
 
-//------------------------------------------------------------------------------
-// Base template
-//------------------------------------------------------------------------------
-
-void OpalTemplate::Revert(Uid securityProvider) {
-    InvokeMethod(securityProvider, opal::eMethod::Revert);
-}
-
-
-void OpalTemplate::Activate(Uid securityProvider) {
-    InvokeMethod(securityProvider, opal::eMethod::Activate);
-}
+    void OpalTemplate::Activate(Uid securityProvider) {
+        InvokeMethod(securityProvider, opal::eMethod::Activate);
+    }
 
 
 } // namespace impl
+
+} // namespace sedmgr

@@ -1,6 +1,7 @@
 #include "Utility.hpp"
 
 
+namespace sedmgr {
 
 std::optional<std::string> NameSequence::Find(Uid uid) const {
     const auto index = int64_t(uid) - int64_t(base);
@@ -80,3 +81,5 @@ std::optional<Uid> SPNameAndUidFinder::Find(std::string_view name, Uid sp) const
     }
     return std::nullopt;
 }
+
+} // namespace sedmgr

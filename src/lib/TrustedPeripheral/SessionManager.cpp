@@ -11,6 +11,7 @@
 #include <Specification/Core/CoreModule.hpp>
 
 
+namespace sedmgr {
 
 template <class Struct, class... Args>
 Struct FromTuple(std::tuple<Args...> args) {
@@ -161,3 +162,5 @@ Method SessionManager::InvokeMethod(const Method& method) {
 const TPerModules& SessionManager::GetModules() const {
     return m_tper->GetModules();
 }
+
+} // namespace sedmgr

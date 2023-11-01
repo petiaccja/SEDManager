@@ -12,6 +12,8 @@
 #include <unordered_map>
 
 
+namespace sedmgr {
+
 struct ColumnDescStatic {
     std::string_view name;
     bool isUnique;
@@ -112,3 +114,5 @@ public:
 private:
     std::unordered_map<Uid, NameAndUidFinder> m_finders;
 };
+
+} // namespace sedmgr

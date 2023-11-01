@@ -7,6 +7,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 enum class eTag : uint8_t {
     TINY_ATOM = 0b0000'0000u,
     SHORT_ATOM = 0b1000'0000u,
@@ -64,3 +66,5 @@ void load(Archive& ar, Token& token) {
     ar(cereal::make_nvp("is_signed", token.isSigned));
     ar(cereal::make_nvp("data", token.data));
 }
+
+} // namespace sedmgr

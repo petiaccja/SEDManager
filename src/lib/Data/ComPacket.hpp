@@ -3,9 +3,12 @@
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
+
+namespace sedmgr {
 
 enum class eSubPacketKind {
     DATA = 0x0000,
@@ -171,3 +174,5 @@ void save(Archive& ar, const SubPacket& obj) {
         ar(uint8_t(0));
     }
 }
+
+} // namespace sedmgr

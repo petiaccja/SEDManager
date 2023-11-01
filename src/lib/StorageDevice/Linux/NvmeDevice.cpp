@@ -13,6 +13,8 @@
 #include <format>
 
 
+namespace sedmgr {
+
 void SendCommand(int file, nvme_admin_cmd command);
 
 
@@ -97,3 +99,5 @@ void SendCommand(int file, nvme_admin_cmd command) {
         };
     }
 }
+
+} // namespace sedmgr

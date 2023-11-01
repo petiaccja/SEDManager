@@ -7,6 +7,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 enum class eStorageDeviceInterface {
     ATA,
     SATA,
@@ -38,3 +40,5 @@ public:
                                  std::span<const std::byte, 2> protocolSpecific,
                                  std::span<std::byte> data) = 0;
 };
+
+} // namespace sedmgr

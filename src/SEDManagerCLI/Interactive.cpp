@@ -21,6 +21,7 @@
     #undef GetObject
 #endif
 
+using namespace sedmgr;
 
 Interactive::Interactive(SEDManager& manager) : m_manager(manager) {
     m_cli.set_help_flag();

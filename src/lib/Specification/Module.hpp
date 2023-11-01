@@ -10,6 +10,7 @@
 #include <string_view>
 
 
+namespace sedmgr {
 
 // Values determine the order in which lookup happens in case of multiple modules.
 // We want features first, then SSCs, and finally core.
@@ -34,3 +35,5 @@ public:
 
     virtual std::span<const std::shared_ptr<Module>> Features() const;
 };
+
+} // namespace sedmgr

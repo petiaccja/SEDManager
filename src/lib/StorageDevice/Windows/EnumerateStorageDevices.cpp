@@ -13,6 +13,8 @@
 #pragma comment(lib, "wbemuuid.lib")
 
 
+namespace sedmgr {
+
 struct ComPtrDeleter {
     template <class T>
     void operator()(T ptr) const {
@@ -131,3 +133,5 @@ std::vector<StorageDeviceLabel> EnumerateStorageDevices() {
 
     return devices;
 }
+
+} // namespace sedmgr

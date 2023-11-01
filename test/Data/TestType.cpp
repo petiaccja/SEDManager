@@ -3,6 +3,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("Type: identified types", "[Type]") {
     const Type type = IdentifiedType<IntegerType, 754>(4, false);
     REQUIRE(type_isa<IntegerType>(type));

@@ -9,6 +9,8 @@
 #include <variant>
 
 
+namespace sedmgr {
+
 struct DiscoveryHeader {
     uint32_t lengthOfData;
     uint16_t versionMajor;
@@ -268,3 +270,5 @@ void load(Archive& ar, ConcreteSSCFeatureDesc& obj) {
 
 
 TPerDesc ParseTPerDesc(std::span<const std::byte> bytes);
+
+} // namespace sedmgr

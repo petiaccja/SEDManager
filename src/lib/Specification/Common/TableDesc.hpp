@@ -4,6 +4,8 @@
 #include <Data/Type.hpp>
 
 
+namespace sedmgr {
+
 enum class eTableKind {
     OBJECT,
     BYTE,
@@ -23,3 +25,5 @@ struct TableDesc {
     std::vector<ColumnDesc> columns = {};
     std::optional<Uid> singleRow = std::nullopt;
 };
+
+} // namespace sedmgr

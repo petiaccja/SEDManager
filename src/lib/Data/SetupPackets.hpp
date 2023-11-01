@@ -2,8 +2,11 @@
 
 #include <cereal/types/array.hpp>
 
+#include <array>
 #include <cstdint>
 
+
+namespace sedmgr {
 
 enum class eComIdState : uint32_t {
     INVALID = 0x00,
@@ -100,3 +103,5 @@ void load(Archive& ar, VerifyComIdValidResponse& obj) {
     ar(obj.timeOfExpiry);
     ar(obj.timeCurrent);
 }
+
+} // namespace sedmgr

@@ -3,6 +3,8 @@
 #include <Specification/Module.hpp>
 
 
+namespace sedmgr {
+
 class TPerModules {
 public:
     void Load(std::shared_ptr<Module> mod);
@@ -22,3 +24,5 @@ public:
 private:
     std::vector<std::shared_ptr<Module>> m_modules;
 };
+
+} // namespace sedmgr

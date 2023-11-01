@@ -11,6 +11,9 @@
 #include <iostream>
 
 
+using namespace sedmgr;
+
+
 class MainApp {
 public:
     MainApp() {
@@ -76,7 +79,6 @@ private:
     CLI::Option* m_device;
     CLI::Option* m_pba;
 };
-
 
 
 int main(int argc, char* argv[]) {

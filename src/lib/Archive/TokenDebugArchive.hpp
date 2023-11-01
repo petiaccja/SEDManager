@@ -14,6 +14,8 @@
 #include <span>
 
 
+namespace sedmgr {
+
 class TokenDebugArchive : public cereal::OutputArchive<TokenDebugArchive>, cereal::traits::TextArchive {
 public:
     TokenDebugArchive(std::ostream& stream);
@@ -57,3 +59,5 @@ void CEREAL_SAVE_FUNCTION_NAME(TokenDebugArchive& ar, const T& t) {
     const auto integral = std::bit_cast<UnsignedType>(t);
     CEREAL_SAVE_FUNCTION_NAME(ar, integral);
 }
+
+} // namespace sedmgr

@@ -3,6 +3,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("Method: parse method roundtrip", "[Method]") {
     const Method input = {
         .methodId = 0xDEADBEEF,

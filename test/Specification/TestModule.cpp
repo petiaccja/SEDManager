@@ -5,6 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("Specification: module find UID", "[Specification]") {
     const auto mod = CoreModule::Get();
     SECTION("valid") {

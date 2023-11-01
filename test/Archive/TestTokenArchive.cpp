@@ -3,6 +3,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
 
 TEST_CASE("TokenBinaryArchive: Save tiny atom positive", "[TokenBinaryArchive]") {
     Token token{

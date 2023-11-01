@@ -8,6 +8,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 class SessionManager {
 public:
     using PropertyMap = std::unordered_map<std::string, uint32_t>;
@@ -88,3 +90,5 @@ OutArgs SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
     }
     return outArgs;
 }
+
+} // namespace sedmgr

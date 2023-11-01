@@ -4,6 +4,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("SetupPackets: VerifyComIdValidRequest to bytes", "[SetupPackets]") {
     VerifyComIdValidRequest input = { .comId = 0xDEAD, .comIdExtension = 0xBEEF };
     const std::vector expected = {

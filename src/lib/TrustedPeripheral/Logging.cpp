@@ -7,6 +7,8 @@
 #include <fstream>
 
 
+namespace sedmgr {
+
 std::ofstream& GetLogFile() {
     const auto path = std::filesystem::temp_directory_path() / "sedmgr.log";
     static std::ofstream file;
@@ -54,3 +56,5 @@ void Log(std::string_view event, const Value& request) {
         file << "\n";
     }
 }
+
+} // namespace sedmgr

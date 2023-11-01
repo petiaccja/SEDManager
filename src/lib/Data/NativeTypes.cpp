@@ -3,6 +3,8 @@
 #include <string>
 
 
+namespace sedmgr {
+
 std::string to_string(Uid uid) {
     std::string result;
     result.reserve(19);
@@ -32,3 +34,5 @@ Uid stouid(std::string_view str) {
     }
     return value;
 }
+
+} // namespace sedmgr

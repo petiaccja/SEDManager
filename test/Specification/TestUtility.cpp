@@ -5,6 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 TEST_CASE("Specification: table to descriptor", "[Specification]") {
     REQUIRE(TableToDescriptor(0x0000'BEEF'0000'0000) == Uid(0x0000'0001'0000'BEEF));
 }

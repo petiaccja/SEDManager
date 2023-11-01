@@ -9,6 +9,8 @@
 #include <memory>
 
 
+namespace sedmgr {
+
 template <bool Mutable>
 class TableRow {
     friend class TableRow<!Mutable>;
@@ -121,3 +123,5 @@ private:
 
 
 using Object = TableRow<true>;
+
+} // namespace sedmgr

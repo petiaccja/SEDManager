@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 
+namespace sedmgr {
 
 //------------------------------------------------------------------------------
 // General errors
@@ -19,7 +20,6 @@ struct NotImplementedError : std::logic_error {
 struct PasswordError : std::logic_error {
     PasswordError() : std::logic_error("invalid password") {}
 };
-
 
 
 //------------------------------------------------------------------------------
@@ -135,3 +135,5 @@ struct ResponseOverflowError : InvocationError {
 struct AuthorityLockedOutError : InvocationError {
     AuthorityLockedOutError(std::string_view methodName) : InvocationError(methodName, "authority locked out") {}
 };
+
+} // namespace sedmgr

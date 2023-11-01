@@ -10,6 +10,8 @@
 #include <variant>
 
 
+namespace sedmgr {
+
 struct Uid {
     Uid() = default;
 
@@ -48,12 +50,13 @@ struct CellBlock {
 std::string to_string(Uid uid);
 Uid stouid(std::string_view str);
 
+} // namespace sedmgr
 
 namespace std {
 
 template <>
-struct hash<Uid> {
-    auto operator()(const Uid& uid) const {
+struct hash<sedmgr::Uid> {
+    auto operator()(const sedmgr::Uid& uid) const {
         return std::hash<uint64_t>()(uid);
     }
 };

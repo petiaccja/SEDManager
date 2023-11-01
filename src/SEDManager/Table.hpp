@@ -9,6 +9,7 @@
 #include <memory>
 
 
+namespace sedmgr {
 
 class Table {
 public:
@@ -81,3 +82,5 @@ Uid Table::row_iterator<Mutable>::Next() const {
     }
     return m_session->base.Next(m_table, m_row).value_or(0);
 }
+
+} // namespace sedmgr
