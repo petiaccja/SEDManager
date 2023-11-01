@@ -8,6 +8,8 @@
 // https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-2_0-2021.06.02-Ratified-5.pdf
 
 
+namespace sedmgr {
+
 enum class eNvmeOpcode {
     IDENTIFY_CONTROLLER = 0x06,
     SECURITY_SEND = 0x81,
@@ -23,3 +25,5 @@ struct NvmeControllerIdentity {
     uint8_t recommendedArbitrationBurst = 0;
     unsigned int ieeeOuiIdentifier = 0;
 };
+
+} // namespace sedmgr

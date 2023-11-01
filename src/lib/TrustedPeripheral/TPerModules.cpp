@@ -3,6 +3,8 @@
 #include <algorithm>
 
 
+namespace sedmgr {
+
 void TPerModules::Load(std::shared_ptr<Module> mod) {
     for (auto& feature : mod->Features()) {
         Load(feature);
@@ -63,3 +65,5 @@ std::optional<Type> TPerModules::FindType(Uid uid) const {
     }
     return std::nullopt;
 }
+
+} // namespace sedmgr

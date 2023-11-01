@@ -9,6 +9,8 @@
 #include <TrustedPeripheral/TrustedPeripheral.hpp>
 
 
+namespace sedmgr {
+
 struct NamedObject {
     Uid uid = 0;
     std::optional<std::string> name = std::nullopt;
@@ -50,3 +52,5 @@ private:
     std::shared_ptr<SessionManager> m_sessionManager;
     std::shared_ptr<Session> m_session;
 };
+
+} // namespace sedmgr

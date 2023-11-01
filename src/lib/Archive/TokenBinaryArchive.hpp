@@ -14,6 +14,7 @@
 #include <span>
 
 
+namespace sedmgr {
 
 class TokenBinaryInputArchive : public cereal::InputArchive<TokenBinaryInputArchive> {
 public:
@@ -121,3 +122,5 @@ void CEREAL_LOAD_FUNCTION_NAME(TokenBinaryInputArchive& ar, T& t) {
     CEREAL_LOAD_FUNCTION_NAME(ar, integral);
     t = std::bit_cast<T>(integral);
 }
+
+} // namespace sedmgr

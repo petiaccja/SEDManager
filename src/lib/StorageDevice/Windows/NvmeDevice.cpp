@@ -13,6 +13,8 @@
 #include <format>
 
 
+namespace sedmgr {
+
 void SendCommand(HANDLE handle,
                  uint8_t securityProtocol,
                  std::span<const std::byte, 2> protocolSpecific,
@@ -196,3 +198,5 @@ void SendCommand(HANDLE handle,
         throw DeviceError(std::format("device returned an error: NVMe status = {}", scsiCommand->ScsiStatus));
     }
 }
+
+} // namespace sedmgr

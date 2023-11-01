@@ -12,6 +12,8 @@
 #include <stack>
 
 
+namespace sedmgr {
+
 // TODO: return a coroutine generator
 std::vector<Token> ValueToTokens(const Value& value);
 
@@ -56,3 +58,5 @@ void load(Archive& ar, Value& value) {
     }
     value = TokensToValue(tokens);
 }
+
+} // namespace sedmgr

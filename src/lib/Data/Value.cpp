@@ -1,6 +1,8 @@
 #include "Value.hpp"
 
 
+namespace sedmgr {
+
 //------------------------------------------------------------------------------
 // Construction
 //------------------------------------------------------------------------------
@@ -15,7 +17,6 @@ Value::Value(Named value)
 
 Value::Value(eCommand command)
     : m_value(command) {}
-
 
 
 bool Value::operator==(const Value& rhs) const {
@@ -179,3 +180,5 @@ std::string Value::GetTypeStr() const {
     }
     return "<empty>";
 }
+
+} // namespace sedmgr

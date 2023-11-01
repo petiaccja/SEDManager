@@ -11,6 +11,9 @@
 #include <csignal>
 
 
+using namespace sedmgr;
+
+
 namespace {
 
 void UnlockDevice(std::shared_ptr<StorageDevice> device);

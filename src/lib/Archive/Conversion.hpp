@@ -9,6 +9,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 constexpr std::byte operator""_b(unsigned long long value) {
     return std::byte(value);
 }
@@ -68,3 +70,5 @@ void FromTokens(std::span<const std::byte> bytes, Object& object) {
     TokenBinaryInputArchive ar(buffer);
     ar(object);
 }
+
+} // namespace sedmgr

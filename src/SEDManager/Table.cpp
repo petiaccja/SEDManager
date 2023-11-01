@@ -1,6 +1,8 @@
 #include "Table.hpp"
 
 
+namespace sedmgr {
+
 Table::Table(Uid table, TableDesc desc, std::shared_ptr<Session> session)
     : m_table(table), m_desc(std::move(desc)), m_session(session) {
 }
@@ -15,3 +17,5 @@ Uid Table::First() const {
     }
     return 0;
 }
+
+} // namespace sedmgr

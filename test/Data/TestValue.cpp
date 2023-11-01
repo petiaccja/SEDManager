@@ -9,6 +9,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
 
 TEST_CASE("Value: integrals", "[Value]") {
     constexpr uint16_t raw = 76;

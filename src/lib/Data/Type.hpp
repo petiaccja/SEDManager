@@ -13,6 +13,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 constexpr uint64_t baseTypeUid = 0x0000'0005'0000'0000;
 
 
@@ -449,7 +451,6 @@ public:
 };
 
 
-
 //------------------------------------------------------------------------------
 // Named types
 //------------------------------------------------------------------------------
@@ -468,3 +469,5 @@ public:
 
     explicit NameValueUintegerType(std::shared_ptr<Storage> s) : Type(std::move(s)) {}
 };
+
+} // namespace sedmgr

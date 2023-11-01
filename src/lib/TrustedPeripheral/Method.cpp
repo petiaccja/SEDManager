@@ -4,6 +4,8 @@
 #include <Error/Exception.hpp>
 
 
+namespace sedmgr {
+
 Value MethodToValue(Uid invokingId, const Method& method) {
     Value stream = {
         eCommand::CALL,
@@ -133,20 +135,22 @@ void MethodStatusToException(std::string_view methodName, eMethodStatus status) 
 
 namespace impl {
 
-std::vector<std::pair<intptr_t, const Value&>> LabelOptionalArgs(std::span<const Value> streams) {
-    using Item = std::pair<intptr_t, const Value&>;
-    std::vector<Item> labels;
-    std::ranges::transform(streams, std::back_inserter(labels), [](const Value& stream) {
-        if (stream.IsNamed()) {
-            const auto& named = stream.Get<Named>();
-            if (!named.name.IsInteger()) {
-                throw std::invalid_argument("expected an integer as argument label");
+    std::vector<std::pair<intptr_t, const Value&>> LabelOptionalArgs(std::span<const Value> streams) {
+        using Item = std::pair<intptr_t, const Value&>;
+        std::vector<Item> labels;
+        std::ranges::transform(streams, std::back_inserter(labels), [](const Value& stream) {
+            if (stream.IsNamed()) {
+                const auto& named = stream.Get<Named>();
+                if (!named.name.IsInteger()) {
+                    throw std::invalid_argument("expected an integer as argument label");
+                }
+                return Item{ named.name.Get<intptr_t>(), named.value };
             }
-            return Item{ named.name.Get<intptr_t>(), named.value };
-        }
-        return Item{ intptr_t(-1), stream };
-    });
-    return labels;
-}
+            return Item{ intptr_t(-1), stream };
+        });
+        return labels;
+    }
 
 } // namespace impl
+
+} // namespace sedmgr

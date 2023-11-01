@@ -5,6 +5,8 @@
 #include <stdexcept>
 
 
+namespace sedmgr {
+
 SEDManager::SEDManager(std::shared_ptr<StorageDevice> device) : m_device(device) {
     LaunchStack();
 }
@@ -128,3 +130,5 @@ void SEDManager::LaunchStack() {
     }
     m_sessionManager = std::make_shared<SessionManager>(m_tper);
 }
+
+} // namespace sedmgr

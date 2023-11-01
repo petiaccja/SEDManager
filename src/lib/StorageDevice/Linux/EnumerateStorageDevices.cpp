@@ -6,6 +6,8 @@
 #include <regex>
 
 
+namespace sedmgr {
+
 std::vector<StorageDeviceLabel> EnumerateStorageDevices() {
     namespace fs = std::filesystem;
 
@@ -26,3 +28,5 @@ std::vector<StorageDeviceLabel> EnumerateStorageDevices() {
 
     return devices;
 }
+
+} // namespace sedmgr

@@ -4,6 +4,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 
+using namespace sedmgr;
+
+
 std::vector<std::byte> MakeDiscoveryBytes(std::span<const std::byte> featureBytes) {
     std::vector discoveryBytes = {
         // Length of parameter data

@@ -3,6 +3,8 @@
 #include "../Module.hpp"
 
 
+namespace sedmgr {
+
 class PSIDModule : public Module {
 public:
     static std::shared_ptr<Module> Get();
@@ -13,3 +15,5 @@ public:
     std::optional<std::string> FindName(Uid uid, std::optional<Uid> = std::nullopt) const override;
     std::optional<Uid> FindUid(std::string_view name, std::optional<Uid> = std::nullopt) const override;
 };
+
+} // namespace sedmgr

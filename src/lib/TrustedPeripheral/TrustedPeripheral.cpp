@@ -14,6 +14,7 @@
 #include <thread>
 
 
+namespace sedmgr {
 
 void LoadModules(const TPerDesc& desc, TPerModules& modules) {
     if (desc.tperDesc && desc.lockingDesc) {
@@ -256,3 +257,5 @@ void TrustedPeripheral::StackReset() {
         throw InvocationError("STACK_RESET", "failed");
     }
 }
+
+} // namespace sedmgr

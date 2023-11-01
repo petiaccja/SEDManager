@@ -14,6 +14,8 @@
 #include <vector>
 
 
+namespace sedmgr {
+
 enum class eCommand : uint8_t {
     CALL = 0xF8,
     END_OF_DATA = 0xF9,
@@ -132,34 +134,34 @@ struct Named {
 
 namespace impl {
 
-template <class Func, class P, class... Ps>
-decltype(auto) ForEachTypeHelper(Func func, const P* ptr, const Ps*... ptrs) {
-    std::optional value = func(ptr);
-    if (value) {
-        return value;
+    template <class Func, class P, class... Ps>
+    decltype(auto) ForEachTypeHelper(Func func, const P* ptr, const Ps*... ptrs) {
+        std::optional value = func(ptr);
+        if (value) {
+            return value;
+        }
+        if constexpr (sizeof...(ptrs) == 0) {
+            return decltype(value){ std::nullopt };
+        }
+        else {
+            return ForEachTypeHelper(func, ptrs...);
+        }
     }
-    if constexpr (sizeof...(ptrs) == 0) {
-        return decltype(value){ std::nullopt };
+
+    template <class TupleType, class Func, size_t... Indices>
+    decltype(auto) ForEachTypeHelper(Func func, std::index_sequence<Indices...>) {
+        std::tuple ptrs{ static_cast<std::tuple_element_t<Indices, TupleType>*>(nullptr)... };
+        const auto dispatch = [&func](const auto*... ptrs) {
+            return ForEachTypeHelper(func, ptrs...);
+        };
+        return std::apply(dispatch, ptrs);
     }
-    else {
-        return ForEachTypeHelper(func, ptrs...);
+
+
+    template <class TupleType, class Func>
+    decltype(auto) ForEachType(Func func) {
+        return ForEachTypeHelper<TupleType>(std::move(func), std::make_index_sequence<std::tuple_size_v<TupleType>>());
     }
-}
-
-template <class TupleType, class Func, size_t... Indices>
-decltype(auto) ForEachTypeHelper(Func func, std::index_sequence<Indices...>) {
-    std::tuple ptrs{ static_cast<std::tuple_element_t<Indices, TupleType>*>(nullptr)... };
-    const auto dispatch = [&func](const auto*... ptrs) {
-        return ForEachTypeHelper(func, ptrs...);
-    };
-    return std::apply(dispatch, ptrs);
-}
-
-
-template <class TupleType, class Func>
-decltype(auto) ForEachType(Func func) {
-    return ForEachTypeHelper<TupleType>(std::move(func), std::make_index_sequence<std::tuple_size_v<TupleType>>());
-}
 
 } // namespace impl
 
@@ -248,3 +250,5 @@ template <std::same_as<Named> T>
 Named& Value::Get() {
     return GetNamed();
 }
+
+} // namespace sedmgr

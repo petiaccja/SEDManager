@@ -9,6 +9,9 @@
 #include <chrono>
 #include <memory>
 
+
+namespace sedmgr {
+
 struct ComPacket;
 
 
@@ -43,3 +46,5 @@ private:
     TPerDesc m_desc;
     TPerModules m_modules;
 };
+
+} // namespace sedmgr

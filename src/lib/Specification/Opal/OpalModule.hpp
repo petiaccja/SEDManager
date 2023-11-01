@@ -4,12 +4,14 @@
 #include "../Module.hpp"
 
 
+namespace sedmgr {
+
 namespace opal {
 
-enum class eMethod : uint64_t {
-    Revert = 0x0000'0006'0000'0202,
-    Activate = 0x0000'0006'0000'0203,
-};
+    enum class eMethod : uint64_t {
+        Revert = 0x0000'0006'0000'0202,
+        Activate = 0x0000'0006'0000'0203,
+    };
 
 }
 
@@ -39,3 +41,5 @@ public:
     static std::shared_ptr<Module> Get();
     std::string_view ModuleName() const override;
 };
+
+} // namespace sedmgr

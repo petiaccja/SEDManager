@@ -8,6 +8,8 @@
 #include <string_view>
 
 
+namespace sedmgr {
+
 class NvmeDevice : public StorageDevice {
 public:
     NvmeDevice(std::string_view name);
@@ -26,3 +28,5 @@ public:
 private:
     int m_file;
 };
+
+} // namespace sedmgr

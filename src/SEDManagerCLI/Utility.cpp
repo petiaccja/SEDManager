@@ -11,6 +11,9 @@
 #endif
 
 
+using namespace sedmgr;
+
+
 std::vector<std::byte> GetPassword(std::string_view prompt) {
 #ifdef __linux__
     std::string_view password = getpass(prompt.data());

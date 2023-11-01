@@ -11,6 +11,8 @@
 #include <span>
 
 
+namespace sedmgr {
+
 class FlatBinaryInputArchive : public cereal::InputArchive<FlatBinaryInputArchive> {
 public:
     FlatBinaryInputArchive(std::istream& stream);
@@ -144,3 +146,5 @@ void CEREAL_LOAD_FUNCTION_NAME(FlatBinaryInputArchive& ar, T& t) {
     CEREAL_LOAD_FUNCTION_NAME(ar, integral);
     t = std::bit_cast<T>(integral);
 }
+
+} // namespace sedmgr

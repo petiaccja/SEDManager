@@ -5,6 +5,8 @@
 #include "Defs/UIDs.hpp" // So that users don't have to include files directly from CoreModule's implementation.
 
 
+namespace sedmgr {
+
 class CoreModule : public Module {
 public:
     static std::shared_ptr<Module> Get();
@@ -17,3 +19,5 @@ public:
     std::optional<TableDesc> FindTable(Uid table) const override;
     std::optional<Type> FindType(Uid uid) const override;
 };
+
+} // namespace sedmgr

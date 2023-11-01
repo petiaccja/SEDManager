@@ -1,6 +1,8 @@
 #include "TokenBinaryArchive.hpp"
 
 
+namespace sedmgr {
+
 eTag GetTagFromHeader(uint8_t header) {
     if ((header & uint8_t(eMask::TINY_ATOM)) == uint8_t(eTag::TINY_ATOM)) {
         return eTag::TINY_ATOM;
@@ -141,3 +143,5 @@ void TokenBinaryInputArchive::Extract(Token& token) {
         token.data = {};
     }
 }
+
+} // namespace sedmgr
