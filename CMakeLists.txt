@@ -26,6 +26,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
 	add_compile_options("/utf-8")
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_subdirectory(src)
 add_subdirectory(test)
 
