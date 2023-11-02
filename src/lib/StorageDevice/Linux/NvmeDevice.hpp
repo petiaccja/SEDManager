@@ -18,12 +18,13 @@ public:
     ~NvmeDevice();
 
     NvmeControllerIdentity IdentifyController();
+    StorageDeviceDesc GetDesc() override;
     void SecuritySend(uint8_t securityProtocol,
                       std::span<const std::byte, 2> protocolSpecific,
-                      std::span<const std::byte> data);
+                      std::span<const std::byte> data) override;
     void SecurityReceive(uint8_t securityProtocol,
                          std::span<const std::byte, 2> protocolSpecific,
-                         std::span<std::byte> data);
+                         std::span<std::byte> data) override;
 
 private:
     int m_file;

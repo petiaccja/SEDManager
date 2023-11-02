@@ -151,6 +151,16 @@ void FillScsiPassthrough(SCSI_PASS_THROUGH_DIRECT& scsiCcmmand,
 }
 
 
+StorageDeviceDesc NvmeDevice::GetDesc() {
+    auto id = IdentifyController();
+    return StorageDeviceDesc{
+        .name = id.modelNumber,
+        .serial = id.serialNumber,
+        .interface = eStorageDeviceInterface::NVME,
+    };
+}
+
+
 void NvmeDevice::SecuritySend(uint8_t securityProtocol,
                               std::span<const std::byte, 2> protocolSpecific,
                               std::span<const std::byte> data) {

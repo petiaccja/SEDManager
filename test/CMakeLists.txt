@@ -16,9 +16,11 @@ target_sources(Test
         Specification/TestModule.cpp
         TrustedPeripheral/TestMethod.cpp
         TrustedPeripheral/TestDiscovery.cpp
+        Mock/TestTrustedPeripheral.cpp
+        Mock/TestSessionManager.cpp
 )
 
 find_package(Catch2 3 REQUIRED)
 
-target_link_libraries(Test Archive Data Specification TrustedPeripheral)
+target_link_libraries(Test Archive Data Specification TrustedPeripheral MockDevice)
 target_link_libraries(Test Catch2::Catch2)

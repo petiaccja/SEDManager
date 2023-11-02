@@ -144,9 +144,9 @@ Method SessionManager::InvokeMethod(const Method& method) {
 
         Value responseStream;
         FromTokens(responseTokens, responseStream);
+        Log(std::format("Result '{}' [SessionManager]", methodIdStr), responseStream);
 
         auto response = MethodFromValue(responseStream);
-        Log(std::format("Result '{}' [SessionManager]", methodIdStr), responseStream);
         MethodStatusToException(methodIdStr, response.status);
         return response;
     }
