@@ -7,4 +7,4 @@ target_sources(SEDManagerCAPI
         SEDManagerCAPI.cpp
 )
 
-target_link_libraries(SEDManagerCAPI SEDManager)
+target_link_libraries(SEDManagerCAPI SEDManager MockDevice)

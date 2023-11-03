@@ -1,7 +1,10 @@
+#include <MockDevice/MockDevice.hpp>
+
 #include <SEDManager/SEDManager.hpp>
 
 
 static std::string lastErrorMessage;
+static constexpr std::string_view mockDevicePath = "/dev/mock_device";
 
 
 void SetLastError(std::exception_ptr ex) {
@@ -40,7 +43,12 @@ const char* GetLastErrorMessage() {
 
 
 size_t EnumerateStorageDevices(char* const devices, const size_t length) {
-    const auto& labels = sedmgr::EnumerateStorageDevices();
+    auto labels = sedmgr::EnumerateStorageDevices();
+
+#ifndef NDEBUG
+    labels.emplace_back(std::string(mockDevicePath), sedmgr::eStorageDeviceInterface::OTHER);
+#endif
+
     size_t writeIndex = 0;
     ptrdiff_t numRemaining = devices != nullptr ? ptrdiff_t(length) : std::numeric_limits<ptrdiff_t>::max();
     for (auto& label : labels) {
@@ -62,9 +70,13 @@ size_t EnumerateStorageDevices(char* const devices, const size_t length) {
 
 
 std::shared_ptr<sedmgr::StorageDevice>* CreateStorageDevice(const char* path) {
+    if (path == mockDevicePath) {
+        const auto device = std::make_shared<sedmgr::MockDevice>();
+        return new std::shared_ptr<sedmgr::StorageDevice>(device);
+    }
     try {
         const auto device = std::make_shared<sedmgr::NvmeDevice>(path);
-        const auto identity = device->IdentifyController();
+        const auto identity = device->IdentifyController(); // Test if device is actually NVMe.
         return new std::shared_ptr<sedmgr::StorageDevice>(device);
     }
     catch (...) {
@@ -75,15 +87,22 @@ std::shared_ptr<sedmgr::StorageDevice>* CreateStorageDevice(const char* path) {
 
 
 size_t StorageDeviceGetName(std::shared_ptr<sedmgr::StorageDevice>* device, char* const name, size_t length) {
-    if (const auto nvmeDevice = std::dynamic_pointer_cast<sedmgr::NvmeDevice>(*device)) {
-        const auto id = nvmeDevice->IdentifyController();
-        const std::string_view devName = id.modelNumber;
-        if (name != nullptr) {
-            return CopyString(devName.begin(), devName.end(), name, ptrdiff_t(length));
-        }
-        return devName.size() + 1;
+    const auto info = (*device)->GetDesc();
+    const std::string_view devName = info.name;
+    if (name != nullptr) {
+        return CopyString(devName.begin(), devName.end(), name, ptrdiff_t(length));
     }
-    return 0;
+    return devName.size() + 1;
+}
+
+
+size_t StorageDeviceGetSerial(std::shared_ptr<sedmgr::StorageDevice>* device, char* const serial, size_t length) {
+    const auto info = (*device)->GetDesc();
+    const std::string_view devSerial = info.serial;
+    if (serial != nullptr) {
+        return CopyString(devSerial.begin(), devSerial.end(), serial, ptrdiff_t(length));
+    }
+    return devSerial.size() + 1;
 }
 
 
