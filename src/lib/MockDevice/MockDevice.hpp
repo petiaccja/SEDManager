@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include "MockSecurityProvider.hpp"
+
 #include <Data/ComPacket.hpp>
 #include <StorageDevice/Common/StorageDevice.hpp>
 #include <TrustedPeripheral/Method.hpp>
@@ -9,6 +11,7 @@
 #include <functional>
 #include <map>
 #include <queue>
+#include <span>
 #include <vector>
 
 
@@ -45,6 +48,7 @@ private:
 
 private:
     static constexpr uint16_t baseComId = 0xBEEF;
+    std::shared_ptr<std::vector<MockSecurityProvider>> m_sps;
     std::map<std::tuple<uint8_t, uint16_t>, InputHandler> m_inputHandlers;
     std::map<std::tuple<uint8_t, uint16_t>, OutputHandler> m_outputHandlers;
 };

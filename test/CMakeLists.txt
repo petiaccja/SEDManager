@@ -17,6 +17,7 @@ target_sources(Test
         TrustedPeripheral/TestMethod.cpp
         TrustedPeripheral/TestDiscovery.cpp
         Mock/TestTrustedPeripheral.cpp
+        Mock/TestSession.cpp
         Mock/TestSessionManager.cpp
 )
 
