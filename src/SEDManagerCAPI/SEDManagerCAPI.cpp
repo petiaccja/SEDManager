@@ -22,52 +22,40 @@ void SetLastError(std::exception_ptr ex) {
 }
 
 
-template <class Iter>
-size_t CopyString(Iter first, Iter last, char* output, size_t outputSize) {
-    const auto outputSizeNull = ptrdiff_t(outputSize) - 1;
-    ptrdiff_t outputIndex = 0;
-    for (; first != last && outputIndex < outputSizeNull; ++first, ++outputIndex) {
-        output[outputIndex] = *first;
-    }
-    if (outputSize > 0) {
-        output[outputIndex] = '\0';
-        ++outputIndex;
-    }
-    return size_t(outputIndex);
+char* AllocateString(std::string_view str) {
+    char* buffer = new char[str.size() + 1];
+    std::ranges::copy(str, buffer);
+    buffer[str.size()] = '\0';
+    return buffer;
 }
 
 
 extern "C"
 {
 const char* GetLastErrorMessage() {
-    return lastErrorMessage.data();
+    return AllocateString(lastErrorMessage);
 }
 
 
-size_t EnumerateStorageDevices(char* const devices, const size_t length) {
-    auto labels = sedmgr::EnumerateStorageDevices();
+char* EnumerateStorageDevices() {
+    try {
+        auto labels = sedmgr::EnumerateStorageDevices();
 
 #ifndef NDEBUG
-    labels.emplace_back(std::string(mockDevicePath), eStorageDeviceInterface::OTHER);
+        labels.emplace_back(std::string(mockDevicePath), eStorageDeviceInterface::OTHER);
 #endif
 
-    size_t writeIndex = 0;
-    ptrdiff_t numRemaining = devices != nullptr ? ptrdiff_t(length) : std::numeric_limits<ptrdiff_t>::max();
-    for (auto& label : labels) {
-        if (devices != nullptr && numRemaining >= 2) {
-            const auto copied = CopyString(label.path.begin(), label.path.end(), devices + writeIndex, numRemaining - 1);
-            writeIndex += copied;
-            numRemaining -= copied;
+        std::string concated;
+        for (auto& label : labels) {
+            concated += label.path;
+            concated += ';';
         }
-        else {
-            writeIndex += label.path.size() + 1;
-        }
+        return AllocateString(concated);
     }
-    if (devices && numRemaining >= 1) {
-        devices[writeIndex] = '\0';
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return nullptr;
     }
-    ++writeIndex;
-    return writeIndex;
 }
 
 
@@ -88,23 +76,15 @@ std::shared_ptr<StorageDevice>* CreateStorageDevice(const char* path) {
 }
 
 
-size_t StorageDevice_GetName(std::shared_ptr<StorageDevice>* device, char* const name, size_t length) {
+char* StorageDevice_GetName(std::shared_ptr<StorageDevice>* device) {
     const auto info = (*device)->GetDesc();
-    const std::string_view devName = info.name;
-    if (name != nullptr) {
-        return CopyString(devName.begin(), devName.end(), name, ptrdiff_t(length));
-    }
-    return devName.size() + 1;
+    return AllocateString(info.name);
 }
 
 
-size_t StorageDeviceGetSerial(std::shared_ptr<StorageDevice>* device, char* const serial, size_t length) {
+char* StorageDevice_GetSerial(std::shared_ptr<StorageDevice>* device) {
     const auto info = (*device)->GetDesc();
-    const std::string_view devSerial = info.serial;
-    if (serial != nullptr) {
-        return CopyString(devSerial.begin(), devSerial.end(), serial, ptrdiff_t(length));
-    }
-    return devSerial.size() + 1;
+    return AllocateString(info.serial);
 }
 
 
@@ -152,17 +132,17 @@ void ReleaseObject(TableIterator* object) {
 }
 
 
-void ObjectNext(TableIterator* object) {
+void Object_Next(TableIterator* object) {
     std::advance(object->first, 1);
 }
 
 
-bool ObjectValid(TableIterator* object) {
+bool Object_Valid(TableIterator* object) {
     return object->first != object->second;
 }
 
 
-char* ObjectGetColumnNames(TableIterator* object, size_t startColumn, size_t endColumn) {
+char* ObjectGet_ColumnNames(TableIterator* object, size_t startColumn, size_t endColumn) {
     Object obj = *object->first;
     if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
         std::string result;
@@ -179,7 +159,7 @@ char* ObjectGetColumnNames(TableIterator* object, size_t startColumn, size_t end
 }
 
 
-char* ObjectGetColumnValues(TableIterator* object, size_t startColumn, size_t endColumn) {
+char* ObjectGet_ColumnValues(TableIterator* object, size_t startColumn, size_t endColumn) {
     Object obj = *object->first;
     if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
         std::string result;
@@ -203,7 +183,7 @@ char* ObjectGetColumnValues(TableIterator* object, size_t startColumn, size_t en
 }
 
 
-size_t ObjectSetColumnValues(TableIterator* object, size_t startColumn, size_t endColumn, const char* values) {
+size_t Object_SetColumnValues(TableIterator* object, size_t startColumn, size_t endColumn, const char* values) {
     Object obj = *object->first;
     size_t numSucceeded = 0;
     if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
