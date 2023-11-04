@@ -12,6 +12,8 @@ target_sources(MockDevice
         MockSession.hpp
         MockSecurityProvider.cpp
         MockSecurityProvider.hpp
+        MockSetupLayer.cpp
+        MockSetupLayer.hpp
 )
 
 target_include_directories(MockDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

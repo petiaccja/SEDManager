@@ -14,3 +14,17 @@ TEST_CASE("TrustedPeripheral: discovery", "[TrustedPeripheral]") {
     REQUIRE(desc.tperDesc);
     REQUIRE(desc.lockingDesc);
 }
+
+
+TEST_CASE("TrustedPeripheral: verify ComID valid", "[TrustedPeripheral]") {
+    const auto device = std::make_shared<MockDevice>();
+    TrustedPeripheral tper(device);
+    REQUIRE(tper.VerifyComId() == eComIdState::ISSUED);
+}
+
+
+TEST_CASE("TrustedPeripheral: stack reset", "[TrustedPeripheral]") {
+    const auto device = std::make_shared<MockDevice>();
+    TrustedPeripheral tper(device);
+    REQUIRE_NOTHROW(tper.StackReset());
+}

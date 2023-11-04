@@ -28,6 +28,13 @@ struct VerifyComIdValidRequest {
 };
 
 
+struct StackResetRequest {
+    uint16_t comId;
+    uint16_t comIdExtension;
+    static constexpr uint32_t requestCode = 0x00'00'00'02;
+};
+
+
 struct VerifyComIdValidResponse {
     uint16_t comId;
     uint16_t comIdExtension;
@@ -37,13 +44,6 @@ struct VerifyComIdValidResponse {
     std::array<uint8_t, 10> timeOfAlloc;
     std::array<uint8_t, 10> timeOfExpiry;
     std::array<uint8_t, 10> timeCurrent;
-};
-
-
-struct StackResetRequest {
-    uint16_t comId;
-    uint16_t comIdExtension;
-    static constexpr uint32_t requestCode = 0x00'00'00'02;
 };
 
 
@@ -58,6 +58,14 @@ struct StackResetResponse {
 
 template <class Archive>
 void save(Archive& ar, const StackResetRequest& obj) {
+    ar(obj.comId);
+    ar(obj.comIdExtension);
+    ar(obj.requestCode);
+}
+
+
+template <class Archive>
+void save(Archive& ar, const VerifyComIdValidRequest& obj) {
     ar(obj.comId);
     ar(obj.comIdExtension);
     ar(obj.requestCode);
@@ -80,10 +88,13 @@ void load(Archive& ar, StackResetResponse& obj) {
 
 
 template <class Archive>
-void save(Archive& ar, const VerifyComIdValidRequest& obj) {
+void save(Archive& ar, const StackResetResponse& obj) {
     ar(obj.comId);
     ar(obj.comIdExtension);
     ar(obj.requestCode);
+    ar(uint16_t(0));
+    ar(obj.availableDataLength);
+    ar(static_cast<uint32_t>(obj.success));
 }
 
 
@@ -99,6 +110,20 @@ void load(Archive& ar, VerifyComIdValidResponse& obj) {
     ar(obj.availableDataLength);
     ar(comIdState);
     obj.comIdState = static_cast<eComIdState>(comIdState);
+    ar(obj.timeOfAlloc);
+    ar(obj.timeOfExpiry);
+    ar(obj.timeCurrent);
+}
+
+
+template <class Archive>
+void save(Archive& ar, const VerifyComIdValidResponse& obj) {
+    ar(obj.comId);
+    ar(obj.comIdExtension);
+    ar(obj.requestCode);
+    ar(uint16_t(0));
+    ar(obj.availableDataLength);
+    ar(static_cast<uint32_t>(obj.comIdState));
     ar(obj.timeOfAlloc);
     ar(obj.timeOfExpiry);
     ar(obj.timeCurrent);

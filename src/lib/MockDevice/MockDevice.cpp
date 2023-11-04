@@ -2,6 +2,7 @@
 
 #include "MockPreconfig.hpp"
 #include "MockSession.hpp"
+#include "MockSetupLayer.hpp"
 
 #include <Archive/Conversion.hpp>
 #include <Archive/Types/ValueToToken.hpp>
@@ -20,6 +21,10 @@ MockDevice::MockDevice() {
     const auto baseSession = std::make_shared<MockSession>(m_sps, baseComId, 0x0000);
     AddInputHandler(0x01, baseComId, [baseSession](std::span<const std::byte> data) { baseSession->Input(data); });
     AddOutputHandler(0x01, baseComId, [baseSession](std::span<std::byte> data) { baseSession->Output(data); });
+
+    const auto baseSetupLayer = std::make_shared<MockSetupLayer>(baseComId, 0x0000);
+    AddInputHandler(0x02, baseComId, [baseSetupLayer](std::span<const std::byte> data) { baseSetupLayer->Input(data); });
+    AddOutputHandler(0x02, baseComId, [baseSetupLayer](std::span<std::byte> data) { baseSetupLayer->Output(data); });
 }
 
 
