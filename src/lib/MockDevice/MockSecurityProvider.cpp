@@ -76,10 +76,10 @@ Uid MockTable::GetUID() const {
 MockSecurityProvider::MockSecurityProvider(Uid uid, std::initializer_list<MockTable> tables, std::initializer_list<MockObject> objects)
     : m_uid(uid) {
     for (auto& table : tables) {
-        m_tables.insert({ table.GetUID(), table });
+        m_tables.insert_or_assign(table.GetUID(), table);
     }
     for (auto& object : objects) {
-        m_objects.insert({ object.GetUID(), object });
+        m_objects.insert_or_assign(object.GetUID(), object);
     }
 }
 
