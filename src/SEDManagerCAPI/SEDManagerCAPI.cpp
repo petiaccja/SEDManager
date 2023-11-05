@@ -109,8 +109,52 @@ void ReleaseSEDManager(SEDManager* manager) {
 }
 
 
+bool SEDManager_Start(SEDManager* manager, uint64_t sp) {
+    try {
+        manager->Start(sp);
+        return true;
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return false;
+    }
+}
+
+
+bool SEDManager_End(SEDManager* manager) {
+    try {
+        manager->End();
+        return true;
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return false;
+    }
+}
+
+
+uint64_t SEDManager_FindUID(SEDManager* manager, const char* name, uint64_t sp) {
+    return manager->GetModules().FindUid(name, sp).value_or(0);
+}
+
+
+char* SEDManager_FindName(SEDManager* manager, uint64_t uid, uint64_t sp) {
+    auto maybeName = manager->GetModules().FindName(uid, sp);
+    if (maybeName) {
+        return AllocateString(*maybeName);
+    }
+    return nullptr;
+}
+
+
 Table* CreateTable(SEDManager* manager, uint64_t uid) {
-    return new Table(manager->GetTable(uid));
+    try {
+        return new Table(manager->GetTable(uid));
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return nullptr;
+    }
 }
 
 
@@ -118,81 +162,109 @@ void ReleaseTable(Table* table) {
     delete table;
 }
 
+struct TableIterator {
+    Table::iterator first;
+    Table::iterator last;
+    bool initial = true;
+};
 
-using TableIterator = std::pair<Table::iterator, Table::iterator>;
 
-
-TableIterator* CreateObject(Table* table) {
-    return new TableIterator(table->begin(), table->end());
+TableIterator* CreateTableIterator(Table* table) {
+    try {
+        return new TableIterator(table->begin(), table->end());
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return nullptr;
+    }
 }
 
 
-void ReleaseObject(TableIterator* object) {
+void ReleaseTableIterator(TableIterator* it) {
+    delete it;
+}
+
+
+bool TableIterator_Next(TableIterator* it) {
+    try {
+        if (!it->initial && it->first != it->last) {
+            std::advance(it->first, 1);
+        }
+        it->initial = false;
+        return it->first != it->last;
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return false;
+    }
+}
+
+
+Object* CreateObject(TableIterator* it) {
+    try {
+        return new Object(*it->first);
+    }
+    catch (std::exception&) {
+        SetLastError(std::current_exception());
+        return nullptr;
+    }
+}
+
+
+void ReleaseObject(Object* object) {
     delete object;
 }
 
 
-void Object_Next(TableIterator* object) {
-    std::advance(object->first, 1);
+uint64_t Object_GetUID(Object* object) {
+    return object->Id();
 }
 
 
-bool Object_Valid(TableIterator* object) {
-    return object->first != object->second;
-}
-
-
-char* ObjectGet_ColumnNames(TableIterator* object, size_t startColumn, size_t endColumn) {
-    Object obj = *object->first;
-    if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
+char* Object_GetColumnNames(Object* object, size_t startColumn, size_t endColumn) {
+    if (startColumn <= endColumn && endColumn <= object->GetDesc().size()) {
         std::string result;
         for (auto i = startColumn; i < endColumn; ++i) {
-            const auto name = obj.GetDesc()[i].name;
+            const auto name = object->GetDesc()[i].name;
             result += name;
+            result += '\0';
         }
-        char* buffer = new char[result.size() + 1];
-        std::ranges::copy(result, buffer);
-        buffer[result.size()] = '\0';
-        return buffer;
+        return AllocateString(result);
     }
     return nullptr;
 }
 
 
-char* ObjectGet_ColumnValues(TableIterator* object, size_t startColumn, size_t endColumn) {
-    Object obj = *object->first;
-    if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
+char* Object_GetColumnValues(Object* object, size_t startColumn, size_t endColumn) {
+    if (startColumn <= endColumn && endColumn <= object->GetDesc().size()) {
         std::string result;
         for (auto i = startColumn; i < endColumn; ++i) {
-            const auto value = *obj[i];
-            const auto type = obj.GetDesc()[i].type;
             try {
+                const auto value = *(*object)[i];
+                const auto type = object->GetDesc()[i].type;
                 result += ValueToJSON(value, type).dump(2);
+                result += '\0';
             }
             catch (std::exception& ex) {
                 SetLastError(std::current_exception());
                 return nullptr;
             }
         }
-        char* buffer = new char[result.size() + 1];
-        std::ranges::copy(result, buffer);
-        buffer[result.size()] = '\0';
-        return buffer;
+        return AllocateString(result);
     }
     return nullptr;
 }
 
 
-size_t Object_SetColumnValues(TableIterator* object, size_t startColumn, size_t endColumn, const char* values) {
-    Object obj = *object->first;
+size_t Object_SetColumnValues(Object* object, size_t startColumn, size_t endColumn, const char* values) {
     size_t numSucceeded = 0;
-    if (startColumn <= endColumn && endColumn <= obj.GetDesc().size()) {
+    if (startColumn <= endColumn && endColumn <= object->GetDesc().size()) {
         for (auto i = startColumn; i < endColumn; ++i) {
             const auto json = std::string_view(values);
-            const auto type = obj.GetDesc()[i].type;
+            const auto type = object->GetDesc()[i].type;
             try {
                 const auto value = JSONToValue(nlohmann::json::parse(json), type);
-                obj[i] = value;
+                (*object)[i] = value;
                 ++numSucceeded;
             }
             catch (std::exception& ex) {
