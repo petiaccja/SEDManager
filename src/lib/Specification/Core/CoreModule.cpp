@@ -2,7 +2,7 @@
 
 #include "../Common/Utility.hpp"
 #include "Defs/TableDescs.hpp"
-#include "Defs/Types.hpp"
+#include "Defs/TypeDefs.hpp"
 #include "Defs/UIDs.hpp"
 
 #include <algorithm>
@@ -12,7 +12,7 @@ namespace sedmgr {
 
 namespace core {
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tables = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> tables = {
         {eTable::Table,          "Table"        }, // Base
         { eTable::SPInfo,        "SPInfo"       }, // Base
         { eTable::SPTemplates,   "SPTemplates"  }, // Base
@@ -62,7 +62,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
         {TableToDescriptor(eTable::Table),          "Table::Table"        }, // Base
         { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       }, // Base
         { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  }, // Base
@@ -112,7 +112,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> methods = {
         {eMethod::Properties,           "MethodID::Properties"         },
         { eMethod::StartSession,        "MethodID::StartSession"       },
         { eMethod::SyncSession,         "MethodID::SyncSession"        },
@@ -176,7 +176,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> singleRowTables = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> singleRowTables = {
         {eTableSingleRows::SPInfo,       "SPInfo::SPInfo"          },
         { eTableSingleRows::TPerInfo,    "TPerInfo::TPerInfo"      },
         { eTableSingleRows::LockingInfo, "LockingInfo::LockingInfo"},
@@ -184,7 +184,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> authorities = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> authorities = {
         {0x0000'0009'0000'0001,  "Authority::Anybody"  }, // Base
         { 0x0000'0009'0000'0002, "Authority::Admins"   }, // Base
         { 0x0000'0009'0000'0003, "Authority::Makers"   }, // Base
@@ -205,80 +205,78 @@ namespace core {
     };
 
 
-    const std::initializer_list<std::pair<Uid, std::string_view>> types = {
-        {type_uid(unknown_type),            "Type::unknown_type"          },
-        { type_uid(boolean),                "Type::boolean"               },
-        { type_uid(integer_1),              "Type::integer_1"             },
-        { type_uid(integer_2),              "Type::integer_2"             },
-        { type_uid(uinteger_1),             "Type::uinteger_1"            },
-        { type_uid(uinteger_2),             "Type::uinteger_2"            },
-        { type_uid(uinteger_4),             "Type::uinteger_4"            },
-        { type_uid(uinteger_8),             "Type::uinteger_8"            },
-        { type_uid(max_bytes_32),           "Type::max_bytes_32"          },
-        { type_uid(max_bytes_64),           "Type::max_bytes_64"          },
-        { type_uid(bytes_4),                "Type::bytes_4"               },
-        { type_uid(bytes_12),               "Type::bytes_12"              },
-        { type_uid(bytes_16),               "Type::bytes_16"              },
-        { type_uid(bytes_32),               "Type::bytes_32"              },
-        { type_uid(bytes_64),               "Type::bytes_64"              },
-        { type_uid(key_128),                "Type::key_128"               },
-        { type_uid(key_256),                "Type::key_256"               },
-        { type_uid(type_def),               "Type::type_def"              },
-        { type_uid(name),                   "Type::name"                  },
-        { type_uid(password),               "Type::password"              },
-        { type_uid(year_enum),              "Type::year_enum"             },
-        { type_uid(month_enum),             "Type::month_enum"            },
-        { type_uid(day_enum),               "Type::day_enum"              },
-        { type_uid(Year),                   "Type::Year"                  },
-        { type_uid(Month),                  "Type::Month"                 },
-        { type_uid(Day),                    "Type::Day"                   },
-        { type_uid(date),                   "Type::date"                  },
-        { type_uid(messaging_type),         "Type::messaging_type"        },
-        { type_uid(hash_protocol),          "Type::hash_protocol"         },
-        { type_uid(auth_method),            "Type::auth_method"           },
-        { type_uid(log_select),             "Type::log_select"            },
-        { type_uid(protect_types),          "Type::protect_types"         },
-        { type_uid(reencrypt_request),      "Type::reencrypt_request"     },
-        { type_uid(reencrypt_state),        "Type::reencrypt_state"       },
-        { type_uid(reset_types),            "Type::reset_types"           },
-        { type_uid(adv_key_mode),           "Type::adv_key_mode"          },
-        { type_uid(verify_mode),            "Type::verify_mode"           },
-        { type_uid(last_reenc_stat),        "Type::last_reenc_stat"       },
-        { type_uid(gen_status),             "Type::gen_status"            },
-        { type_uid(enc_supported),          "Type::enc_supported"         },
-        { type_uid(keys_avail_conds),       "Type::keys_avail_conds"      },
-        { type_uid(symmetric_mode_media),   "Type::symmetric_mode_media"  },
-        { type_uid(uid),                    "Type::uid"                   },
-        { type_uid(table_kind),             "Type::table_kind"            },
-        { type_uid(object_ref),             "Type::object_ref"            },
-        { type_uid(table_ref),              "Type::table_ref"             },
-        { type_uid(byte_table_ref),         "Type::byte_table_ref"        },
-        { type_uid(table_or_object_ref),    "Type::table_or_object_ref"   },
-        { type_uid(Authority_object_ref),   "Type::Authority_object_ref"  },
-        { type_uid(Table_object_ref),       "Type::Table_object_ref"      },
-        { type_uid(MethodID_object_ref),    "Type::MethodID_object_ref"   },
-        { type_uid(SPTemplates_object),     "Type::SPTemplates_object"    },
-        { type_uid(Column_object_ref),      "Type::Column_object_ref"     },
-        { type_uid(Template_object_ref),    "Type::Template_object_ref"   },
-        { type_uid(LogList_object_ref),     "Type::LogList_object_ref"    },
-        { type_uid(cred_object_uidref),     "Type::cred_object_uidref"    },
-        { type_uid(mediakey_object_uidref), "Type::mediakey_object_uidref"},
-        { type_uid(boolean_ACE),            "Type::boolean_ACE"           },
-        { type_uid(ACE_expression),         "Type::ACE_expression"        },
-        { type_uid(AC_element),             "Type::AC_element"            },
-        { type_uid(ACE_object_ref),         "Type::ACE_object_ref"        },
-        { type_uid(ACL),                    "Type::ACL"                   },
-        { type_uid(ACE_columns),            "Type::ACE_columns"           },
-        { type_uid(life_cycle_state),       "Type::life_cycle_state"      },
-        { type_uid(SSC),                    "Type::SSC"                   },
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> types = {
+        {eType::unknown_type,            "Type::unknown_type"          },
+        { eType::boolean,                "Type::boolean"               },
+        { eType::integer_1,              "Type::integer_1"             },
+        { eType::integer_2,              "Type::integer_2"             },
+        { eType::uinteger_1,             "Type::uinteger_1"            },
+        { eType::uinteger_2,             "Type::uinteger_2"            },
+        { eType::uinteger_4,             "Type::uinteger_4"            },
+        { eType::uinteger_8,             "Type::uinteger_8"            },
+        { eType::max_bytes_32,           "Type::max_bytes_32"          },
+        { eType::max_bytes_64,           "Type::max_bytes_64"          },
+        { eType::bytes_4,                "Type::bytes_4"               },
+        { eType::bytes_12,               "Type::bytes_12"              },
+        { eType::bytes_16,               "Type::bytes_16"              },
+        { eType::bytes_32,               "Type::bytes_32"              },
+        { eType::bytes_64,               "Type::bytes_64"              },
+        { eType::key_128,                "Type::key_128"               },
+        { eType::key_256,                "Type::key_256"               },
+        { eType::type_def,               "Type::type_def"              },
+        { eType::name,                   "Type::name"                  },
+        { eType::password,               "Type::password"              },
+        { eType::year_enum,              "Type::year_enum"             },
+        { eType::month_enum,             "Type::month_enum"            },
+        { eType::day_enum,               "Type::day_enum"              },
+        { eType::Year,                   "Type::Year"                  },
+        { eType::Month,                  "Type::Month"                 },
+        { eType::Day,                    "Type::Day"                   },
+        { eType::date,                   "Type::date"                  },
+        { eType::messaging_type,         "Type::messaging_type"        },
+        { eType::hash_protocol,          "Type::hash_protocol"         },
+        { eType::auth_method,            "Type::auth_method"           },
+        { eType::log_select,             "Type::log_select"            },
+        { eType::protect_types,          "Type::protect_types"         },
+        { eType::reencrypt_request,      "Type::reencrypt_request"     },
+        { eType::reencrypt_state,        "Type::reencrypt_state"       },
+        { eType::reset_types,            "Type::reset_types"           },
+        { eType::adv_key_mode,           "Type::adv_key_mode"          },
+        { eType::verify_mode,            "Type::verify_mode"           },
+        { eType::last_reenc_stat,        "Type::last_reenc_stat"       },
+        { eType::gen_status,             "Type::gen_status"            },
+        { eType::enc_supported,          "Type::enc_supported"         },
+        { eType::keys_avail_conds,       "Type::keys_avail_conds"      },
+        { eType::symmetric_mode_media,   "Type::symmetric_mode_media"  },
+        { eType::uid,                    "Type::uid"                   },
+        { eType::table_kind,             "Type::table_kind"            },
+        { eType::object_ref,             "Type::object_ref"            },
+        { eType::table_ref,              "Type::table_ref"             },
+        { eType::byte_table_ref,         "Type::byte_table_ref"        },
+        { eType::table_or_object_ref,    "Type::table_or_object_ref"   },
+        { eType::Authority_object_ref,   "Type::Authority_object_ref"  },
+        { eType::Table_object_ref,       "Type::Table_object_ref"      },
+        { eType::MethodID_object_ref,    "Type::MethodID_object_ref"   },
+        { eType::SPTemplates_object,     "Type::SPTemplates_object"    },
+        { eType::Column_object_ref,      "Type::Column_object_ref"     },
+        { eType::Template_object_ref,    "Type::Template_object_ref"   },
+        { eType::LogList_object_ref,     "Type::LogList_object_ref"    },
+        { eType::cred_object_uidref,     "Type::cred_object_uidref"    },
+        { eType::mediakey_object_uidref, "Type::mediakey_object_uidref"},
+        { eType::boolean_ACE,            "Type::boolean_ACE"           },
+        { eType::ACE_expression,         "Type::ACE_expression"        },
+        { eType::AC_element,             "Type::AC_element"            },
+        { eType::ACE_object_ref,         "Type::ACE_object_ref"        },
+        { eType::ACL,                    "Type::ACL"                   },
+        { eType::ACE_columns,            "Type::ACE_columns"           },
+        { eType::life_cycle_state,       "Type::life_cycle_state"      },
+        { eType::SSC,                    "Type::SSC"                   },
     };
-
 
     const NameAndUidFinder& GetFinder() {
         static NameAndUidFinder finder({ tables, tablesDescriptors, methods, singleRowTables, authorities, types }, {});
         return finder;
     }
-
 
 } // namespace core
 
@@ -313,77 +311,32 @@ std::optional<TableDesc> CoreModule::FindTable(Uid table) const {
     using namespace core;
     static const auto lut = [] {
         std::unordered_map<Uid, TableDescStatic> lut;
-        for (auto& desc : tableDescs) {
-            lut.insert({ desc.uid, desc });
+        for (auto& [uid, desc] : TableDescs()) {
+            lut.insert({ uid, desc });
         }
         return lut;
     }();
     const auto it = lut.find(table);
-    return it != lut.end() ? std::optional(TableDesc(it->second)) : std::nullopt;
+    if (it != lut.end()) {
+        std::vector<ColumnDesc> columns;
+        for (const auto& column : it->second.columns) {
+            columns.emplace_back(std::string(column.name), column.isUnique, *FindType(column.type));
+        }
+        return TableDesc{ std::string(it->second.name), it->second.kind, std::move(columns), it->second.singleRow };
+    }
+    return std::nullopt;
 }
 
 
 std::optional<Type> CoreModule::FindType(Uid lookupUid) const {
     using namespace core;
-    static const std::unordered_map<Uid, Type> lut = {
-        {type_uid(unknown_type),            unknown_type          },
-        { type_uid(boolean),                boolean               },
-        { type_uid(integer_1),              integer_1             },
-        { type_uid(integer_2),              integer_2             },
-        { type_uid(uinteger_1),             uinteger_1            },
-        { type_uid(uinteger_2),             uinteger_2            },
-        { type_uid(uinteger_4),             uinteger_4            },
-        { type_uid(uinteger_8),             uinteger_8            },
-        { type_uid(max_bytes_32),           max_bytes_32          },
-        { type_uid(max_bytes_64),           max_bytes_64          },
-        { type_uid(bytes_12),               bytes_12              },
-        { type_uid(name),                   name                  },
-        { type_uid(password),               password              },
-        { type_uid(year_enum),              year_enum             },
-        { type_uid(month_enum),             month_enum            },
-        { type_uid(day_enum),               day_enum              },
-        { type_uid(Year),                   Year                  },
-        { type_uid(Month),                  Month                 },
-        { type_uid(Day),                    Day                   },
-        { type_uid(date),                   date                  },
-        { type_uid(messaging_type),         messaging_type        },
-        { type_uid(hash_protocol),          hash_protocol         },
-        { type_uid(auth_method),            auth_method           },
-        { type_uid(log_select),             log_select            },
-        { type_uid(protect_types),          protect_types         },
-        { type_uid(reencrypt_request),      reencrypt_request     },
-        { type_uid(reencrypt_state),        reencrypt_state       },
-        { type_uid(reset_types),            reset_types           },
-        { type_uid(adv_key_mode),           adv_key_mode          },
-        { type_uid(verify_mode),            verify_mode           },
-        { type_uid(last_reenc_stat),        last_reenc_stat       },
-        { type_uid(gen_status),             gen_status            },
-        { type_uid(enc_supported),          enc_supported         },
-        { type_uid(keys_avail_conds),       keys_avail_conds      },
-        { type_uid(uid),                    uid                   },
-        { type_uid(table_kind),             table_kind            },
-        { type_uid(object_ref),             object_ref            },
-        { type_uid(table_ref),              table_ref             },
-        { type_uid(byte_table_ref),         byte_table_ref        },
-        { type_uid(table_or_object_ref),    table_or_object_ref   },
-        { type_uid(Authority_object_ref),   Authority_object_ref  },
-        { type_uid(Table_object_ref),       Table_object_ref      },
-        { type_uid(MethodID_object_ref),    MethodID_object_ref   },
-        { type_uid(SPTemplates_object),     SPTemplates_object    },
-        { type_uid(Column_object_ref),      Column_object_ref     },
-        { type_uid(Template_object_ref),    Template_object_ref   },
-        { type_uid(LogList_object_ref),     LogList_object_ref    },
-        { type_uid(cred_object_uidref),     cred_object_uidref    },
-        { type_uid(mediakey_object_uidref), mediakey_object_uidref},
-        { type_uid(boolean_ACE),            boolean_ACE           },
-        { type_uid(ACE_expression),         ACE_expression        },
-        { type_uid(AC_element),             AC_element            },
-        { type_uid(ACE_object_ref),         ACE_object_ref        },
-        { type_uid(ACL),                    ACL                   },
-        { type_uid(ACE_columns),            ACE_columns           },
-        { type_uid(life_cycle_state),       life_cycle_state      },
-        { type_uid(SSC),                    SSC                   },
-    };
+    static const auto lut = [] {
+        std::unordered_map<Uid, Type> lut;
+        for (auto& [uid, def] : core::TypeDefs()) {
+            lut.insert_or_assign(uid, def);
+        }
+        return lut;
+    }();
     const auto it = lut.find(lookupUid);
     return it != lut.end() ? std::optional(it->second) : std::nullopt;
 }

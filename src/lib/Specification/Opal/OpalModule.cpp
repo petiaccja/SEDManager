@@ -2,7 +2,6 @@
 
 #include "../Common/Utility.hpp"
 #include "../Core/CoreModule.hpp"
-#include "../Core/Defs/Types.hpp"
 #include "../PSID/PSIDModule.hpp"
 
 #include <ranges>
@@ -13,7 +12,7 @@ namespace sedmgr {
 namespace opal {
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
+    constinit std::initializer_list<std::pair<Uid, std::string_view>> methods = {
         {opal::eMethod::Activate, "MethodID::Activate"},
         { opal::eMethod::Revert,  "MethodID::Revert"  },
     };
@@ -29,14 +28,14 @@ namespace opal {
 
         namespace admin {
 
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
                 {0x0000'0002'0000'0001, "SPInfo::Admin"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
                 {0x0000'0003'0000'0001,  "SPTemplates::Base" },
                 { 0x0000'0003'0000'0002, "SPTemplates::Admin"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> ace = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> ace = {
                 {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
                 { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
                 { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
@@ -48,28 +47,28 @@ namespace opal {
                 { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
                 { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> authority = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> authority = {
                 {0x0000'0009'0000'0001,  "Authority::Anybody"},
                 { 0x0000'0009'0000'0002, "Authority::Admins" },
                 { 0x0000'0009'0000'0003, "Authority::Makers" },
                 { 0x0000'0009'0000'0006, "Authority::SID"    },
             };
-            const std::initializer_list<NameSequence> authoritySeq = {
+            constinit std::initializer_list<NameSequence> authoritySeq = {
                 {0x0000'0009'0000'0201, 1, 32, "Authority::Admin{}"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> cPin = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> cPin = {
                 {0x0000'000B'0000'0001,  "C_PIN::SID" },
                 { 0x0000'000B'0000'8402, "C_PIN::MSID"},
             };
-            const std::initializer_list<NameSequence> cPinSeq = {
+            constinit std::initializer_list<NameSequence> cPinSeq = {
                 {0x0000'000B'0000'0201, 1, 32, "C_PIN::Admin{}"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> template_ = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> template_ = {
                 {0x0000'0204'0000'0001,  "Template::Base"   },
                 { 0x0000'0204'0000'0002, "Template::Admin"  },
                 { 0x0000'0204'0000'0006, "Template::Locking"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> sp = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> sp = {
                 {eSP::Admin,    "SP::Admin"  },
                 { eSP::Locking, "SP::Locking"},
             };
@@ -77,14 +76,14 @@ namespace opal {
         } // namespace admin
 
         namespace locking {
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> spInfo = {
                 {0x0000'0002'0000'0001, "SPInfo::Locking"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> spTemplates = {
                 {0x0000'0003'0000'0001,  "SPTemplates::Base"   },
                 { 0x0000'0003'0000'0002, "SPTemplates::Locking"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> ace = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> ace = {
                 {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
                 { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
                 { 0x0000'0008'0000'0003, "ACE::Anybody_Get_CommonName"                             },
@@ -115,7 +114,7 @@ namespace opal {
                 { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
                 { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
             };
-            const std::initializer_list<NameSequence> aceSeq = {
+            constinit std::initializer_list<NameSequence> aceSeq = {
                 {0x0000'0008'0004'4001,  1, 32, "ACE::User{}_Set_CommonName"                    },
                 { 0x0000'0008'0003'A801, 1, 32, "ACE::C_PIN_User{}_Set_PIN"                     },
                 { 0x0000'0008'0003'B001, 1, 32, "ACE::K_AES_128_Range{}_GenKey"                 },
@@ -124,39 +123,39 @@ namespace opal {
                 { 0x0000'0008'0003'E001, 1, 32, "ACE::Locking_Range{}_Set_RdLocked"             },
                 { 0x0000'0008'0003'E801, 1, 32, "ACE::Locking_Range{}_Set_WrLocked"             },
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> authority = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> authority = {
                 {0x0000'0009'0000'0001,  "Authority::Anybody"},
                 { 0x0000'0009'0000'0002, "Authority::Admins" },
                 { 0x0000'0009'0003'0000, "Authority::Users"  },
             };
-            const std::initializer_list<NameSequence> authoritySeq = {
+            constinit std::initializer_list<NameSequence> authoritySeq = {
                 {0x0000'0009'0001'0001,  1, 32, "Authority::Admin{}"},
                 { 0x0000'0009'0003'0001, 1, 32, "Authority::User{}" },
             };
-            const std::initializer_list<NameSequence> cPinSeq = {
+            constinit std::initializer_list<NameSequence> cPinSeq = {
                 {0x0000'000B'0001'0001,  1, 32, "C_PIN::Admin{}"},
                 { 0x0000'000B'0003'0001, 1, 32, "C_PIN::User{}" },
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> secretProtect = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> secretProtect = {
                 {0x0000'001D'0000'001D,  "SecretProtect::K_AES_128"},
                 { 0x0000'001D'0000'001E, "SecretProtect::K_AES_256"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> locking = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> locking = {
                 {0x0000'0802'0000'0001, "Locking::GlobalRange"},
             };
-            const std::initializer_list<NameSequence> lockingSeq = {
+            constinit std::initializer_list<NameSequence> lockingSeq = {
                 {0x0000'0802'0003'0001, 1, 32, "Locking::Range{}"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> kAes128 = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> kAes128 = {
                 {0x0000'0805'0000'0001, "K_AES_128::GlobalRange"},
             };
-            const std::initializer_list<NameSequence> kAes128Seq = {
+            constinit std::initializer_list<NameSequence> kAes128Seq = {
                 {0x0000'0805'0003'0001, 1, 32, "K_AES_128::Range{}"},
             };
-            constexpr std::initializer_list<std::pair<Uid, std::string_view>> kAes256 = {
+            constinit std::initializer_list<std::pair<Uid, std::string_view>> kAes256 = {
                 {0x0000'0806'0000'0001, "K_AES_256::GlobalRange"},
             };
-            const std::initializer_list<NameSequence> kAes256Seq = {
+            constinit std::initializer_list<NameSequence> kAes256Seq = {
                 {0x0000'0806'0003'0001, 1, 32, "K_AES_256::Range{}"},
             };
 
@@ -166,12 +165,12 @@ namespace opal {
 
 
     const SPNameAndUidFinder& GetFinder() {
-        const auto globalPairs = {
+        static const auto globalPairs = {
             methods,
             preconf::admin::sp
         };
 
-        const auto lockingPairs = {
+        static const auto lockingPairs = {
             preconf::locking::spInfo,
             preconf::locking::spTemplates,
             preconf::locking::ace,
@@ -182,7 +181,7 @@ namespace opal {
             preconf::locking::kAes256,
         };
 
-        const auto lockingSequences = {
+        static const auto lockingSequences = {
             preconf::locking::aceSeq,
             preconf::locking::authoritySeq,
             preconf::locking::cPinSeq,
@@ -191,7 +190,7 @@ namespace opal {
             preconf::locking::kAes256Seq,
         };
 
-        const auto adminPairs = {
+        static const auto adminPairs = {
             preconf::admin::spInfo,
             preconf::admin::spTemplates,
             preconf::admin::ace,
@@ -201,7 +200,7 @@ namespace opal {
             preconf::admin::sp,
         };
 
-        const auto adminSequences = {
+        static const auto adminSequences = {
             preconf::admin::authoritySeq,
             preconf::admin::cPinSeq,
         };
@@ -266,7 +265,7 @@ std::optional<Uid> OpalModule::FindUid(std::string_view name, std::optional<Uid>
 std::optional<TableDesc> OpalModule::FindTable(Uid table) const {
     if (table == Uid(core::eTable::TPerInfo)) {
         auto desc = CoreModule::Get()->FindTable(table);
-        desc->columns.push_back({ "ProgrammaticResetEnable", false, core::boolean });
+        desc->columns.push_back({ "ProgrammaticResetEnable", false, CoreModule::Get()->FindType(core::eType::boolean).value() });
         return desc;
     }
     return std::nullopt;

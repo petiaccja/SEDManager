@@ -17,24 +17,15 @@ namespace sedmgr {
 struct ColumnDescStatic {
     std::string_view name;
     bool isUnique;
-    const Type& type;
-    operator ColumnDesc() const {
-        return { std::string(name), isUnique, type };
-    }
+    const Uid type;
 };
 
 
 struct TableDescStatic {
-    Uid uid;
     std::string_view name;
     eTableKind kind;
     std::span<const ColumnDescStatic> columns = {};
     std::optional<Uid> singleRow = std::nullopt;
-    operator TableDesc() const {
-        std::vector<ColumnDesc> columns_;
-        std::ranges::transform(columns, std::back_inserter(columns_), [](const ColumnDescStatic& v) { return ColumnDesc(v); });
-        return { std::string(name), kind, std::move(columns_), singleRow };
-    }
 };
 
 
@@ -50,8 +41,8 @@ constexpr Uid DescriptorToTable(Uid descriptor) {
 
 class NameSequence {
 public:
-    NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
-        : base(base), start(start), count(count), format(format), parse(std::regex_replace(format.get().data(), std::regex(R"(\{\})"), "([0-9]*)")) {
+    constexpr NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
+        : base(base), start(start), count(count), format(format) {
         assert(format.get().find("{}") != format.get().npos);
     }
 
@@ -63,7 +54,6 @@ private:
     uint64_t start;
     uint64_t count;
     std::format_string<uint64_t> format;
-    std::regex parse;
 };
 
 
