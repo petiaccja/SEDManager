@@ -9,8 +9,8 @@ using namespace sedmgr;
 using namespace std::string_view_literals;
 
 
-const auto adminSpUid = *Opal1Module::Get()->FindUid("SP::Admin");
-const auto tableTableUid = *CoreModule::Get()->FindUid("Table");
+const auto adminSpUid = *Opal1Module::Get() -> FindUid("SP::Admin");
+const auto tableTableUid = *CoreModule::Get() -> FindUid("Table");
 
 
 struct SessionFixture {

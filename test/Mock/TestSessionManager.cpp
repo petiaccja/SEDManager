@@ -7,7 +7,7 @@
 
 using namespace sedmgr;
 
-const auto adminSp = *Opal1Module::Get()->FindUid("SP::Admin");
+const auto adminSp = *Opal1Module::Get() -> FindUid("SP::Admin");
 
 
 TEST_CASE("SessionManager: start / end session", "[SessionManager]") {
