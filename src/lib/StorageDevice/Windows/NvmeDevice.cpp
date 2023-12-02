@@ -13,6 +13,9 @@
 #include <format>
 
 
+#undef interface
+
+
 namespace sedmgr {
 
 void SendCommand(HANDLE handle,
@@ -148,6 +151,16 @@ void FillScsiPassthrough(SCSI_PASS_THROUGH_DIRECT& scsiCcmmand,
             break;
         default: std::terminate();
     }
+}
+
+
+StorageDeviceDesc NvmeDevice::GetDesc() {
+    auto id = IdentifyController();
+    return StorageDeviceDesc{
+        .name = id.modelNumber,
+        .serial = id.serialNumber,
+        .interface = eStorageDeviceInterface::NVME,
+    };
 }
 
 

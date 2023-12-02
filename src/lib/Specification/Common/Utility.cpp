@@ -14,6 +14,7 @@ std::optional<std::string> NameSequence::Find(Uid uid) const {
 
 
 std::optional<Uid> NameSequence::Find(std::string_view name) const {
+    const std::regex parse(std::regex_replace(format.get().data(), std::regex(R"(\{\})"), "([0-9]*)"));
     std::match_results<std::string_view::iterator> matches;
     const bool success = std::regex_match(name.begin(), name.end(), matches, parse);
     if (success) {

@@ -3,7 +3,6 @@
 #include <Archive/Conversion.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
-#include <Specification/Core/Defs/Types.hpp>
 
 #include <sstream>
 
@@ -599,7 +598,7 @@ namespace impl {
         bool InterpretAsString(const BytesType& type) {
             try {
                 const auto uid = type_uid(type);
-                if (uid == type_uid(core::name) || uid == type_uid(core::password)) {
+                if (uid == Uid(core::eType::name) || uid == Uid(core::eType::password)) {
                     return true;
                 }
             }

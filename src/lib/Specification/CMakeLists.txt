@@ -20,7 +20,6 @@ target_sources(Specification
         Core/CoreModule.cpp
         Core/CoreModule.hpp
         Core/Defs/TableDescs.hpp
-        Core/Defs/Types.hpp
         Core/Defs/UIDs.hpp
 )
 

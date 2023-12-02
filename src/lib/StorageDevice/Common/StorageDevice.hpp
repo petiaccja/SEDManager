@@ -26,6 +26,13 @@ struct StorageDeviceLabel {
 };
 
 
+struct StorageDeviceDesc {
+    std::string name;
+    std::string serial;
+    eStorageDeviceInterface interface;
+};
+
+
 std::vector<StorageDeviceLabel> EnumerateStorageDevices();
 
 
@@ -33,6 +40,7 @@ class StorageDevice {
 public:
     virtual ~StorageDevice() {}
 
+    virtual StorageDeviceDesc GetDesc() = 0;
     virtual void SecuritySend(uint8_t securityProtocol,
                               std::span<const std::byte, 2> protocolSpecific,
                               std::span<const std::byte> data) = 0;
