@@ -4,7 +4,6 @@
 #include <Data/Value.hpp>
 #include <TrustedPeripheral/Method.hpp>
 
-#include <expected>
 #include <unordered_map>
 #include <unordered_set>
 

@@ -36,6 +36,7 @@ void MockSetupLayer::Output(std::span<std::byte> data) {
         throw DeviceError("Mock: IF-RECV 0x02: receive buffer too small");
     }
     std::ranges::copy(m_responseQueue.front(), data.begin());
+    m_responseQueue.pop();
 }
 
 

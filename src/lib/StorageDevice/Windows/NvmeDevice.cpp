@@ -13,6 +13,9 @@
 #include <format>
 
 
+#undef interface
+
+
 namespace sedmgr {
 
 void SendCommand(HANDLE handle,
