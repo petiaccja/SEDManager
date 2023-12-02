@@ -12,7 +12,7 @@ namespace sedmgr {
 
 namespace core {
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> tables = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tables = {
         {eTable::Table,          "Table"        }, // Base
         { eTable::SPInfo,        "SPInfo"       }, // Base
         { eTable::SPTemplates,   "SPTemplates"  }, // Base
@@ -62,7 +62,7 @@ namespace core {
     };
 
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
         {TableToDescriptor(eTable::Table),          "Table::Table"        }, // Base
         { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       }, // Base
         { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  }, // Base
@@ -112,7 +112,7 @@ namespace core {
     };
 
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> methods = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
         {eMethod::Properties,           "MethodID::Properties"         },
         { eMethod::StartSession,        "MethodID::StartSession"       },
         { eMethod::SyncSession,         "MethodID::SyncSession"        },
@@ -176,7 +176,7 @@ namespace core {
     };
 
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> singleRowTables = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> singleRowTables = {
         {eTableSingleRows::SPInfo,       "SPInfo::SPInfo"          },
         { eTableSingleRows::TPerInfo,    "TPerInfo::TPerInfo"      },
         { eTableSingleRows::LockingInfo, "LockingInfo::LockingInfo"},
@@ -184,7 +184,7 @@ namespace core {
     };
 
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> authorities = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> authorities = {
         {0x0000'0009'0000'0001,  "Authority::Anybody"  }, // Base
         { 0x0000'0009'0000'0002, "Authority::Admins"   }, // Base
         { 0x0000'0009'0000'0003, "Authority::Makers"   }, // Base
@@ -205,7 +205,7 @@ namespace core {
     };
 
 
-    constinit std::initializer_list<std::pair<Uid, std::string_view>> types = {
+    constexpr std::initializer_list<std::pair<Uid, std::string_view>> types = {
         {eType::unknown_type,            "Type::unknown_type"          },
         { eType::boolean,                "Type::boolean"               },
         { eType::integer_1,              "Type::integer_1"             },
