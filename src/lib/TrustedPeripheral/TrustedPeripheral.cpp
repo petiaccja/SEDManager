@@ -1,6 +1,8 @@
 #include "TrustedPeripheral.hpp"
 
 #include "Method.hpp"
+#include <async++/join.hpp>
+#include <async++/sleep.hpp>
 
 #include <Archive/Conversion.hpp>
 #include <Data/ComPacket.hpp>
@@ -62,7 +64,7 @@ TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevic
 
 TrustedPeripheral::~TrustedPeripheral() {
     try {
-        StackReset();
+        join(StackReset());
     }
     catch (std::exception& ex) {
         std::cerr << ex.what() << std::endl;
@@ -90,7 +92,7 @@ const TPerModules& TrustedPeripheral::GetModules() const {
 }
 
 
-eComIdState TrustedPeripheral::VerifyComId() {
+asyncpp::task<eComIdState> TrustedPeripheral::VerifyComId() {
     // Send VERIFY_COMID_VALID command.
     VerifyComIdValidRequest payload{
         .comId = m_comId,
@@ -111,11 +113,11 @@ eComIdState TrustedPeripheral::VerifyComId() {
             throw NoResponseError("VERIFY_COMID_VALID");
         }
         if (response.availableDataLength == 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            co_await asyncpp::sleep_for(std::chrono::milliseconds(16));
         }
     } while (response.availableDataLength == 0);
 
-    return response.comIdState;
+    co_return response.comIdState;
 }
 
 
@@ -126,7 +128,7 @@ void TrustedPeripheral::Reset() {
 
 
 template <typename Rep, typename Period>
-static void Sleep(std::chrono::duration<Rep, Period> time) {
+static asyncpp::task<void> Sleep(std::chrono::duration<Rep, Period> time) {
     using namespace std::chrono;
 
     if (time < milliseconds(1)) {
@@ -136,30 +138,24 @@ static void Sleep(std::chrono::duration<Rep, Period> time) {
         }
     }
     else {
-        std::this_thread::sleep_for(time);
+        co_await asyncpp::sleep_for(time);
     }
 }
 
 
-ComPacket TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
+asyncpp::task<ComPacket> TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
     const auto request = ToBytes(packet);
 
-    try {
-        SecuritySend(protocol, GetComId(), request);
-        auto packets = FlushResponses(protocol);
-        if (packets.empty()) {
-            throw ProtocolError("no response to IF-SEND");
-        }
-        return packets.back();
+    SecuritySend(protocol, GetComId(), request);
+    auto packets = co_await FlushResponses(protocol);
+    if (packets.empty()) {
+        throw ProtocolError("no response to IF-SEND");
     }
-    catch (std::exception& ex) {
-        FlushResponses(protocol);
-        throw;
-    }
+    co_return packets.back();
 }
 
 
-std::vector<ComPacket> TrustedPeripheral::FlushResponses(uint8_t protocol) {
+asyncpp::task<std::vector<ComPacket>> TrustedPeripheral::FlushResponses(uint8_t protocol) {
     using namespace std::chrono;
     using namespace std::chrono_literals;
 
@@ -181,7 +177,7 @@ std::vector<ComPacket> TrustedPeripheral::FlushResponses(uint8_t protocol) {
             bytes.resize(packet.minTransfer);
         }
         if (more) {
-            Sleep(currentSleepTime);
+            co_await Sleep(currentSleepTime);
             if (currentSleepTime * 2 < maxSleepTime) {
                 currentSleepTime *= 2;
             }
@@ -189,7 +185,7 @@ std::vector<ComPacket> TrustedPeripheral::FlushResponses(uint8_t protocol) {
         packets.push_back(std::move(packet));
     } while (more);
 
-    return packets;
+    co_return packets;
 }
 
 
@@ -228,7 +224,7 @@ std::pair<uint16_t, uint16_t> TrustedPeripheral::RequestComId() {
 }
 
 
-void TrustedPeripheral::StackReset() {
+asyncpp::task<void> TrustedPeripheral::StackReset() {
     // Send STACK_RESET command.
     StackResetRequest payload{
         .comId = m_comId,
@@ -249,7 +245,7 @@ void TrustedPeripheral::StackReset() {
             throw NoResponseError("STACK_RESET");
         }
         if (response.availableDataLength == 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            co_await asyncpp::sleep_for(std::chrono::milliseconds(4));
         }
     } while (response.availableDataLength == 0);
 

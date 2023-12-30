@@ -1,6 +1,7 @@
 #include "PBA.hpp"
 
 #include "Utility.hpp"
+#include <async++/join.hpp>
 
 #include <Archive/Types/ValueToNative.hpp>
 #include <StorageDevice/StorageDevice.hpp>
@@ -76,19 +77,19 @@ void StartLockingSession(SEDManager& manager) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
 
     try {
-        manager.Start(lockingSpUid);
+        join(manager.Start(lockingSpUid));
     }
     catch (SecurityProviderBusyError& ex) {
         // Do a stack reset and retry, maybe a previous session was not terminated properly.
-        manager.StackReset();
-        manager.Start(lockingSpUid);
+        join(manager.StackReset());
+        join(manager.Start(lockingSpUid));
     }
 }
 
 
-std::optional<std::string> GetCommonName(const TableRow<false>& object, int column) {
+std::optional<std::string> UnwrapCommonName(Value commonName) {
     try {
-        return value_cast<std::string>(*object[column]);
+        return value_cast<std::string>(commonName);
     }
     catch (std::exception&) {
         return std::nullopt;
@@ -107,12 +108,13 @@ std::optional<Uid> FindAuthority(SEDManager& manager, std::string_view name) {
     if (maybeUid) {
         return maybeUid;
     }
-    const auto authorities = manager.GetTable(Unwrap(manager.GetModules().FindUid("Authority"), "could not find Authority table"));
-    for (auto authority : authorities) {
+    const auto authorityTableUid = Unwrap(manager.GetModules().FindUid("Authority"), "could not find Authority table");
+    const auto authorityUids = manager.GetTableRows(authorityTableUid);
+    while (const auto authority = join(authorityUids)) {
         try {
-            const auto commonName = GetCommonName(authority, 2);
+            const auto commonName = UnwrapCommonName(join(manager.GetObjectColumn(*authority, 2)));
             if (commonName && *commonName == name) {
-                return authority.Id();
+                return authority;
             }
         }
         catch (std::exception&) {
@@ -156,7 +158,7 @@ bool TryLoginUser(SEDManager& manager, Uid authority) {
                 std::cout << "Cancelled." << std::endl;
                 return false;
             }
-            manager.Authenticate(authority, password);
+            join(manager.Authenticate(authority, password));
             return true;
         }
         catch (PasswordError&) {
@@ -169,24 +171,24 @@ bool TryLoginUser(SEDManager& manager, Uid authority) {
 
 void TryUnlockRanges(SEDManager& manager) {
     const auto lockingSp = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
-    auto lockingRanges = manager.GetTable(Unwrap(manager.GetModules().FindUid("Locking"), "could not find Locking table"));
+    const auto lockingTableUid = Unwrap(manager.GetModules().FindUid("Locking"), "could not find Locking table");
+    auto lockingRangeUids = manager.GetTableRows(lockingTableUid);
 
-    for (auto lockingRange : lockingRanges) {
-        const auto uid = lockingRange.Id();
-        const auto name = FormatObjectRef(manager, lockingRange.Id(), lockingSp);
-        const auto commonName = GetCommonName(lockingRange, 2);
+    while (const auto lockingRange = join(lockingRangeUids)) {
+        const auto name = FormatObjectRef(manager, *lockingRange, lockingSp);
+        const auto commonName = UnwrapCommonName(join(manager.GetObjectColumn(*lockingRange, 2)));
 
         bool rdUnlocked = false;
         bool wrUnlocked = false;
         try {
-            lockingRange[7] = false;
+            join(manager.SetObjectColumn(*lockingRange, 7, false));
             rdUnlocked = true;
         }
         catch (NotAuthorizedError& ex) {
             // Expected.
         }
         try {
-            lockingRange[8] = false;
+            join(manager.SetObjectColumn(*lockingRange, 8, false));
             wrUnlocked = true;
         }
         catch (NotAuthorizedError& ex) {
@@ -203,8 +205,7 @@ void TryUnlockRanges(SEDManager& manager) {
 void TryDoMBR(SEDManager& manager) {
     const auto mbrControlTableUid = Unwrap(manager.GetModules().FindUid("MBRControl"), "could not find MBRControl table");
     try {
-        auto mbrControl = *manager.GetTable(mbrControlTableUid).begin();
-        mbrControl[2] = 1;
+        join(manager.SetObjectColumn(mbrControlTableUid, 2, 1));
         std::cout << "MBR Done!" << std::endl;
     }
     catch (std::exception&) {

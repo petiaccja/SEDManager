@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Object.hpp"
-#include "Table.hpp"
+#include <async++/stream.hpp>
 
 #include <StorageDevice/NvmeDevice.hpp>
 #include <TrustedPeripheral/Session.hpp>
@@ -26,25 +25,28 @@ public:
     SEDManager& operator=(SEDManager&&) = default;
 
     const TPerDesc& GetDesc() const;
-    std::unordered_map<std::string, uint32_t> GetProperties();
     const TPerModules& GetModules() const;
 
-    void Start(Uid securityProvider);
-    void Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
-    void End();
+    asyncpp::task<void> Start(Uid securityProvider);
+    asyncpp::task<void> Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
+    asyncpp::task<void> End();
 
-    Table GetTable(Uid table);
-    Object GetObject(Uid table, Uid object);
-    void GenMEK(Uid lockingRange);
-    void GenPIN(Uid credentialObject, uint32_t length);
-    void Revert(Uid securityProvider);
-    void Activate(Uid securityProvider);
+    asyncpp::stream<Uid> GetTableRows(Uid table);
+    asyncpp::stream<Value> GetObjectColumns(Uid table, Uid object);
+    asyncpp::task<Value> GetObjectColumn(Uid object, uint32_t column);
+    asyncpp::task<void> SetObjectColumn(Uid object, uint32_t column, Value value);
 
-    void StackReset();
-    void Reset();
+    asyncpp::task<void> GenMEK(Uid lockingRange);
+    asyncpp::task<void> GenPIN(Uid credentialObject, uint32_t length);
+    asyncpp::task<void> Revert(Uid securityProvider);
+    asyncpp::task<void> Activate(Uid securityProvider);
+
+    asyncpp::task<void> StackReset();
+    asyncpp::task<void> Reset();
 
 private:
-    void LaunchStack();
+    asyncpp::task<std::unordered_map<std::string, uint32_t>> ExchangeProperties();
+    asyncpp::task<void> LaunchStack();
 
 private:
     std::shared_ptr<StorageDevice> m_device;

@@ -1,3 +1,5 @@
+#include <async++/join.hpp>
+
 #include <MockDevice/MockDevice.hpp>
 #include <Specification/Opal/OpalModule.hpp>
 #include <TrustedPeripheral/SessionManager.hpp>
@@ -15,8 +17,8 @@ TEST_CASE("SessionManager: start / end session", "[SessionManager]") {
     const auto tper = std::make_shared<TrustedPeripheral>(device);
     const auto sessionManager = std::make_shared<SessionManager>(tper);
     SessionManager::StartSessionResult sessionParams;
-    REQUIRE_NOTHROW(sessionParams = sessionManager->StartSession(100, adminSp, true));
-    REQUIRE_NOTHROW(sessionManager->EndSession(sessionParams.spSessionId, sessionParams.hostSessionId));
+    REQUIRE_NOTHROW(sessionParams = join(sessionManager->StartSession(100, adminSp, true)));
+    REQUIRE_NOTHROW(join(sessionManager->EndSession(sessionParams.spSessionId, sessionParams.hostSessionId)));
 }
 
 
@@ -25,6 +27,6 @@ TEST_CASE("SessionManager: properties", "[SessionManager]") {
     const auto tper = std::make_shared<TrustedPeripheral>(device);
     const auto sessionManager = std::make_shared<SessionManager>(tper);
     SessionManager::PropertiesResult properties;
-    REQUIRE_NOTHROW(properties = sessionManager->Properties());
+    REQUIRE_NOTHROW(properties = join(sessionManager->Properties()));
     REQUIRE(properties.tperProperties.contains("MaxPackets"));
 }

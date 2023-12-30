@@ -2,6 +2,7 @@
 
 #include "Discovery.hpp"
 #include "TPerModules.hpp"
+#include <async++/task.hpp>
 
 #include <Data/SetupPackets.hpp>
 #include <StorageDevice/NvmeDevice.hpp>
@@ -25,16 +26,16 @@ public:
 
     uint16_t GetComId() const;
     uint16_t GetComIdExtension() const;
-    eComIdState VerifyComId();
-    void StackReset();
+    asyncpp::task<eComIdState> VerifyComId();
+    asyncpp::task<void> StackReset();
     void Reset();
 
-    ComPacket SendPacket(uint8_t protocol, const ComPacket& packet);
-    std::vector<ComPacket> FlushResponses(uint8_t protocol);
+    asyncpp::task<ComPacket> SendPacket(uint8_t protocol, const ComPacket& packet);
 
 private:
     void SecuritySend(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload);
     void SecurityReceive(uint8_t protocol, uint16_t comId, std::span<std::byte> response);
+    asyncpp::task<std::vector<ComPacket>> FlushResponses(uint8_t protocol);
 
     TPerDesc Discovery();
     std::pair<uint16_t, uint16_t> RequestComId();

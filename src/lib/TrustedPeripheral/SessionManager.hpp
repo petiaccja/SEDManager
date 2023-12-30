@@ -2,6 +2,7 @@
 
 #include "Method.hpp"
 #include "TrustedPeripheral.hpp"
+#include <async++/task.hpp>
 
 #include <Error/Exception.hpp>
 
@@ -37,9 +38,9 @@ public:
     SessionManager& operator=(const SessionManager&) = delete;
     SessionManager& operator=(SessionManager&&) = delete;
 
-    PropertiesResult Properties(const std::optional<PropertyMap>& hostProperties = {});
+    asyncpp::task<PropertiesResult> Properties(const std::optional<PropertyMap>& hostProperties = {});
 
-    StartSessionResult StartSession(
+    asyncpp::task<StartSessionResult> StartSession(
         uint32_t hostSessionID,
         Uid spId,
         bool write,
@@ -53,7 +54,7 @@ public:
         std::optional<uint32_t> initialCredit = {},
         std::optional<std::span<const std::byte>> signedHash = {});
 
-    void EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
+    asyncpp::task<void> EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
 
     std::shared_ptr<TrustedPeripheral> GetTrustedPeripheral();
     std::shared_ptr<const TrustedPeripheral> GetTrustedPeripheral() const;
@@ -62,10 +63,10 @@ public:
     static std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
 
 private:
-    Method InvokeMethod(const Method& method);
+    asyncpp::task<Method> InvokeMethod(const Method& method);
 
     template <class OutArgs, class... InArgs>
-    OutArgs InvokeMethod(Uid methodId, const InArgs&... inArgs);
+    asyncpp::task<OutArgs> InvokeMethod(Uid methodId, const InArgs&... inArgs);
 
     const TPerModules& GetModules() const;
 
@@ -77,9 +78,9 @@ private:
 
 
 template <class OutArgs, class... InArgs>
-OutArgs SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
+asyncpp::task<OutArgs> SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
-    const Method result = InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
+    const Method result = co_await InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
 
     OutArgs outArgs;
     try {
@@ -88,7 +89,7 @@ OutArgs SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
     catch (std::exception& ex) {
         throw InvalidResponseError(GetModules().FindName(methodId).value_or(to_string(methodId)), ex.what());
     }
-    return outArgs;
+    co_return outArgs;
 }
 
 } // namespace sedmgr

@@ -1,6 +1,7 @@
 #include "Interactive.hpp"
 
 #include "Utility.hpp"
+#include <async++/join.hpp>
 
 #include <Archive/Types/ValueToJSON.hpp>
 
@@ -172,7 +173,7 @@ void Interactive::RegisterCallbackStart() {
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
     cmd->callback([this] {
         const auto spUid = Unwrap(ParseObjectRef(m_manager, "SP::" + spName, m_currentSecurityProvider), "cannot find security provider");
-        m_manager.Start(spUid);
+        join(m_manager.Start(spUid));
         m_currentSecurityProvider = spUid;
     });
 }
@@ -186,7 +187,7 @@ void Interactive::RegisterCallbackAuthenticate() {
     cmd->callback([this] {
         const auto authUid = Unwrap(ParseObjectRef(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
         const auto password = GetPassword("Password: ");
-        m_manager.Authenticate(authUid, password);
+        join(m_manager.Authenticate(authUid, password));
         m_currentAuthorities.insert(authUid);
     });
 }
@@ -195,7 +196,7 @@ void Interactive::RegisterCallbackAuthenticate() {
 void Interactive::RegisterCallbackEnd() {
     auto cmd = m_cli.add_subcommand("end", "End session with current service provider.");
     cmd->callback([this] {
-        m_manager.End();
+        join(m_manager.End());
         ClearCurrents();
     });
 }
@@ -298,12 +299,12 @@ void Interactive::RegisterCallbackRows() {
     cmdRows->add_option("table", tableName, "The table to list the rows of.")->required();
     cmdRows->callback([this] {
         const auto tableUid = Unwrap(ParseObjectRef(m_manager, tableName, m_currentSecurityProvider), "cannot find table");
-        const auto table = m_manager.GetTable(tableUid);
+        auto rowStream = m_manager.GetTableRows(tableUid);
 
         const std::vector<std::string> columnNames = { "UID", "Name" };
         std::vector<std::vector<std::string>> rows;
-        for (const auto& row : table) {
-            rows.push_back({ to_string(row.Id()), m_manager.GetModules().FindName(row.Id(), m_currentSecurityProvider).value_or("") });
+        while (const auto row = join(rowStream)) {
+            rows.push_back({ to_string(*row), m_manager.GetModules().FindName(*row, m_currentSecurityProvider).value_or("") });
         }
         std::cout << FormatTable(columnNames, rows);
     });
@@ -317,12 +318,12 @@ void Interactive::RegisterCallbackColumns() {
     cmdColumns->add_option("table", tableName, "The table to list the columns of.")->required();
     cmdColumns->callback([this] {
         const auto tableUid = Unwrap(ParseObjectRef(m_manager, tableName, m_currentSecurityProvider), "cannot find table");
-        const auto table = m_manager.GetTable(tableUid);
+        const auto tableDesc = Unwrap(m_manager.GetModules().FindTable(tableUid), "cannot find table description");
 
         size_t columnNumber = 0;
         const std::vector<std::string> columnNames = { "Number", "Name", "IsUnique", "Type" };
         std::vector<std::vector<std::string>> rows;
-        for (const auto& column : table.GetDesc().columns) {
+        for (const auto& column : tableDesc.columns) {
             rows.push_back({ std::to_string(columnNumber++), column.name, column.isUnique ? "yes" : "", GetTypeStr(column.type) });
         }
         std::cout << FormatTable(columnNames, rows);
@@ -345,16 +346,17 @@ void Interactive::RegisterCallbackGet() {
             return;
         }
         const auto& [tableUid, rowUid, column] = *parsed;
-        const auto object = m_manager.GetObject(tableUid, rowUid);
         const auto nameConverter = [this](Uid uid) { return m_manager.GetModules().FindName(uid, m_currentSecurityProvider); };
+        const auto tableDesc = Unwrap(m_manager.GetModules().FindTable(tableUid), "could not find table description");
         if (column < 0) {
+            const auto columnValues = m_manager.GetObjectColumns(tableUid, rowUid);
             const std::vector<std::string> outColumns = { "Column", "Value" };
             std::vector<std::vector<std::string>> outData;
             size_t idx = 0;
-            for (const auto& columnDesc : object.GetDesc()) {
+            for (const auto& columnDesc : tableDesc.columns) {
                 const auto label = std::format("{}: {}", idx, columnDesc.name);
                 try {
-                    const auto value = *object[idx];
+                    const auto value = *join(columnValues);
                     auto valueStr = value.HasValue() ? ValueToJSON(value, columnDesc.type, nameConverter).dump() : "<empty>";
                     if (valueStr.size() > 55) {
                         valueStr.resize(51);
@@ -370,11 +372,11 @@ void Interactive::RegisterCallbackGet() {
             std::cout << FormatTable(outColumns, outData) << std::endl;
         }
         else {
-            if (!(column < std::ssize(object))) {
+            if (!(column < std::ssize(tableDesc.columns))) {
                 throw std::invalid_argument("column index is out of bounds.");
             }
-            const auto value = *object[column];
-            const auto columnType = object.GetDesc()[column].type;
+            const auto value = join(m_manager.GetObjectColumn(rowUid, column));
+            const auto columnType = tableDesc.columns[column].type;
             std::cout << (value.HasValue() ? ValueToJSON(value, columnType, nameConverter).dump(4) : "<empty>") << std::endl;
         }
     });
@@ -401,14 +403,14 @@ void Interactive::RegisterCallbackSet() {
             jsonStr = GetMultiline("END");
         }
         const auto [tableUid, rowUid, column] = *parsed;
-        auto object = m_manager.GetObject(tableUid, rowUid);
+        const auto tableDesc = Unwrap(m_manager.GetModules().FindTable(tableUid), "could not find table description");
 
         const auto jsonObject = nlohmann::json::parse(jsonStr);
-        const auto columnType = object.GetDesc()[column].type;
+        const auto columnType = tableDesc.columns[column].type;
         const auto nameConverter = [this](std::string_view name) { return m_manager.GetModules().FindUid(name, m_currentSecurityProvider); };
         const auto value = JSONToValue(jsonObject, columnType, nameConverter);
 
-        object[column] = value;
+        join(m_manager.SetObjectColumn(rowUid, column, value));
     });
 }
 
@@ -422,15 +424,13 @@ void Interactive::RegisterCallbackPasswd() {
         const auto authTable = Unwrap(ParseObjectRef(m_manager, "Authority", m_currentSecurityProvider), "cannot find Authority table");
         const auto cPinTable = Unwrap(ParseObjectRef(m_manager, "C_PIN", m_currentSecurityProvider), "cannot find C_PIN table");
         const auto authUid = Unwrap(ParseObjectRef(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
-        const auto authority = m_manager.GetObject(authTable, authUid);
-        const auto credentialUid = value_cast<Uid>(*authority[10]);
-        auto credential = m_manager.GetObject(cPinTable, credentialUid);
+        const auto credentialUid = value_cast<Uid>(join(m_manager.GetObjectColumn(authUid, 10)));
         const std::vector<std::byte> password = GetPassword("New password: ");
         const std::vector<std::byte> passwordAgain = GetPassword("Retype password: ");
         if (password != passwordAgain) {
             throw std::invalid_argument("the two passwords do not match");
         }
-        credential[3] = value_cast(password);
+        join(m_manager.SetObjectColumn(credentialUid, 3, value_cast(password)));
     });
 }
 
@@ -441,7 +441,7 @@ void Interactive::RegisterCallbackGenMEK() {
     cmd->add_option("range", rangeName, "The locking range.")->required();
     cmd->callback([&] {
         const auto rangeUid = Unwrap(ParseObjectRef(m_manager, rangeName, m_currentSecurityProvider), "cannot find locking range");
-        m_manager.GenMEK(rangeUid);
+        join(m_manager.GenMEK(rangeUid));
     });
 }
 
@@ -453,7 +453,7 @@ void Interactive::RegisterCallbackGenPIN() {
     cmd->add_option("c-pin-obj", credentialObj, "The authority's credential object in C_PIN.")->required();
     cmd->callback([&] {
         const auto credentialUid = Unwrap(ParseObjectRef(m_manager, credentialObj, m_currentSecurityProvider), "cannot find credential object");
-        m_manager.GenMEK(credentialUid);
+        join(m_manager.GenMEK(credentialUid));
     });
 }
 
@@ -464,7 +464,7 @@ void Interactive::RegisterCallbackActivate() {
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
     cmd->callback([&] {
         const auto spUid = Unwrap(ParseObjectRef(m_manager, spName, m_currentSecurityProvider), "cannot find security provider");
-        m_manager.Activate(spUid);
+        join(m_manager.Activate(spUid));
     });
 }
 
@@ -475,7 +475,7 @@ void Interactive::RegisterCallbackRevert() {
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
     cmd->callback([&] {
         const auto spUid = Unwrap(ParseObjectRef(m_manager, spName, m_currentSecurityProvider), "cannot find security provider");
-        m_manager.Revert(spUid);
+        join(m_manager.Revert(spUid));
         ClearCurrents();
     });
 }
@@ -484,7 +484,7 @@ void Interactive::RegisterCallbackRevert() {
 void Interactive::RegisterCallbackStackReset() {
     auto cmd = m_cli.add_subcommand("stack-reset", "Reset the current communication stream.");
     cmd->callback([this] {
-        m_manager.StackReset();
+        join(m_manager.StackReset());
         ClearCurrents();
     });
 }
@@ -493,7 +493,7 @@ void Interactive::RegisterCallbackStackReset() {
 void Interactive::RegisterCallbackReset() {
     auto cmd = m_cli.add_subcommand("reset", "Reset the device as if power-cycled.");
     cmd->callback([this] {
-        m_manager.Reset();
+        join(m_manager.Reset());
         ClearCurrents();
     });
 }

@@ -6,9 +6,6 @@ target_sources(SEDManager
     PRIVATE
         SEDManager.cpp
         SEDManager.hpp
-        Object.hpp
-        Table.cpp
-        Table.hpp
 )
 
 target_include_directories(SEDManager INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

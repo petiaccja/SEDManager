@@ -24,9 +24,9 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 
 
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
-    -> PropertiesResult {
+    -> asyncpp::task<PropertiesResult> {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    return FromTuple<PropertiesResult>(InvokeMethod<OutArgs>(core::eMethod::Properties, hostProperties));
+    co_return FromTuple<PropertiesResult>(co_await InvokeMethod<OutArgs>(core::eMethod::Properties, hostProperties));
 }
 
 
@@ -43,7 +43,7 @@ auto SessionManager::StartSession(
     std::optional<uint32_t> transTimeout,
     std::optional<uint32_t> initialCredit,
     std::optional<std::span<const std::byte>> signedHash)
-    -> StartSessionResult {
+    -> asyncpp::task<StartSessionResult> {
     using OutArgs = std::tuple<
         uint32_t,
         uint32_t,
@@ -53,29 +53,29 @@ auto SessionManager::StartSession(
         std::optional<uint32_t>,
         std::optional<uint32_t>,
         std::optional<std::vector<std::byte>>>;
-    auto results = InvokeMethod<OutArgs>(core::eMethod::StartSession,
-                                         hostSessionID,
-                                         spId,
-                                         write,
-                                         hostChallenge,
-                                         hostExchangeAuthority,
-                                         hostExchangeCert,
-                                         hostSigningAuthority,
-                                         hostSigningCert,
-                                         sessionTimeout,
-                                         transTimeout,
-                                         initialCredit,
-                                         signedHash);
-    return FromTuple<StartSessionResult>(std::move(results));
+    auto results = co_await InvokeMethod<OutArgs>(core::eMethod::StartSession,
+                                                  hostSessionID,
+                                                  spId,
+                                                  write,
+                                                  hostChallenge,
+                                                  hostExchangeAuthority,
+                                                  hostExchangeCert,
+                                                  hostSigningAuthority,
+                                                  hostSigningCert,
+                                                  sessionTimeout,
+                                                  transTimeout,
+                                                  initialCredit,
+                                                  signedHash);
+    co_return FromTuple<StartSessionResult>(std::move(results));
 }
 
 
-void SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
+asyncpp::task<void> SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     Value request = eCommand::END_OF_SESSION;
     Log("Close session", request);
     auto payload = ToTokens(request);
     const auto packet = CreatePacket(std::move(payload), tperSessionNumber, hostSessionNumber);
-    const auto result = m_tper->SendPacket(PROTOCOL, packet);
+    const auto result = co_await m_tper->SendPacket(PROTOCOL, packet);
     try {
         const auto resultBytes = UnwrapPacket(result);
         Value resultValue;
@@ -129,7 +129,7 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 }
 
 
-Method SessionManager::InvokeMethod(const Method& method) {
+asyncpp::task<Method> SessionManager::InvokeMethod(const Method& method) {
     const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
         const Value requestStream = MethodToValue(INVOKING_ID, method);
@@ -139,7 +139,7 @@ Method SessionManager::InvokeMethod(const Method& method) {
         save_strip_list(requestAr, requestStream);
         const auto requestTokens = std::as_bytes(std::span(requestSs.view()));
         const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
-        const auto responsePacket = m_tper->SendPacket(PROTOCOL, requestPacket);
+        const auto responsePacket = co_await m_tper->SendPacket(PROTOCOL, requestPacket);
         const auto responseTokens = UnwrapPacket(responsePacket);
 
         Value responseStream;
@@ -148,7 +148,7 @@ Method SessionManager::InvokeMethod(const Method& method) {
 
         auto response = MethodFromValue(responseStream);
         MethodStatusToException(methodIdStr, response.status);
-        return response;
+        co_return response;
     }
     catch (InvocationError&) {
         throw;
