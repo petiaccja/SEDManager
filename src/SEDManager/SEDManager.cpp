@@ -93,7 +93,7 @@ asyncpp::task<void> SEDManager::GenPIN(Uid credentialObject, uint32_t length) {
 
 asyncpp::task<void> SEDManager::Revert(Uid securityProvider) {
     co_await m_session->opal.Revert(securityProvider);
-    join(End());
+    co_await End();
     co_await LaunchStack();
 }
 
@@ -105,14 +105,14 @@ asyncpp::task<void> SEDManager::Activate(Uid securityProvider) {
 
 asyncpp::task<void> SEDManager::StackReset() {
     co_await m_tper->StackReset();
-    join(End());
+    co_await End();
     co_await LaunchStack();
 }
 
 
 asyncpp::task<void> SEDManager::Reset() {
     m_tper->Reset();
-    join(End());
+    co_await End();
     co_await LaunchStack();
 }
 

@@ -20,7 +20,7 @@ Struct FromTuple(std::tuple<Args...> args) {
 
 
 SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
-    : m_tper(tper){};
+    : m_tper(tper) {}
 
 
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
