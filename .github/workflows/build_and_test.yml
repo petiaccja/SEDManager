@@ -52,7 +52,7 @@ jobs:
     - uses: seanmiddleditch/gha-setup-vsdevenv@master
     - uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "16.0"
+        version: "17.0"
         directory: ${{ runner.temp }}/llvm
 
     - name: Install GCC
@@ -93,6 +93,8 @@ jobs:
         CC: ${{matrix.c_compiler}}
         CXX: ${{matrix.cxx_compiler}}
       run: |
+        git clone https://github.com/petiaccja/asyncpp-conan.git
+        conan create ./asyncpp-conan -pr ci -pr:b ci --version 0.1.2
         conan install $GITHUB_WORKSPACE --output-folder=. --build="*" -pr ci -pr:b ci -s build_type=${{ matrix.build_type }}
         conan cache clean
         cmake $GITHUB_WORKSPACE --preset ${{ matrix.conan_preset }}
