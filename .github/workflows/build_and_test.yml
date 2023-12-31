@@ -52,7 +52,7 @@ jobs:
     - uses: seanmiddleditch/gha-setup-vsdevenv@master
     - uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "16.0"
+        version: "17.0"
         directory: ${{ runner.temp }}/llvm
 
     - name: Install GCC
