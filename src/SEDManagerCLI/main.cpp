@@ -1,13 +1,11 @@
 #include "Interactive.hpp"
 #include "PBA.hpp"
-#include "Utility.hpp"
 
 #include <CLI/App.hpp>
 #include <CLI/CLI.hpp>
-#include <SEDManager/SEDManager.hpp>
+#include <EncryptedDevice/EncryptedDevice.hpp>
 #include <rang.hpp>
 
-#include <algorithm>
 #include <iostream>
 
 
@@ -53,7 +51,7 @@ public:
                 std::cout << rang::fg::yellow << "Drive: "
                           << rang::fg::reset << identity.modelNumber
                           << rang::style::reset << std::endl;
-                SEDManager manager(device);
+                EncryptedDevice manager(device);
                 Interactive session(manager);
                 return session.Run();
             }

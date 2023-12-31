@@ -16,19 +16,23 @@ struct NamedObject {
 };
 
 
-class SEDManager {
+class EncryptedDevice {
 public:
-    SEDManager(std::shared_ptr<StorageDevice> device);
-    SEDManager(const SEDManager&) = delete;
-    SEDManager& operator=(const SEDManager&) = delete;
-    SEDManager(SEDManager&&) = default;
-    SEDManager& operator=(SEDManager&&) = default;
+    EncryptedDevice(std::shared_ptr<StorageDevice> device);
+    EncryptedDevice(const EncryptedDevice&) = delete;
+    EncryptedDevice& operator=(const EncryptedDevice&) = delete;
+    EncryptedDevice(EncryptedDevice&&) = default;
+    EncryptedDevice& operator=(EncryptedDevice&&) = default;
+    ~EncryptedDevice();
 
+    static asyncpp::task<EncryptedDevice> Start(std::shared_ptr<StorageDevice> device);
     const TPerDesc& GetDesc() const;
     const TPerModules& GetModules() const;
 
-    asyncpp::task<void> Start(Uid securityProvider);
+    asyncpp::task<void> Login(Uid securityProvider);
     asyncpp::task<void> Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
+    asyncpp::task<void> StackReset();
+    asyncpp::task<void> Reset();
     asyncpp::task<void> End();
 
     asyncpp::stream<Uid> GetTableRows(Uid table);
@@ -41,12 +45,10 @@ public:
     asyncpp::task<void> Revert(Uid securityProvider);
     asyncpp::task<void> Activate(Uid securityProvider);
 
-    asyncpp::task<void> StackReset();
-    asyncpp::task<void> Reset();
-
 private:
-    asyncpp::task<std::unordered_map<std::string, uint32_t>> ExchangeProperties();
-    asyncpp::task<void> LaunchStack();
+    EncryptedDevice(std::shared_ptr<StorageDevice> device,
+                    std::shared_ptr<TrustedPeripheral> tper,
+                    std::shared_ptr<SessionManager> sessionManager);
 
 private:
     std::shared_ptr<StorageDevice> m_device;

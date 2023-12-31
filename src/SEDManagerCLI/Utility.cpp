@@ -65,7 +65,7 @@ std::string GetMultiline(std::string_view terminator) {
 }
 
 
-std::optional<Uid> ParseObjectRef(SEDManager& app, std::string_view nameOrUid, std::optional<Uid> sp) {
+std::optional<Uid> ParseObjectRef(EncryptedDevice& app, std::string_view nameOrUid, std::optional<Uid> sp) {
     const auto maybeUid = app.GetModules().FindUid(nameOrUid, sp);
     if (maybeUid) {
         return *maybeUid;
@@ -80,7 +80,7 @@ std::optional<Uid> ParseObjectRef(SEDManager& app, std::string_view nameOrUid, s
 }
 
 
-std::string FormatObjectRef(SEDManager& app, Uid uid, std::optional<Uid> sp) {
+std::string FormatObjectRef(EncryptedDevice& app, Uid uid, std::optional<Uid> sp) {
     const auto maybeName = app.GetModules().FindName(uid, sp);
     if (maybeName) {
         return *maybeName;

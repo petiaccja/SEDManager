@@ -2,19 +2,17 @@
 
 #include <Data/NativeTypes.hpp>
 
-#include <SEDManager/SEDManager.hpp>
+#include <EncryptedDevice/EncryptedDevice.hpp>
 
-#include <bit>
 #include <optional>
-#include <string_view>
 #include <vector>
 
 
 std::vector<std::byte> GetPassword(std::string_view prompt);
 std::string GetMultiline(std::string_view terminator);
 
-std::optional<sedmgr::Uid> ParseObjectRef(sedmgr::SEDManager& app, std::string_view nameOrUid, std::optional<sedmgr::Uid> sp = {});
-std::string FormatObjectRef(sedmgr::SEDManager& app, sedmgr::Uid uid, std::optional<sedmgr::Uid> sp = {});
+std::optional<sedmgr::Uid> ParseObjectRef(sedmgr::EncryptedDevice& app, std::string_view nameOrUid, std::optional<sedmgr::Uid> sp = {});
+std::string FormatObjectRef(sedmgr::EncryptedDevice& app, sedmgr::Uid uid, std::optional<sedmgr::Uid> sp = {});
 std::string FormatTable(std::span<const std::string> columns, std::span<const std::vector<std::string>> rows);
 
 std::vector<std::string_view> SplitName(std::string_view name);

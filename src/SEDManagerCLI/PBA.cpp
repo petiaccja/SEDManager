@@ -6,10 +6,7 @@
 #include <Archive/Types/ValueToNative.hpp>
 #include <StorageDevice/StorageDevice.hpp>
 
-#include <SEDManager/SEDManager.hpp>
-
-#include <atomic>
-#include <csignal>
+#include <EncryptedDevice/EncryptedDevice.hpp>
 
 
 using namespace sedmgr;
@@ -45,9 +42,9 @@ int PBA::Run() {
 namespace {
 
 
-std::optional<SEDManager> ConnectDevice(std::shared_ptr<StorageDevice> device) {
+std::optional<EncryptedDevice> ConnectDevice(std::shared_ptr<StorageDevice> device) {
     try {
-        return SEDManager(device);
+        return EncryptedDevice(device);
     }
     catch (std::exception&) {
         return std::nullopt;
@@ -55,7 +52,7 @@ std::optional<SEDManager> ConnectDevice(std::shared_ptr<StorageDevice> device) {
 }
 
 
-bool IsLockingEnabled(const SEDManager& manager) {
+bool IsLockingEnabled(const EncryptedDevice& manager) {
     const auto desc = manager.GetDesc();
     if (!desc.lockingDesc) {
         return false;
@@ -73,16 +70,16 @@ std::string GetDeviceName(std::shared_ptr<StorageDevice> device) {
 }
 
 
-void StartLockingSession(SEDManager& manager) {
+void StartLockingSession(EncryptedDevice& manager) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
 
     try {
-        join(manager.Start(lockingSpUid));
+        join(manager.Login(lockingSpUid));
     }
     catch (SecurityProviderBusyError& ex) {
         // Do a stack reset and retry, maybe a previous session was not terminated properly.
         join(manager.StackReset());
-        join(manager.Start(lockingSpUid));
+        join(manager.Login(lockingSpUid));
     }
 }
 
@@ -102,7 +99,7 @@ std::string FormatName(std::string_view name, const std::optional<std::string> c
 }
 
 
-std::optional<Uid> FindAuthority(SEDManager& manager, std::string_view name) {
+std::optional<Uid> FindAuthority(EncryptedDevice& manager, std::string_view name) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
     const auto maybeUid = ParseObjectRef(manager, std::format("Authority::{}", name), lockingSpUid);
     if (maybeUid) {
@@ -125,7 +122,7 @@ std::optional<Uid> FindAuthority(SEDManager& manager, std::string_view name) {
 }
 
 
-std::optional<Uid> TryGetUser(SEDManager& manager) {
+std::optional<Uid> TryGetUser(EncryptedDevice& manager) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {
@@ -147,7 +144,7 @@ std::optional<Uid> TryGetUser(SEDManager& manager) {
 }
 
 
-bool TryLoginUser(SEDManager& manager, Uid authority) {
+bool TryLoginUser(EncryptedDevice& manager, Uid authority) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {
@@ -169,7 +166,7 @@ bool TryLoginUser(SEDManager& manager, Uid authority) {
 }
 
 
-void TryUnlockRanges(SEDManager& manager) {
+void TryUnlockRanges(EncryptedDevice& manager) {
     const auto lockingSp = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
     const auto lockingTableUid = Unwrap(manager.GetModules().FindUid("Locking"), "could not find Locking table");
     auto lockingRangeUids = manager.GetTableRows(lockingTableUid);
@@ -202,7 +199,7 @@ void TryUnlockRanges(SEDManager& manager) {
 }
 
 
-void TryDoMBR(SEDManager& manager) {
+void TryDoMBR(EncryptedDevice& manager) {
     const auto mbrControlTableUid = Unwrap(manager.GetModules().FindUid("MBRControl"), "could not find MBRControl table");
     try {
         join(manager.SetObjectColumn(mbrControlTableUid, 2, 1));
@@ -216,7 +213,7 @@ void TryDoMBR(SEDManager& manager) {
 
 
 void UnlockDevice(std::shared_ptr<StorageDevice> device) {
-    std::optional<SEDManager> maybeManager = ConnectDevice(device);
+    std::optional<EncryptedDevice> maybeManager = ConnectDevice(device);
     if (!maybeManager) {
         // Device does not support TCG specifications.
         // Ignore device.

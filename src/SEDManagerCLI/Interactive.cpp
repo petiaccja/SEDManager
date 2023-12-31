@@ -6,10 +6,10 @@
 #include <Archive/Types/ValueToJSON.hpp>
 
 #include <CLI/App.hpp>
-#include <SEDManager/SEDManager.hpp>
 
 #include <iostream>
 #include <ostream>
+#include <utility>
 
 
 // DO NOT REORDER THIS. Includes <Windows.h>
@@ -24,7 +24,7 @@
 
 using namespace sedmgr;
 
-Interactive::Interactive(SEDManager& manager) : m_manager(manager) {
+Interactive::Interactive(EncryptedDevice& manager) : m_manager(manager) {
     m_cli.set_help_flag();
     m_cli.set_help_all_flag();
     m_cli.set_version_flag();
@@ -173,7 +173,7 @@ void Interactive::RegisterCallbackStart() {
     cmd->add_option("sp", spName, "The name or UID (in hex) of the security provider.")->required();
     cmd->callback([this] {
         const auto spUid = Unwrap(ParseObjectRef(m_manager, "SP::" + spName, m_currentSecurityProvider), "cannot find security provider");
-        join(m_manager.Start(spUid));
+        join(m_manager.Login(spUid));
         m_currentSecurityProvider = spUid;
     });
 }

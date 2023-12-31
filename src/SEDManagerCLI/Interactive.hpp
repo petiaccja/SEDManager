@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CLI/CLI.hpp>
-#include <SEDManager/SEDManager.hpp>
+#include <EncryptedDevice/EncryptedDevice.hpp>
 
 #include <optional>
 #include <unordered_set>
@@ -9,7 +9,7 @@
 
 class Interactive {
 public:
-    Interactive(sedmgr::SEDManager& manager);
+    Interactive(sedmgr::EncryptedDevice& manager);
     Interactive(const Interactive&) = delete;
     Interactive(Interactive&&) = delete;
     Interactive& operator=(const Interactive&) = delete;
@@ -48,7 +48,7 @@ private:
     void PrintHelp(const std::string& command) const;
 
 private:
-    sedmgr::SEDManager& m_manager;
+    sedmgr::EncryptedDevice& m_manager;
     CLI::App m_cli;
     std::optional<sedmgr::Uid> m_currentSecurityProvider;
     std::unordered_set<sedmgr::Uid> m_currentAuthorities;

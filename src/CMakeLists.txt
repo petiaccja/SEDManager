@@ -1,3 +1,3 @@
 add_subdirectory(lib)
-add_subdirectory(SEDManager)
+add_subdirectory(EncryptedDevice)
 add_subdirectory(SEDManagerCLI)
