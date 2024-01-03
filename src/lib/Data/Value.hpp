@@ -2,13 +2,12 @@
 
 #include <Error/Exception.hpp>
 
-#include <algorithm>
 #include <any>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <format>
-#include <optional>
+#include <memory>
 #include <span>
 #include <string>
 #include <typeinfo>
@@ -148,7 +147,8 @@ struct Named {
     Value name;
     Value value;
 
-    auto operator<=>(const Named&) const = default;
+    bool operator==(const Named&) const = default;
+    bool operator!=(const Named&) const = default;
 };
 
 
@@ -274,7 +274,7 @@ std::string Value::GetTypeStr() {
     else if constexpr (std::is_same_v<T, eCommand>) {
         return "command";
     }
-    else [[noreturn]] {
+    else {
         static_assert(sizeof(T) == 0);
         std::terminate();
     }
