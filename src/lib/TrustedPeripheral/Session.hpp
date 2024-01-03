@@ -25,7 +25,7 @@ namespace impl {
         template <class OutArgs = std::tuple<>, class... InArgs>
         asyncpp::task<OutArgs> InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
 
-        const TPerModules& GetModules() const;
+        const ModuleCollection& GetModules() const;
 
     private:
         ComPacket CreatePacket(std::vector<std::byte> payload);

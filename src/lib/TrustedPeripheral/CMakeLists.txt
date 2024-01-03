@@ -16,8 +16,8 @@ target_sources(TrustedPeripheral
         TrustedPeripheral.hpp
         Method.cpp
         Method.hpp
-        TPerModules.cpp
-        TPerModules.hpp
+        ModuleCollection.cpp
+        ModuleCollection.hpp
 )
 
 target_include_directories(TrustedPeripheral INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

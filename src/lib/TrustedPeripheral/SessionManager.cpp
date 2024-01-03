@@ -159,7 +159,7 @@ asyncpp::task<Method> SessionManager::InvokeMethod(const Method& method) {
 }
 
 
-const TPerModules& SessionManager::GetModules() const {
+const ModuleCollection& SessionManager::GetModules() const {
     return m_tper->GetModules();
 }
 

@@ -27,7 +27,7 @@ public:
 
     static asyncpp::task<EncryptedDevice> Start(std::shared_ptr<StorageDevice> device);
     const TPerDesc& GetDesc() const;
-    const TPerModules& GetModules() const;
+    const ModuleCollection& GetModules() const;
 
     asyncpp::task<void> Login(Uid securityProvider);
     asyncpp::task<void> Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});

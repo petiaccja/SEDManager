@@ -5,7 +5,7 @@
 
 namespace sedmgr {
 
-class TPerModules {
+class ModuleCollection {
 public:
     void Load(std::shared_ptr<Module> mod);
 

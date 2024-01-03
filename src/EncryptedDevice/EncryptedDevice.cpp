@@ -57,7 +57,7 @@ const TPerDesc& EncryptedDevice::GetDesc() const {
 }
 
 
-const TPerModules& EncryptedDevice::GetModules() const {
+const ModuleCollection& EncryptedDevice::GetModules() const {
     return m_tper->GetModules();
 }
 
