@@ -55,8 +55,8 @@ Method MethodFromValue(const Value& stream) {
         };
         return method;
     }
-    catch (std::exception&) {
-        throw std::invalid_argument("incorrect method format");
+    catch (std::exception& ex) {
+        throw std::invalid_argument(std::format("incorrect method format: {}", ex.what()));
     }
 }
 
@@ -67,7 +67,7 @@ MethodResult MethodResultFromValue(const Value& result) {
     }
     const auto content = result.Get<std::span<const Value>>();
     if (content.size() < 3) {
-        throw std::invalid_argument("method result stream must contains at least result list, EOD, and status list");
+        throw std::invalid_argument("method result stream must contain at least result list, EOD, and status list");
     }
 
     if (content[0].IsCommand() && content[0].Get<eCommand>() == eCommand::CALL) {
