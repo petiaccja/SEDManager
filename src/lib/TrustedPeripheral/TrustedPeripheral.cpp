@@ -18,7 +18,7 @@
 
 namespace sedmgr {
 
-void LoadModules(const TPerDesc& desc, TPerModules& modules) {
+void LoadModules(const TPerDesc& desc, ModuleCollection& modules) {
     if (desc.tperDesc && desc.lockingDesc) {
         const auto coreModule = CoreModule::Get();
         modules.Load(coreModule);
@@ -87,7 +87,7 @@ const TPerDesc& TrustedPeripheral::GetDesc() const {
 }
 
 
-const TPerModules& TrustedPeripheral::GetModules() const {
+const ModuleCollection& TrustedPeripheral::GetModules() const {
     return m_modules;
 }
 

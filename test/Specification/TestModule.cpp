@@ -34,6 +34,31 @@ TEST_CASE("Specification: module find name", "[Specification]") {
 }
 
 
+TEST_CASE("Specification: CoreModule find table", "[Specification]") {
+    const auto mod = CoreModule::Get();
+    SECTION("valid") {
+        const auto result = mod->FindTable(core::eTable::Table);
+        REQUIRE(!!result);
+        REQUIRE(result.value().name == "Table");
+    }
+    SECTION("invalid") {
+        REQUIRE(!mod->FindTable(0xFFFF'FFFF'FFFF'CCCC));
+    }
+}
+
+TEST_CASE("Specification: CoreModule find type", "[Specification]") {
+    const auto mod = CoreModule::Get();
+    SECTION("valid") {
+        const auto result = mod->FindType(core::eType::MethodID_object_ref);
+        REQUIRE(!!result);
+        REQUIRE(type_uid(result.value()) == Uid(core::eType::MethodID_object_ref));
+    }
+    SECTION("invalid") {
+        REQUIRE(!mod->FindTable(0xFFFF'FFFF'FFFF'CCCC));
+    }
+}
+
+
 TEST_CASE("Specification: CoreModule init", "[Specification]") {
     REQUIRE_NOTHROW(CoreModule::Get());
 }

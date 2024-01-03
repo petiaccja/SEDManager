@@ -57,7 +57,7 @@ const TPerDesc& EncryptedDevice::GetDesc() const {
 }
 
 
-const TPerModules& EncryptedDevice::GetModules() const {
+const ModuleCollection& EncryptedDevice::GetModules() const {
     return m_tper->GetModules();
 }
 
@@ -84,12 +84,21 @@ asyncpp::task<void> EncryptedDevice::End() {
 
 
 asyncpp::stream<Uid> EncryptedDevice::GetTableRows(Uid table) {
-    std::optional<Uid> lastUid = std::nullopt;
-    while (const auto rowUid = co_await m_session->base.Next(table, lastUid)) {
-        if (*rowUid != Uid(0)) {
-            co_yield *rowUid;
+    const auto desc = GetModules().FindTable(table);
+    if (!desc) {
+        throw std::invalid_argument("could not find table description");
+    }
+    if (desc->singleRow) {
+        co_yield *desc->singleRow;
+    }
+    else {
+        std::optional<Uid> lastUid = std::nullopt;
+        while (const auto rowUid = co_await m_session->base.Next(table, lastUid)) {
+            if (*rowUid != Uid(0)) {
+                co_yield *rowUid;
+            }
+            lastUid = *rowUid;
         }
-        lastUid = *rowUid;
     }
 }
 

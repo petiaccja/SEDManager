@@ -14,7 +14,9 @@ namespace sedmgr {
 
 MockSession::MockSession(std::shared_ptr<std::vector<MockSecurityProvider>> sps,
                          uint16_t comId,
-                         uint16_t comIdExt) : m_sps(sps), m_comId(comId), m_comIdExt(comIdExt) {}
+                         uint16_t comIdExt) : m_sps(sps), m_comId(comId), m_comIdExt(comIdExt) {
+    assert(m_sps);
+}
 
 
 void MockSession::Input(std::span<const std::byte> data) {
@@ -226,15 +228,21 @@ void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const Method& m
         for (size_t i = 0; i < count.value_or(1); ++i) {
             const auto maybeNext = table.Next(nexts.empty() ? from.value_or(0) : nexts.back());
             try {
-                nexts.push_back(std::get<0>(maybeNext));
-                std::vector<Value> results;
-                std::ranges::transform(nexts, std::back_inserter(results), [](auto v) { return value_cast(v); });
-                EnqueueMethodResult({ .values = { value_cast(results) }, .status = eMethodStatus::SUCCESS });
+                const auto next = std::get<0>(maybeNext);
+                if (next != Uid(0)) {
+                    nexts.push_back(next);
+                }
+                else {
+                    break;
+                }
             }
             catch (std::exception&) {
                 EnqueueMethodResult({ .values = {}, .status = eMethodStatus::INVALID_PARAMETER });
             }
         }
+        std::vector<Value> results;
+        std::ranges::transform(nexts, std::back_inserter(results), [](auto v) { return value_cast(v); });
+        EnqueueMethodResult({ .values = { value_cast(results) }, .status = eMethodStatus::SUCCESS });
     }
     catch (std::exception&) {
         EnqueueMethodResult({ .values = {}, .status = eMethodStatus::INVALID_PARAMETER });

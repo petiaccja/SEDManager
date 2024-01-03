@@ -66,14 +66,16 @@ class IdentifiedType : public BaseType {
 public:
     struct Storage : BaseType::Storage, TypeIdentifier::Storage {
         template <class... Args>
-            requires std::is_constructible_v<typename BaseType::Storage, Args...>
+            requires(std::is_constructible_v<typename BaseType::Storage, Args...>
+                     && !std::same_as<std::tuple<Storage>, std::tuple<std::remove_cvref_t<Args>...>>)
         explicit Storage(Args&&... args) : BaseType::Storage(std::forward<Args>(args)...) {}
 
         constexpr uint64_t Id() const override { return Identifier; }
     };
 
     template <class... Args>
-        requires std::is_constructible_v<Storage, Args...>
+        requires(std::is_constructible_v<Storage, Args...>
+                 && !std::same_as<std::tuple<IdentifiedType>, std::tuple<std::remove_cvref_t<Args>...>>)
     explicit IdentifiedType(Args&&... args) : BaseType(std::make_shared<Storage>(std::forward<Args>(args)...)) {}
 };
 
@@ -262,12 +264,14 @@ public:
     struct Storage : Type::Storage {
         explicit Storage(std::vector<Type> types) : types(std::move(types)) {}
         template <std::convertible_to<Type>... Types>
+            requires(!std::same_as<std::tuple<Storage>, std::tuple<std::remove_cvref_t<Types>...>>)
         explicit Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
         std::vector<Type> types;
     };
 
     explicit AlternativeType(std::vector<Type> types) : Type(std::make_shared<Storage>(std::move(types))) {}
     template <std::convertible_to<Type>... Types>
+        requires(!std::same_as<std::tuple<AlternativeType>, std::tuple<std::remove_cvref_t<Types>...>>)
     explicit AlternativeType(Types&&... types) : AlternativeType(std::vector<Type>{ std::forward<Types>(types)... }) {}
     std::span<const Type> Types() const { return GetStorage<AlternativeType>().types; }
 
@@ -294,12 +298,14 @@ public:
     struct Storage : Type::Storage {
         explicit Storage(std::vector<Type> elementTypes) : elementTypes(std::move(elementTypes)) {}
         template <std::convertible_to<Type>... Types>
+            requires(!std::same_as<std::tuple<Storage>, std::tuple<std::remove_cvref_t<Types>...>>)
         explicit Storage(Types&&... types) : Storage(std::vector<Type>{ std::forward<Types>(types)... }) {}
         std::vector<Type> elementTypes;
     };
 
     explicit StructType(std::vector<Type> elementTypes) : Type(std::make_shared<Storage>(std::move(elementTypes))) {}
     template <std::convertible_to<Type>... Types>
+        requires(!std::same_as<std::tuple<StructType>, std::tuple<std::remove_cvref_t<Types>...>>)
     explicit StructType(Types&&... types) : StructType(std::vector<Type>{ std::forward<Types>(types)... }) {}
     std::span<const Type> ElementTypes() const { return GetStorage<StructType>().elementTypes; }
 

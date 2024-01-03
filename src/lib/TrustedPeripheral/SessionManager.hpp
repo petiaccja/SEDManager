@@ -68,7 +68,7 @@ private:
     template <class OutArgs, class... InArgs>
     asyncpp::task<OutArgs> InvokeMethod(Uid methodId, const InArgs&... inArgs);
 
-    const TPerModules& GetModules() const;
+    const ModuleCollection& GetModules() const;
 
 private:
     static constexpr Uid INVOKING_ID = 0xFF;

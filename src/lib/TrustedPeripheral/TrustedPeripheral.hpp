@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Discovery.hpp"
-#include "TPerModules.hpp"
+#include "ModuleCollection.hpp"
 #include <async++/task.hpp>
 
 #include <Data/SetupPackets.hpp>
@@ -22,7 +22,7 @@ public:
     ~TrustedPeripheral();
 
     const TPerDesc& GetDesc() const;
-    const TPerModules& GetModules() const;
+    const ModuleCollection& GetModules() const;
 
     uint16_t GetComId() const;
     uint16_t GetComIdExtension() const;
@@ -45,7 +45,7 @@ private:
     uint16_t m_comId;
     uint16_t m_comIdExtension;
     TPerDesc m_desc;
-    TPerModules m_modules;
+    ModuleCollection m_modules;
 };
 
 } // namespace sedmgr

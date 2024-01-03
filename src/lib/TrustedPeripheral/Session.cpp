@@ -106,7 +106,7 @@ namespace impl {
           m_hostSessionNumber(hostSessionNumber) {}
 
 
-    const TPerModules& Template::GetModules() const {
+    const ModuleCollection& Template::GetModules() const {
         return m_sessionManager->GetTrustedPeripheral()->GetModules();
     }
 
