@@ -14,7 +14,9 @@ namespace sedmgr {
 
 MockSession::MockSession(std::shared_ptr<std::vector<MockSecurityProvider>> sps,
                          uint16_t comId,
-                         uint16_t comIdExt) : m_sps(sps), m_comId(comId), m_comIdExt(comIdExt) {}
+                         uint16_t comIdExt) : m_sps(sps), m_comId(comId), m_comIdExt(comIdExt) {
+    assert(m_sps);
+}
 
 
 void MockSession::Input(std::span<const std::byte> data) {
