@@ -25,7 +25,7 @@ public:
     Uid GetUID() const;
 
 private:
-    const Uid m_uid;
+    Uid m_uid;
     std::vector<Value> m_values;
 };
 
@@ -37,7 +37,7 @@ public:
     Uid GetUID() const;
 
 private:
-    const Uid m_uid;
+    Uid m_uid;
     std::unordered_set<Uid> m_objects;
 };
 
