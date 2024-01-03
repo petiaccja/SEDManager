@@ -52,15 +52,14 @@ void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 namespace impl {
 
-
+    // clang-format off
     template <class T>
     concept OptionalType =
         requires(T& v) {
             typename T::value_type;
-            {
-                v
-                } -> std::same_as<std::optional<typename T::value_type>&>;
+            { v } -> std::same_as<std::optional<typename T::value_type>&>;
         };
+    // clang-format on
 
     static_assert(OptionalType<std::optional<bool>>);
     static_assert(!OptionalType<float>);
