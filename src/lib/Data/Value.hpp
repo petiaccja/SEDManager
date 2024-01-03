@@ -2,15 +2,16 @@
 
 #include <Error/Exception.hpp>
 
-#include <algorithm>
 #include <any>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <format>
-#include <optional>
+#include <memory>
 #include <span>
 #include <string>
 #include <typeinfo>
+#include <variant>
 #include <vector>
 
 
@@ -30,13 +31,23 @@ struct Named;
 
 
 class Value {
-    struct AsBytesType {};
-
-public:
-    static constexpr auto bytes = AsBytesType{};
-    using ListType = std::vector<Value>;
-    using BytesType = std::vector<std::byte>;
-    using IntTypes = std::tuple<bool, char, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t>;
+    using List = std::vector<Value>;
+    using Bytes = std::vector<std::byte>;
+    using StorageType = std::variant<
+        bool,
+        char,
+        uint8_t,
+        uint16_t,
+        uint32_t,
+        uint64_t,
+        int8_t,
+        int16_t,
+        int32_t,
+        int64_t,
+        eCommand,
+        Named,
+        List,
+        Bytes>;
 
 public:
     Value() = default;
@@ -57,6 +68,8 @@ public:
         requires std::same_as<std::ranges::range_value_t<R>, std::byte>
     Value(R&& bytes);
 
+    template <class Visitor>
+    auto VisitInt(Visitor&& visitor) const;
 
     template <std::integral T>
     T GetInt() const;
@@ -114,7 +127,7 @@ public:
     bool IsList() const;
     bool IsNamed() const;
     bool IsCommand() const;
-    bool HasValue() const { return m_value.has_value(); }
+    bool HasValue() const;
     const std::type_info& Type() const;
     std::string GetTypeStr() const;
 
@@ -122,81 +135,68 @@ public:
     bool operator!=(const Value& rhs) const { return !operator==(rhs); }
 
 private:
-    std::any m_value;
+    template <class T>
+    static std::string GetTypeStr();
+
+private:
+    std::shared_ptr<StorageType> m_storage;
 };
 
 
 struct Named {
     Value name;
     Value value;
+
+    bool operator==(const Named&) const = default;
+    bool operator!=(const Named&) const = default;
 };
 
 
-namespace impl {
-
-    template <class Func, class P, class... Ps>
-    decltype(auto) ForEachTypeHelper(Func func, const P* ptr, const Ps*... ptrs) {
-        std::optional value = func(ptr);
-        if (value) {
-            return value;
-        }
-        if constexpr (sizeof...(ptrs) == 0) {
-            return decltype(value){ std::nullopt };
-        }
-        else {
-            return ForEachTypeHelper(func, ptrs...);
-        }
-    }
-
-    template <class TupleType, class Func, size_t... Indices>
-    decltype(auto) ForEachTypeHelper(Func func, std::index_sequence<Indices...>) {
-        std::tuple ptrs{ static_cast<std::tuple_element_t<Indices, TupleType>*>(nullptr)... };
-        const auto dispatch = [&func](const auto*... ptrs) {
-            return ForEachTypeHelper(func, ptrs...);
-        };
-        return std::apply(dispatch, ptrs);
-    }
-
-
-    template <class TupleType, class Func>
-    decltype(auto) ForEachType(Func func) {
-        return ForEachTypeHelper<TupleType>(std::move(func), std::make_index_sequence<std::tuple_size_v<TupleType>>());
-    }
-
-} // namespace impl
-
-
 Value::Value(std::integral auto value)
-    : m_value(value) {}
+    : m_storage(std::make_shared<StorageType>(value)) {}
 
 
 template <std::ranges::range R>
     requires std::convertible_to<std::ranges::range_value_t<R>, Value>
 Value::Value(R&& values)
-    : m_value(ListType(std::ranges::begin(values), std::ranges::end(values))) {}
+    : m_storage(std::make_shared<StorageType>(List(std::ranges::begin(values), std::ranges::end(values)))) {}
 
 
 template <std::ranges::range R>
     requires std::same_as<std::ranges::range_value_t<R>, std::byte>
-Value::Value(R&& values) {
-    m_value = BytesType(std::ranges::begin(values), std::ranges::end(values));
+Value::Value(R&& values)
+    : m_storage(std::make_shared<StorageType>(Bytes(std::ranges::begin(values), std::ranges::end(values)))) {}
+
+
+template <class Visitor>
+auto Value::VisitInt(Visitor&& visitor) const {
+    if (!IsInteger()) {
+        throw TypeConversionError(GetTypeStr(), "<int*>");
+    }
+    const auto _visitor = [&]<class S>(const S& value) -> std::invoke_result_t<Visitor, int> {
+        if constexpr (std::is_integral_v<S>) {
+            return visitor(value);
+        }
+        throw TypeConversionError(GetTypeStr(), "<int*>");
+    };
+    return std::visit(_visitor, *m_storage);
 }
+
 
 template <std::integral T>
 T Value::GetInt() const {
-    const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<T> {
-        using Q = std::decay_t<decltype(*ptr)>;
-        if (m_value.type() == typeid(Q)) {
-            return static_cast<T>(std::any_cast<const Q&>(m_value));
+    assert(m_storage);
+    const auto visitor = [this]<class S>(const S& value) -> T {
+        if constexpr (std::is_integral_v<S>) {
+            return static_cast<T>(value);
         }
-        return std::nullopt;
-    });
-    if (!v) {
-        const auto targetType = std::format("{}int{}", std::is_signed_v<T> ? "" : "u", sizeof(T) * 8);
-        const auto actualType = GetTypeStr();
-        throw TypeConversionError(actualType, targetType);
-    }
-    return *v;
+        else {
+            const auto targetType = std::format("{}int{}", std::is_signed_v<T> ? "" : "u", sizeof(T) * 8);
+            const auto actualType = GetTypeStr();
+            throw TypeConversionError(actualType, targetType);
+        }
+    };
+    return std::visit(visitor, *m_storage);
 }
 
 
@@ -250,5 +250,35 @@ template <std::same_as<Named> T>
 Named& Value::Get() {
     return GetNamed();
 }
+
+
+template <class T>
+std::string Value::GetTypeStr() {
+    if constexpr (std::is_integral_v<T>) {
+        if constexpr (std::is_signed_v<T>) {
+            return std::format("int{}", 8 * sizeof(T));
+        }
+        else {
+            return std::format("uint{}", 8 * sizeof(T));
+        }
+    }
+    else if constexpr (std::is_same_v<T, List>) {
+        return "list";
+    }
+    else if constexpr (std::is_same_v<T, Named>) {
+        return "named";
+    }
+    else if constexpr (std::is_same_v<T, Bytes>) {
+        return "bytes";
+    }
+    else if constexpr (std::is_same_v<T, eCommand>) {
+        return "command";
+    }
+    else {
+        static_assert(sizeof(T) == 0);
+        std::terminate();
+    }
+}
+
 
 } // namespace sedmgr

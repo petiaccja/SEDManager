@@ -1,9 +1,10 @@
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenBinaryArchive.hpp>
 #include <Archive/Types/ValueToToken.hpp>
 #include <Data/Value.hpp>
 
 #include <cereal/archives/json.hpp>
+
+#include <algorithm>
 
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
