@@ -4,6 +4,8 @@
 #include <Data/NativeTypes.hpp>
 #include <Data/Value.hpp>
 
+#include <algorithm>
+
 
 namespace sedmgr {
 
@@ -57,7 +59,7 @@ namespace impl {
             typename T::value_type;
             {
                 v
-            } -> std::same_as<std::optional<typename T::value_type>&>;
+                } -> std::same_as<std::optional<typename T::value_type>&>;
         };
 
     static_assert(OptionalType<std::optional<bool>>);
