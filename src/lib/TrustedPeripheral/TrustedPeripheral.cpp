@@ -41,7 +41,7 @@ TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevic
                 std::tie(m_comId, m_comIdExtension) = RequestComId();
             }
             catch (std::exception& ex) {
-                throw std::runtime_error(std::format("dynamically allocating ComID failed: ", ex.what()));
+                throw std::runtime_error(std::format("dynamically allocating ComID failed: {}", ex.what()));
             }
         }
         else {
