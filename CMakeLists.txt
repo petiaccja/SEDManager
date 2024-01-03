@@ -21,6 +21,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 		add_compile_options("-fsanitize=memory")
 		add_link_options("-fsanitize=memory")
 	endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
+	add_compile_options("/utf-8")
 endif()
 
 add_subdirectory(src)
