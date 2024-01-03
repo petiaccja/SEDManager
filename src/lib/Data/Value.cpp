@@ -3,53 +3,28 @@
 
 namespace sedmgr {
 
+
 //------------------------------------------------------------------------------
 // Construction
 //------------------------------------------------------------------------------
 
 Value::Value(std::initializer_list<Value> values)
-    : m_value(ListType(values)) {}
+    : m_storage(std::make_shared<StorageType>(List(values))) {}
 
 
 Value::Value(Named value)
-    : m_value(std::move(value)) {}
+    : m_storage(std::make_shared<StorageType>(std::move(value))) {}
 
 
 Value::Value(eCommand command)
-    : m_value(command) {}
+    : m_storage(std::make_shared<StorageType>(command)) {}
 
 
 bool Value::operator==(const Value& rhs) const {
-    if (IsInteger() && rhs.IsInteger()) {
-        if (Type() != rhs.Type()) {
-            return false;
-        }
-        const auto cmpResult = impl::ForEachType<IntTypes>([&]<class T>(T*) -> std::optional<bool> {
-            if (Type() == typeid(T)) {
-                const auto lhsv = Get<T>();
-                const auto rhsv = rhs.Get<T>();
-                return lhsv == rhsv;
-            }
-            return std::nullopt;
-        });
-        return cmpResult.value_or(false);
+    if (HasValue() && rhs.HasValue()) {
+        return *m_storage == *rhs.m_storage;
     }
-    else if (IsBytes() && rhs.IsBytes()) {
-        return std::ranges::equal(GetBytes(), rhs.GetBytes());
-    }
-    else if (IsCommand() && rhs.IsCommand()) {
-        return GetCommand() == rhs.GetCommand();
-    }
-    else if (IsList() && rhs.IsList()) {
-        return std::ranges::equal(GetList(), rhs.GetList());
-    }
-    else if (IsNamed() && rhs.IsNamed()) {
-        return GetNamed().name == rhs.GetNamed().name && GetNamed().value == rhs.GetNamed().value;
-    }
-    else if (!HasValue() && !rhs.HasValue()) {
-        return true;
-    }
-    return false;
+    return !HasValue() && !rhs.HasValue();
 }
 
 
@@ -58,127 +33,101 @@ bool Value::operator==(const Value& rhs) const {
 //------------------------------------------------------------------------------
 
 std::span<const Value> Value::GetList() const {
-    try {
-        return std::any_cast<const ListType&>(m_value);
+    if (IsList()) {
+        return std::get<List>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "list");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<List>());
 }
 
 std::vector<Value>& Value::GetList() {
-    try {
-        return std::any_cast<std::vector<Value>&>(m_value);
+    if (IsList()) {
+        return std::get<List>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "list");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<List>());
 }
 
 std::vector<std::byte>& Value::GetBytes() {
-    try {
-        return std::any_cast<BytesType&>(m_value);
+    if (IsBytes()) {
+        return std::get<Bytes>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "bytes");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<Bytes>());
 }
 
 std::span<const std::byte> Value::GetBytes() const {
-    try {
-        return { std::any_cast<const BytesType&>(m_value) };
+    if (IsBytes()) {
+        return std::get<Bytes>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "bytes");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<Bytes>());
 }
 
 const Named& Value::GetNamed() const {
-    try {
-        return std::any_cast<const Named&>(m_value);
+    if (IsNamed()) {
+        return std::get<Named>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "named");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<Named>());
 }
 
 Named& Value::GetNamed() {
-    try {
-        return std::any_cast<Named&>(m_value);
+    if (IsNamed()) {
+        return std::get<Named>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "named");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<Named>());
 }
 
 eCommand Value::GetCommand() const {
-    try {
-        return std::any_cast<eCommand>(m_value);
+    if (IsCommand()) {
+        return std::get<eCommand>(*m_storage);
     }
-    catch (std::bad_any_cast&) {
-        throw TypeConversionError(GetTypeStr(), "command");
-    }
+    throw TypeConversionError(GetTypeStr(), GetTypeStr<eCommand>());
 }
 
 
 //------------------------------------------------------------------------------
-// Querystd::optional(Get<T>() == )
+// Query
 //------------------------------------------------------------------------------
 
 bool Value::IsInteger() const {
-    const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<bool> {
-        if (m_value.type() == typeid(decltype(*ptr))) {
-            return true;
-        }
-        return std::nullopt;
-    });
-    return v.has_value();
+    if (!m_storage) {
+        return false;
+    }
+    const auto visitor = []<class S>(const S&) { return std::is_integral_v<S>; };
+    return std::visit(visitor, *m_storage);
 }
 
 bool Value::IsBytes() const {
-    return typeid(BytesType) == m_value.type();
+    return m_storage && std::holds_alternative<Bytes>(*m_storage);
 }
 
 bool Value::IsList() const {
-    return typeid(ListType) == m_value.type();
+    return m_storage && std::holds_alternative<List>(*m_storage);
 }
 
 bool Value::IsNamed() const {
-    return typeid(Named) == m_value.type();
+    return m_storage && std::holds_alternative<Named>(*m_storage);
 }
 
 bool Value::IsCommand() const {
-    return typeid(eCommand) == m_value.type();
+    return m_storage && std::holds_alternative<eCommand>(*m_storage);
+}
+
+bool Value::HasValue() const {
+    return m_storage != nullptr;
 }
 
 const std::type_info& Value::Type() const {
-    return m_value.type();
+    if (!HasValue()) {
+        return typeid(void);
+    }
+    const auto visitor = []<class S>(const S&) -> const std::type_info& { return typeid(S); };
+    return std::visit(visitor, *m_storage);
 }
 
 std::string Value::GetTypeStr() const {
-    if (IsInteger()) {
-        const auto v = impl::ForEachType<IntTypes>([this](auto* ptr) -> std::optional<std::pair<size_t, bool>> {
-            using Q = std::decay_t<decltype(*ptr)>;
-            if (m_value.type() == typeid(Q)) {
-                return std::pair{ sizeof(Q), std::is_signed_v<Q> };
-            }
-            return std::nullopt;
-        });
-        return std::format("{}int{}", v->second ? "" : "u", v->first * 8);
+    if (!HasValue()) {
+        return "<empty>";
     }
-    else if (IsCommand()) {
-        return "command";
-    }
-    else if (IsList()) {
-        return "list";
-    }
-    else if (IsNamed()) {
-        return "named";
-    }
-    else if (IsBytes()) {
-        return "bytes";
-    }
-    return "<empty>";
+    const auto visitor = []<class S>(const S&) { return GetTypeStr<S>(); };
+    return std::visit(visitor, *m_storage);
 }
 
 } // namespace sedmgr

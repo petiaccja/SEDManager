@@ -96,20 +96,15 @@ namespace impl {
             out.push_back(std::move(token));
         }
         else if (value.IsInteger()) {
-            const auto result = ForEachType<Value::IntTypes>([&]<class T>(T*) -> std::optional<bool> {
-                if (value.Type() == typeid(T)) {
-                    Token token = {
-                        .tag = eTag::SHORT_ATOM,
-                        .isByte = false,
-                        .isSigned = std::is_signed_v<T>,
-                        .data = ToBytes(value.Get<T>()),
-                    };
-                    out.push_back(std::move(token));
-                    return true;
-                }
-                return std::nullopt;
+            auto token = value.VisitInt([]<class T>(const T& value) {
+                return Token{
+                    .tag = eTag::SHORT_ATOM,
+                    .isByte = false,
+                    .isSigned = std::is_signed_v<T>,
+                    .data = ToBytes(value),
+                };
             });
-            assert(result.has_value());
+            out.push_back(std::move(token));
         }
         else if (value.IsList()) {
             out.push_back(Token{ .tag = eTag::START_LIST });
