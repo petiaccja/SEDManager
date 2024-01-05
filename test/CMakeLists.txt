@@ -3,7 +3,7 @@ add_executable(Test)
 target_sources(Test
     PRIVATE
         main.cpp
-        Archive/TestTokenArchive.cpp
+        Data/TestTokenStream.cpp
         Archive/TestValueToJSON.cpp
         Archive/TestValueToNative.cpp
         Data/TestComPacket.cpp

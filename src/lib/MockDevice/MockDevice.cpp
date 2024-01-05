@@ -5,7 +5,6 @@
 #include "MockSetupLayer.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Archive/Types/ValueToToken.hpp>
 #include <Data/Value.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>

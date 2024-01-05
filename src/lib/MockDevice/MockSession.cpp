@@ -1,8 +1,8 @@
 #include "MockSession.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Archive/Types/ValueToToken.hpp>
 #include <Data/ComPacket.hpp>
+#include <Data/TokenStream.hpp>
 #include <Data/Value.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
@@ -36,8 +36,8 @@ void MockSession::Input(std::span<const std::byte> data) {
     if (subPacket.payload.size() != subPacket.PayloadLength()) {
         throw DeviceError("invalid SubPacket payload");
     }
-    Value value;
-    FromTokens(subPacket.payload, value);
+    const auto tokenStream = SurroundWithList(DeSerialize(Serialized<TokenStream>{ subPacket.payload }));
+    const Value value = DeTokenize(Tokenized<Value>{ tokenStream.stream }).first;
     if (value.Is<List>()) {
         const auto& items = value.Get<List>();
         if (items.size() >= 1 && items[0].Is<eCommand>() && items[0].Get<eCommand>() == eCommand::END_OF_SESSION) {
@@ -210,7 +210,7 @@ void MockSession::EndSession() {
     m_sp = std::nullopt;
     m_tsn = std::nullopt;
     m_hsn = std::nullopt;
-    EnqueueResponse(Value(eCommand::END_OF_SESSION));
+    EnqueueResponse(Value(List{ eCommand::END_OF_SESSION }));
 }
 
 
@@ -330,10 +330,8 @@ void MockSession::EnqueueMethodResult(const MethodResult& result) {
 
 
 void MockSession::EnqueueResponse(const Value& value) {
-    std::stringstream ss(std::ios::binary | std::ios::out);
-    TokenBinaryOutputArchive ar(ss);
-    save_strip_list(ar, value);
-    const auto bytes = std::as_bytes(std::span(ss.view()));
+    const auto tokenStream = UnSurroundWithList(TokenStream{ Tokenize(value) });
+    const auto bytes = Serialize(tokenStream);
     SubPacket subPacket{
         .kind = uint16_t(eSubPacketKind::DATA), .payload = {bytes.begin(), bytes.end()}
     };

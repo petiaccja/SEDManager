@@ -11,6 +11,8 @@ target_sources(Data
         NativeTypes.cpp
         NativeTypes.hpp
         SetupPackets.hpp
+        TokenStream.cpp
+        TokenStream.hpp
 )
 
 target_include_directories(Data INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

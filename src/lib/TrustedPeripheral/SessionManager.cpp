@@ -3,10 +3,8 @@
 #include "Logging.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenBinaryArchive.hpp>
-#include <Archive/TokenDebugArchive.hpp>
-#include <Archive/Types/ValueToToken.hpp>
 #include <Data/ComPacket.hpp>
+#include <Data/TokenStream.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 
@@ -73,13 +71,15 @@ auto SessionManager::StartSession(
 asyncpp::task<void> SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     Value request = eCommand::END_OF_SESSION;
     Log("Close session", request);
-    auto payload = ToTokens(request);
+    const auto requestStream = TokenStream{ Tokenize(request) };
+    const auto payload = Serialize(requestStream);
     const auto packet = CreatePacket(std::move(payload), tperSessionNumber, hostSessionNumber);
     const auto result = co_await m_tper->SendPacket(PROTOCOL, packet);
     try {
         const auto resultBytes = UnwrapPacket(result);
         Value resultValue;
-        FromTokens(resultBytes, resultValue);
+        const auto responseStream = SurroundWithList(DeSerialize(Serialized<TokenStream>{ resultBytes }));
+        const Value response = DeTokenize(Tokenized<Value>{ responseStream.stream }).first;
         if (resultValue.HasValue()) {
             Log("Close session: response", resultValue);
         }
@@ -132,23 +132,20 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 asyncpp::task<Method> SessionManager::InvokeMethod(const Method& method) {
     const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
-        const Value requestStream = MethodToValue(INVOKING_ID, method);
-        Log(std::format("Call '{}' [SessionManager]", methodIdStr), requestStream);
-        std::stringstream requestSs(std::ios::binary | std::ios::out);
-        TokenBinaryOutputArchive requestAr(requestSs);
-        save_strip_list(requestAr, requestStream);
-        const auto requestTokens = std::as_bytes(std::span(requestSs.view()));
-        const auto requestPacket = CreatePacket({ requestTokens.begin(), requestTokens.end() });
+        const Value request = MethodToValue(INVOKING_ID, method);
+        Log(std::format("Call '{}' [SessionManager]", methodIdStr), request);
+        const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
+        const auto requestBytes = Serialize(requestStream);
+        const auto requestPacket = CreatePacket(requestBytes);
         const auto responsePacket = co_await m_tper->SendPacket(PROTOCOL, requestPacket);
-        const auto responseTokens = UnwrapPacket(responsePacket);
+        const auto responseBytes = UnwrapPacket(responsePacket);
+        const auto responseStream = SurroundWithList(DeSerialize(Serialized<TokenStream>{ responseBytes }));
+        const Value response = DeTokenize(Tokenized<Value>{ responseStream.stream }).first;
+        Log(std::format("Result '{}' [SessionManager]", methodIdStr), response);
 
-        Value responseStream;
-        FromTokens(responseTokens, responseStream);
-        Log(std::format("Result '{}' [SessionManager]", methodIdStr), responseStream);
-
-        auto response = MethodFromValue(responseStream);
-        MethodStatusToException(methodIdStr, response.status);
-        co_return response;
+        auto responseMethod = MethodFromValue(response);
+        MethodStatusToException(methodIdStr, responseMethod.status);
+        co_return responseMethod;
     }
     catch (InvocationError&) {
         throw;

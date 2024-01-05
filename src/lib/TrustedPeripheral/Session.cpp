@@ -4,9 +4,8 @@
 #include <async++/join.hpp>
 
 #include <Archive/Conversion.hpp>
-#include <Archive/TokenDebugArchive.hpp>
-#include <Archive/Types/ValueToToken.hpp>
 #include <Data/ComPacket.hpp>
+#include <Data/TokenStream.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
@@ -118,15 +117,13 @@ namespace impl {
 
             const auto request = MethodToValue(invokingId, method);
             Log(std::format("Call '{}' [Session]", methodIdStr), request);
-            std::stringstream requestSs(std::ios::binary | std::ios::out);
-            TokenBinaryOutputArchive requestAr(requestSs);
-            save_strip_list(requestAr, request);
-            const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
+            const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
+            const auto requestBytes = Serialize(requestStream);
             const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
             const auto responsePacket = co_await m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
             const auto responseBytes = UnwrapPacket(responsePacket);
-            Value response;
-            FromTokens(responseBytes, response);
+            const auto responseStream = SurroundWithList(DeSerialize(Serialized<TokenStream>{ responseBytes }));
+            const Value response = DeTokenize(Tokenized<Value>{ responseStream.stream }).first;
             Log(std::format("Result '{}' [Session]", methodIdStr), response);
 
             MethodResult result = MethodResultFromValue(response);

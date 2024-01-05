@@ -9,18 +9,12 @@ target_sources(Archive
         FlatBinaryArchive.hpp
         Token.cpp
         Token.hpp
-        TokenDebugArchive.cpp
-        TokenDebugArchive.hpp
-        TokenBinaryArchive.cpp
-        TokenBinaryArchive.hpp
 )
 
 target_sources(Archive
     PRIVATE
         Types/ValueToJSON.cpp
         Types/ValueToJSON.hpp
-        Types/ValueToToken.cpp
-        Types/ValueToToken.hpp
         Types/ValueToNative.hpp
 )
 

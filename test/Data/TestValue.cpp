@@ -1,5 +1,4 @@
 #include <Archive/Conversion.hpp>
-#include <Archive/Types/ValueToToken.hpp>
 #include <Data/Value.hpp>
 
 #include <cereal/archives/json.hpp>
