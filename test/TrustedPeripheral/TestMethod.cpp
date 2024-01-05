@@ -15,8 +15,8 @@ TEST_CASE("Method: parse method roundtrip", "[Method]") {
         .status = eMethodStatus::FAIL,
     };
 
-    const auto value = MethodToValue(input);
-    const MethodCall output = MethodFromValue(value);
+    const auto value = MethodCallToValue(input);
+    const MethodCall output = MethodCallFromValue(value);
 
     REQUIRE(output.methodId == input.methodId);
     REQUIRE(output.args.size() == 3);
@@ -36,7 +36,7 @@ TEST_CASE("Method: parse method - invalid input", "[Method]") {
         eCommand::END_OF_DATA,
         { 0, 0, 0 }
     };
-    REQUIRE_THROWS_AS(MethodFromValue(input), std::invalid_argument);
+    REQUIRE_THROWS_AS(MethodCallFromValue(input), std::invalid_argument);
 }
 
 

@@ -6,7 +6,7 @@
 
 namespace sedmgr {
 
-Value MethodToValue(const MethodCall& method) {
+Value MethodCallToValue(const MethodCall& method) {
     Value stream = {
         eCommand::CALL,
         ToBytes(uint64_t(method.invokingId)),
@@ -19,11 +19,11 @@ Value MethodToValue(const MethodCall& method) {
 }
 
 
-MethodCall MethodFromValue(const Value& stream) {
-    if (!stream.Is<List>()) {
+MethodCall MethodCallFromValue(const Value& value) {
+    if (!value.Is<List>()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = stream.Get<List>();
+    const auto content = value.Get<List>();
     if (content.size() < 6) {
         throw std::invalid_argument("method stream must contains at least CALL, invoking ID, method ID, arg list, EOD, and status list");
     }
@@ -64,11 +64,11 @@ MethodCall MethodFromValue(const Value& stream) {
 }
 
 
-MethodResult MethodResultFromValue(const Value& result) {
-    if (!result.Is<List>()) {
+MethodResult MethodResultFromValue(const Value& value) {
+    if (!value.Is<List>()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = result.Get<List>();
+    const auto content = value.Get<List>();
     if (content.size() < 3) {
         throw std::invalid_argument("method result stream must contain at least result list, EOD, and status list");
     }
@@ -76,7 +76,7 @@ MethodResult MethodResultFromValue(const Value& result) {
     if (content[0].Is<eCommand>() && content[0].Get<eCommand>() == eCommand::CALL) {
         MethodCall method;
         try {
-            method = MethodFromValue(result);
+            method = MethodCallFromValue(value);
         }
         catch (std::exception& ex) {
             throw std::invalid_argument(std::format("failed to parse results (result was a call): {}", ex.what()));

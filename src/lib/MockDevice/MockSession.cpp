@@ -45,7 +45,7 @@ void MockSession::Input(std::span<const std::byte> data) {
         }
         else {
             try {
-                const auto method = MethodFromValue(value);
+                const auto method = MethodCallFromValue(value);
                 if (method.invokingId == Uid(0xFF)) {
                     SessionManagerInput(method);
                 }
@@ -314,7 +314,7 @@ void MockSession::Set(MockSecurityProvider& sp, const MethodCall& method) {
 
 
 void MockSession::EnqueueMethod(const MethodCall& method) {
-    return EnqueueResponse(MethodToValue(method));
+    return EnqueueResponse(MethodCallToValue(method));
 }
 
 

@@ -42,9 +42,9 @@ struct MethodResult {
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
-Value MethodToValue(const MethodCall& method);
-MethodCall MethodFromValue(const Value& stream);
-MethodResult MethodResultFromValue(const Value& stream);
+Value MethodCallToValue(const MethodCall& method);
+MethodCall MethodCallFromValue(const Value& value);
+MethodResult MethodResultFromValue(const Value& value);
 void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 }

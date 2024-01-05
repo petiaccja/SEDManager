@@ -115,7 +115,7 @@ namespace impl {
         try {
             assert(m_sessionManager);
 
-            const auto request = MethodToValue(method);
+            const auto request = MethodCallToValue(method);
             Log(std::format("Call '{}' [Session]", methodIdStr), request);
             const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
             const auto requestBytes = Serialize(requestStream);

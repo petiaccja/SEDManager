@@ -133,7 +133,7 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 asyncpp::task<MethodCall> SessionManager::InvokeMethod(const MethodCall& method) {
     const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
-        const Value request = MethodToValue(method);
+        const Value request = MethodCallToValue(method);
         Log(std::format("Call '{}' [SessionManager]", methodIdStr), request);
         const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
         const auto requestBytes = Serialize(requestStream);
@@ -144,7 +144,7 @@ asyncpp::task<MethodCall> SessionManager::InvokeMethod(const MethodCall& method)
         const Value response = DeTokenize(Tokenized<Value>{ responseStream.stream }).first;
         Log(std::format("Result '{}' [SessionManager]", methodIdStr), response);
 
-        auto responseMethod = MethodFromValue(response);
+        auto responseMethod = MethodCallFromValue(response);
         MethodStatusToException(methodIdStr, responseMethod.status);
         co_return responseMethod;
     }
