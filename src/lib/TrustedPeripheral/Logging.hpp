@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Data/ComPacket.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/ComPacket.hpp>
+#include <Messaging/Value.hpp>
 
 
 namespace sedmgr {

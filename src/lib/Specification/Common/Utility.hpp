@@ -2,7 +2,7 @@
 
 #include "TableDesc.hpp"
 
-#include <Data/NativeTypes.hpp>
+#include <Messaging/NativeTypes.hpp>
 
 #include <algorithm>
 #include <cassert>

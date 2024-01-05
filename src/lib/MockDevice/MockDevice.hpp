@@ -3,7 +3,7 @@
 
 #include "MockSecurityProvider.hpp"
 
-#include <Data/ComPacket.hpp>
+#include <Messaging/ComPacket.hpp>
 #include <StorageDevice/Common/StorageDevice.hpp>
 #include <TrustedPeripheral/Method.hpp>
 

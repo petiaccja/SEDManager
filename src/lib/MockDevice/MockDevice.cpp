@@ -5,7 +5,7 @@
 #include "MockSetupLayer.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/Value.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 

@@ -3,14 +3,14 @@ add_executable(Test)
 target_sources(Test
     PRIVATE
         main.cpp
-        Data/TestTokenStream.cpp
+        Messaging/TestTokenStream.cpp
         Archive/TestValueToJSON.cpp
         Archive/TestValueToNative.cpp
-        Data/TestComPacket.cpp
-        Data/TestNativeTypes.cpp
-        Data/TestType.cpp
-        Data/TestSetupPackets.cpp
-        Data/TestValue.cpp
+        Messaging/TestComPacket.cpp
+        Messaging/TestNativeTypes.cpp
+        Messaging/TestType.cpp
+        Messaging/TestSetupPackets.cpp
+        Messaging/TestValue.cpp
         Specification/TestUtility.cpp
         Specification/TestModule.cpp
         TrustedPeripheral/TestMethod.cpp
@@ -22,5 +22,5 @@ target_sources(Test
 
 find_package(Catch2 3 REQUIRED)
 
-target_link_libraries(Test Archive Data Specification TrustedPeripheral MockDevice)
+target_link_libraries(Test Archive Messaging Specification TrustedPeripheral MockDevice)
 target_link_libraries(Test Catch2::Catch2)

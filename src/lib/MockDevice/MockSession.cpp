@@ -1,9 +1,9 @@
 #include "MockSession.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Data/ComPacket.hpp>
-#include <Data/TokenStream.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/ComPacket.hpp>
+#include <Messaging/TokenStream.hpp>
+#include <Messaging/Value.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 

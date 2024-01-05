@@ -2,7 +2,7 @@
 
 #include "MockSecurityProvider.hpp"
 
-#include <Data/NativeTypes.hpp>
+#include <Messaging/NativeTypes.hpp>
 #include <TrustedPeripheral/Method.hpp>
 
 #include <cstdint>

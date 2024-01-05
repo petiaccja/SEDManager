@@ -5,8 +5,8 @@
 #include <async++/sleep.hpp>
 
 #include <Archive/Conversion.hpp>
-#include <Data/ComPacket.hpp>
-#include <Data/SetupPackets.hpp>
+#include <Messaging/ComPacket.hpp>
+#include <Messaging/SetupPackets.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>

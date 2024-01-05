@@ -17,4 +17,4 @@ target_sources(MockDevice
 )
 
 target_include_directories(MockDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(MockDevice TrustedPeripheral StorageDevice Specification Archive Data)
+target_link_libraries(MockDevice TrustedPeripheral StorageDevice Specification Archive Messaging)

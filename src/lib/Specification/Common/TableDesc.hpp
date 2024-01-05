@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Data/NativeTypes.hpp>
-#include <Data/Type.hpp>
+#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Type.hpp>
 
 
 namespace sedmgr {

@@ -1,5 +1,5 @@
 #include <Archive/Conversion.hpp>
-#include <Data/SetupPackets.hpp>
+#include <Messaging/SetupPackets.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

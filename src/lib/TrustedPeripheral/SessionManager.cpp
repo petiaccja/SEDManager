@@ -3,8 +3,8 @@
 #include "Logging.hpp"
 
 #include <Archive/Conversion.hpp>
-#include <Data/ComPacket.hpp>
-#include <Data/TokenStream.hpp>
+#include <Messaging/ComPacket.hpp>
+#include <Messaging/TokenStream.hpp>
 #include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 

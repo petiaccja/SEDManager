@@ -24,4 +24,4 @@ target_sources(Specification
 )
 
 target_include_directories(Specification INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(Specification Data)
+target_link_libraries(Specification Messaging)

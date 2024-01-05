@@ -21,7 +21,7 @@ target_sources(TrustedPeripheral
 )
 
 target_include_directories(TrustedPeripheral INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(TrustedPeripheral StorageDevice Specification Archive Data)
+target_link_libraries(TrustedPeripheral StorageDevice Specification Archive Messaging)
 
 find_package(asyncpp REQUIRED)
 target_link_libraries(TrustedPeripheral asyncpp::asyncpp)

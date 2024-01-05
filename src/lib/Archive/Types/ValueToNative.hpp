@@ -2,8 +2,8 @@
 
 #include "../Conversion.hpp"
 
-#include <Data/NativeTypes.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Value.hpp>
 #include <Error/Exception.hpp>
 
 #include <concepts>

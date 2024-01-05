@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Data/Type.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/Type.hpp>
+#include <Messaging/Value.hpp>
 
 #include <nlohmann/json.hpp>
 

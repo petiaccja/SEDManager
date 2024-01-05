@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Data/NativeTypes.hpp>
-#include <Data/Value.hpp>
+#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Value.hpp>
 #include <TrustedPeripheral/Method.hpp>
 
 #include <unordered_map>

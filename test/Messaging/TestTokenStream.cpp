@@ -1,5 +1,5 @@
 #include <Archive/Conversion.hpp>
-#include <Data/TokenStream.hpp>
+#include <Messaging/TokenStream.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
