@@ -32,8 +32,8 @@ void save(Archive& ar, const Value& value) {
 
 template <class Archive>
 void save_strip_list(Archive& ar, const Value& value) {
-    if (value.IsList()) {
-        for (const auto& item : value.GetList()) {
+    if (value.Is<List>()) {
+        for (const auto& item : value.Get<List>()) {
             save(ar, item);
         }
     }

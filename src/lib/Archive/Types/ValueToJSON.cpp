@@ -224,23 +224,23 @@ namespace impl {
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const BytesType& type) const {
-            if (value.IsBytes()) {
-                return BytesToJSON(value.GetBytes(), "", InterpretAsString(type));
+            if (value.Is<Bytes>()) {
+                return BytesToJSON(value.Get<Bytes>(), "", InterpretAsString(type));
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const AlternativeType& type) const {
-            if (value.IsNamed()) {
+            if (value.Is<Named>()) {
                 const auto& alts = type.Types();
                 const auto currentTypeType = BytesType(4, true);
-                const Value& currentType = value.GetNamed().name;
-                const Value& currentValue = value.GetNamed().value;
-                if (!currentType.IsBytes()) {
+                const Value& currentType = value.Get<Named>().name;
+                const Value& currentValue = value.Get<Named>().value;
+                if (!currentType.Is<Bytes>()) {
                     throw UnexpectedTypeError(m_formatter(currentTypeType), value.GetTypeStr());
                 }
                 uint32_t altUidLower = 0;
-                FromBytes(currentType.GetBytes(), altUidLower);
+                FromBytes(currentType.Get<Bytes>(), altUidLower);
                 const Uid altUid = uint64_t(altUidLower) | baseTypeUid;
                 const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
                     try {
@@ -262,9 +262,9 @@ namespace impl {
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const ListType& type) const {
-            if (value.IsList()) {
+            if (value.Is<List>()) {
                 std::vector<nlohmann::json> jsons;
-                const auto& items = value.GetList();
+                const auto& items = value.Get<List>();
                 for (auto& item : items) {
                     jsons.push_back(Convert(item, type.ElementType()));
                 }
@@ -274,12 +274,12 @@ namespace impl {
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const StructType& type) const {
-            if (value.IsList()) {
-                const auto& elements = value.GetList();
+            if (value.Is<List>()) {
+                const auto& elements = value.Get<List>();
 
                 const auto [mandatoryTypes, optionalTypeLookup] = ReduceStructType(type);
-                auto mandatoryElements = elements | std::views::filter([](const Value& v) { return !v.IsNamed(); });
-                auto optionalElements = elements | std::views::filter([](const Value& v) { return v.IsNamed(); });
+                auto mandatoryElements = elements | std::views::filter([](const Value& v) { return !v.Is<Named>(); });
+                auto optionalElements = elements | std::views::filter([](const Value& v) { return v.Is<Named>(); });
 
                 std::vector<nlohmann::json> jsons;
 
@@ -292,7 +292,7 @@ namespace impl {
                 }
 
                 for (const auto& optionalElement : optionalElements) {
-                    const auto& named = optionalElement.GetNamed();
+                    const auto& named = optionalElement.Get<Named>();
                     if (!named.name.IsInteger()) {
                         throw InvalidTypeError(std::format("optional element of struct type must have integer key: got '{}'", named.name.GetTypeStr()));
                     }
@@ -312,9 +312,9 @@ namespace impl {
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const ReferenceType& type) const {
-            if (value.IsBytes()) {
+            if (value.Is<Bytes>()) {
                 uint64_t uid;
-                FromBytes(value.GetBytes(), uid);
+                FromBytes(value.Get<Bytes>(), uid);
                 if (m_nameConverter) {
                     const auto maybeName = m_nameConverter(Uid(uid));
                     if (maybeName) {
@@ -327,17 +327,17 @@ namespace impl {
         }
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const NameValueUintegerType& type) const {
-            if (value.IsNamed()) {
-                const auto& name = value.GetNamed().name;
+            if (value.Is<Named>()) {
+                const auto& name = value.Get<Named>().name;
                 if (!name.IsInteger()) {
                     throw UnexpectedTypeError("integer", name.GetTypeStr());
                 }
-                if (name.GetInt<uint16_t>() != type.Name()) {
-                    throw InvalidTypeError(std::format("name encoded in Value ({}) does not match name encoded in Type ({})", name.GetInt<uint16_t>(), type.Name()));
+                if (name.Get<uint16_t>() != type.Name()) {
+                    throw InvalidTypeError(std::format("name encoded in Value ({}) does not match name encoded in Type ({})", name.Get<uint16_t>(), type.Name()));
                 }
                 return nlohmann::json({
                     { "name", type.Name() },
-                    { "value", Convert(value.GetNamed().value, type.ValueType()) },
+                    { "value", Convert(value.Get<Named>().value, type.ValueType()) },
                 });
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
@@ -397,7 +397,7 @@ namespace impl {
             const auto& altJson = json.begin().key();
             const auto& valueJson = json.begin().value();
             uint64_t altUidBits = 0;
-            FromBytes(Convert(altJson, ReferenceType{}).GetBytes(), altUidBits);
+            FromBytes(Convert(altJson, ReferenceType{}).Get<Bytes>(), altUidBits);
             const Uid altUid = altUidBits;
 
             const auto& alts = type.Types();

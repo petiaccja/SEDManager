@@ -54,20 +54,20 @@ namespace impl {
 
 
     void InsertItem(Value& target, Value item) {
-        if (target.IsList()) {
-            target.GetList().push_back(std::move(item));
+        if (target.Is<List>()) {
+            target.Get<List>().push_back(std::move(item));
         }
-        else if (target.IsNamed()) {
-            const bool doName = !target.GetNamed().value.HasValue();
+        else if (target.Is<Named>()) {
+            const bool doName = !target.Get<Named>().value.HasValue();
             if (doName) {
-                target.GetNamed().name = item;
-                target.GetNamed().value = eCommand::EMPTY;
+                target.Get<Named>().name = item;
+                target.Get<Named>().value = eCommand::EMPTY;
             }
             else {
-                if (!target.GetNamed().value.IsCommand() || target.GetNamed().value.Get<eCommand>() != eCommand::EMPTY) {
+                if (!target.Get<Named>().value.Is<eCommand>() || target.Get<Named>().value.Get<eCommand>() != eCommand::EMPTY) {
                     throw std::invalid_argument("named items expect a single item as value");
                 }
-                target.GetNamed().value = std::move(item);
+                target.Get<Named>().value = std::move(item);
             }
         }
         else {
@@ -77,101 +77,11 @@ namespace impl {
 
 
     void ValueToTokens(const Value& value, std::vector<Token>& out) {
-        if (value.IsBytes()) {
-            const auto& bytes = value.GetBytes();
-            Token token = {
-                .tag = GetTagForData(bytes.size()),
-                .isByte = true,
-                .isSigned = false,
-                .data = {bytes.begin(), bytes.end()},
-            };
-            out.push_back(std::move(token));
-        }
-        else if (value.IsCommand()) {
-            Token token = {
-                .tag = static_cast<eTag>(value.GetCommand()),
-                .isByte = false,
-                .isSigned = false,
-            };
-            out.push_back(std::move(token));
-        }
-        else if (value.IsInteger()) {
-            auto token = value.VisitInt([]<class T>(const T& value) {
-                return Token{
-                    .tag = eTag::SHORT_ATOM,
-                    .isByte = false,
-                    .isSigned = std::is_signed_v<T>,
-                    .data = ToBytes(value),
-                };
-            });
-            out.push_back(std::move(token));
-        }
-        else if (value.IsList()) {
-            out.push_back(Token{ .tag = eTag::START_LIST });
-            for (const auto& item : value.GetList()) {
-                ValueToTokens(item, out);
-            }
-            out.push_back(Token{ .tag = eTag::END_LIST });
-        }
-        else if (value.IsNamed()) {
-            out.push_back(Token{ .tag = eTag::START_NAME });
-            ValueToTokens(value.GetNamed().name, out);
-            ValueToTokens(value.GetNamed().value, out);
-            out.push_back(Token{ .tag = eTag::END_NAME });
-        }
-        else if (!value.HasValue()) {
-            return;
-        }
-        else {
-            assert(false);
-        }
+        out = Tokenize(value);
     }
 
     Value TokensToValue(std::span<const Token> tokens) {
-        std::stack<Value> stack;
-        stack.push(Value(std::vector<Value>{}));
-        for (const auto& token : tokens) {
-            if (token.tag == eTag::EMPTY) {
-                continue;
-            }
-            else if (token.tag == eTag::START_LIST) {
-                stack.push(Value(std::vector<Value>{}));
-            }
-            else if (token.tag == eTag::START_NAME) {
-                stack.push(Value(Named{}));
-            }
-            else if (token.tag == eTag::END_LIST) {
-                auto item = std::move(stack.top());
-                if (stack.empty() || !item.IsList()) {
-                    throw InvalidFormatError("invalid token stream: unexpected list close");
-                }
-                stack.pop();
-                InsertItem(stack.top(), std::move(item));
-            }
-            else if (token.tag == eTag::END_NAME) {
-                auto item = std::move(stack.top());
-                if (stack.empty() || !item.IsNamed()) {
-                    throw InvalidFormatError("invalid token stream: unexpected name close");
-                }
-                stack.pop();
-                InsertItem(stack.top(), std::move(item));
-            }
-            else {
-                stack.push(ConvertToData(token));
-            }
-
-            if (!stack.top().IsList() && !stack.top().IsNamed()) {
-                auto item = std::move(stack.top());
-                stack.pop();
-                InsertItem(stack.top(), std::move(item));
-            }
-        }
-
-        if (stack.size() != 1) {
-            throw InvalidFormatError("invalid token stream: unclosed lists or named values");
-        }
-
-        return std::move(stack.top());
+        return DeTokenize(Tokenized<Value>{tokens}).first;
     }
 
 } // namespace impl

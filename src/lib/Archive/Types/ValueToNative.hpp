@@ -53,7 +53,7 @@ namespace impl {
     template <>
     struct ValueCast<std::string> {
         static Value To(const std::string& v) { return Value(std::as_bytes(std::span(v))); }
-        static std::string From(const Value& v) { return std::string(ToStringView(v.Get<std::span<const std::byte>>())); }
+        static std::string From(const Value& v) { return std::string(ToStringView(v.Get<Bytes>())); }
     };
 
 
@@ -61,7 +61,7 @@ namespace impl {
     struct ValueCast<std::string_view> {
         static Value To(const std::string_view& v) { return Value(std::as_bytes(std::span(v))); }
         static std::string_view From(const Value& v) {
-            const auto bytes = v.GetBytes();
+            const auto& bytes = v.Get<Bytes>();
             const auto ptr = reinterpret_cast<const char*>(bytes.data());
             return { ptr, ptr + bytes.size() };
         }
@@ -73,7 +73,7 @@ namespace impl {
         static Value To(const Uid& v) { return Value(ToBytes(uint64_t(v))); }
         static Uid From(const Value& v) {
             uint64_t uid;
-            FromBytes(v.GetBytes(), uid);
+            FromBytes(v.Get<Bytes>(), uid);
             return Uid(uid);
         }
     };
@@ -99,7 +99,7 @@ namespace impl {
             return fields;
         }
         static CellBlock From(const Value& v) {
-            const auto fields = v.Get<std::span<const Value>>();
+            const auto fields = v.Get<List>();
             CellBlock parsed;
             for (const auto& field : fields) {
                 const auto& named = field.Get<Named>();
@@ -128,7 +128,7 @@ namespace impl {
         static Range From(const Value& v) {
             if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
                 Range r;
-                for (const auto byte : v.Get<std::span<const std::byte>>()) {
+                for (const auto byte : v.Get<Bytes>()) {
                     r.push_back(std::bit_cast<std::ranges::range_value_t<Range>>(byte));
                 }
                 return r;
@@ -153,7 +153,7 @@ namespace impl {
         static Range From(const Value& v) {
             if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
                 Range r;
-                for (auto& item : v.GetList()) {
+                for (auto& item : v.Get<List>()) {
                     r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));
                 }
                 return r;
@@ -175,10 +175,10 @@ namespace impl {
             return Value(std::move(nameds));
         }
         static std::unordered_map<K, V> From(const Value& v) {
-            const auto& nameds = v.Get<std::span<const Value>>();
+            const auto& nameds = v.Get<List>();
             std::unordered_map<K, V> mapped = {};
             for (auto& named : nameds) {
-                mapped.insert_or_assign(value_cast<K>(named.GetNamed().name), value_cast<V>(named.GetNamed().value));
+                mapped.insert_or_assign(value_cast<K>(named.Get<Named>().name), value_cast<V>(named.Get<Named>().value));
             }
             return mapped;
         }

@@ -164,14 +164,14 @@ namespace impl {
         auto [nameValuePairs] = co_await InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
         std::vector<Value> values(endColumn - startColumn);
         for (auto& nvp : nameValuePairs) {
-            const auto idx = nvp.GetNamed().name.Get<size_t>();
+            const auto idx = nvp.Get<Named>().name.Get<size_t>();
             if (size_t(idx - startColumn) > values.size()) {
                 throw InvalidResponseError("Get", "too many columns");
             }
-            values[idx - startColumn] = nvp.GetNamed().value;
+            values[idx - startColumn] = nvp.Get<Named>().value;
         }
         std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
-            return std::move(value.GetNamed().value);
+            return std::move(value.Get<Named>().value);
         });
         co_return values;
     }

@@ -20,20 +20,20 @@ Value MethodToValue(Uid invokingId, const Method& method) {
 
 
 Method MethodFromValue(const Value& stream) {
-    if (!stream.IsList()) {
+    if (!stream.Is<List>()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = stream.Get<std::span<const Value>>();
+    const auto content = stream.Get<List>();
     if (content.size() < 6) {
         throw std::invalid_argument("method stream must contains at least CALL, invoking ID, method ID, arg list, EOD, and status list");
     }
     try {
         const auto call = content[0].Get<eCommand>();
-        const auto invokingIdBytes = content[1].Get<std::span<const std::byte>>();
-        const auto methodIdBytes = content[2].Get<std::span<const std::byte>>();
-        const auto args = content[3].Get<std::span<const Value>>();
+        const auto invokingIdBytes = content[1].Get<Bytes>();
+        const auto methodIdBytes = content[2].Get<Bytes>();
+        const auto args = content[3].Get<List>();
         const auto eod = content[4].Get<eCommand>();
-        const auto statusList = content[5].Get<std::span<const Value>>();
+        const auto statusList = content[5].Get<List>();
 
         if (call != eCommand::CALL) {
             throw std::invalid_argument("expected a leading call token");
@@ -62,15 +62,15 @@ Method MethodFromValue(const Value& stream) {
 
 
 MethodResult MethodResultFromValue(const Value& result) {
-    if (!result.IsList()) {
+    if (!result.Is<List>()) {
         throw std::invalid_argument("expected a list as top-level item");
     }
-    const auto content = result.Get<std::span<const Value>>();
+    const auto content = result.Get<List>();
     if (content.size() < 3) {
         throw std::invalid_argument("method result stream must contain at least result list, EOD, and status list");
     }
 
-    if (content[0].IsCommand() && content[0].Get<eCommand>() == eCommand::CALL) {
+    if (content[0].Is<eCommand>() && content[0].Get<eCommand>() == eCommand::CALL) {
         Method method;
         try {
             method = MethodFromValue(result);
@@ -84,9 +84,9 @@ MethodResult MethodResultFromValue(const Value& result) {
     }
 
     try {
-        const auto results = content[0].Get<std::span<const Value>>();
+        const auto results = content[0].Get<List>();
         const auto eod = content[1].Get<eCommand>();
-        const auto statusList = content[2].Get<std::span<const Value>>();
+        const auto statusList = content[2].Get<List>();
 
         if (eod != eCommand::END_OF_DATA) {
             throw std::invalid_argument("expected an end of data token after result list");
@@ -139,7 +139,7 @@ namespace impl {
         using Item = std::pair<intptr_t, const Value&>;
         std::vector<Item> labels;
         std::ranges::transform(streams, std::back_inserter(labels), [](const Value& stream) {
-            if (stream.IsNamed()) {
+            if (stream.Is<Named>()) {
                 const auto& named = stream.Get<Named>();
                 if (!named.name.IsInteger()) {
                     throw std::invalid_argument("expected an integer as argument label");

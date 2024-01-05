@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cereal/details/helpers.hpp>
 #include <cereal/types/vector.hpp>
 
+#include <concepts>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 
@@ -42,29 +43,32 @@ struct Token {
     std::vector<std::byte> data = {};
 
     auto operator<=>(const Token&) const noexcept = default;
+
+    bool IsAtom() const;
+    static eTag GetTag(size_t dataLength);
+};
+
+template <class T>
+struct Tokenized {
+    std::span<const Token> tokens;
+};
+
+std::vector<Token> Tokenize(const Token& token);
+std::pair<Token, std::span<const Token>> DeTokenize(Tokenized<Token> tokens);
+
+
+template <class T>
+concept Tokenizable = requires(const T& value, Tokenized<T> tokens) {
+    {
+        Tokenize(value)
+    } -> std::same_as<std::template vector<Token>>;
+    {
+        DeTokenize(tokens)
+    } -> std::same_as<std::pair<T, std::span<const Token>>>;
 };
 
 
-eTag GetTagForData(size_t dataLength);
+static_assert(Tokenizable<Token>);
 
-
-template <class Archive>
-void save(Archive& ar, const Token& token) {
-    ar(cereal::make_nvp("tag", static_cast<uint8_t>(token.tag)));
-    ar(cereal::make_nvp("is_bytes", token.isByte));
-    ar(cereal::make_nvp("is_signed", token.isSigned));
-    ar(cereal::make_nvp("data", token.data));
-}
-
-
-template <class Archive>
-void load(Archive& ar, Token& token) {
-    uint8_t tag = 0;
-    ar(cereal::make_nvp("tag", tag));
-    token.tag = static_cast<eTag>(tag);
-    ar(cereal::make_nvp("is_bytes", token.isByte));
-    ar(cereal::make_nvp("is_signed", token.isSigned));
-    ar(cereal::make_nvp("data", token.data));
-}
 
 } // namespace sedmgr

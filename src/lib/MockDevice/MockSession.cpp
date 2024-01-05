@@ -38,16 +38,16 @@ void MockSession::Input(std::span<const std::byte> data) {
     }
     Value value;
     FromTokens(subPacket.payload, value);
-    if (value.IsList()) {
-        const auto& items = value.GetList();
-        if (items.size() >= 1 && items[0].IsCommand() && items[0].GetCommand() == eCommand::END_OF_SESSION) {
+    if (value.Is<List>()) {
+        const auto& items = value.Get<List>();
+        if (items.size() >= 1 && items[0].Is<eCommand>() && items[0].Get<eCommand>() == eCommand::END_OF_SESSION) {
             EndSession();
         }
         else {
             try {
                 const auto method = MethodFromValue(value);
                 uint64_t invokingId = 0;
-                FromBytes(items[1].GetBytes(), invokingId);
+                FromBytes(items[1].Get<Bytes>(), invokingId);
                 if (invokingId == 0xFF) {
                     SessionManagerInput(method);
                 }
@@ -291,7 +291,7 @@ void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const Method& me
         auto& object = std::get<0>(maybeObject).get();
 
         if (values) {
-            if (values->IsList()) {
+            if (values->Is<List>()) {
                 const auto mapping = value_cast<std::unordered_map<uint32_t, Value>>(*values);
                 const auto result = object.Set(mapping);
                 if (result.index() == 1) {
@@ -303,7 +303,7 @@ void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const Method& me
                     return;
                 }
             }
-            else if (values->IsBytes()) {
+            else if (values->Is<Bytes>()) {
                 throw NotImplementedError();
             }
         }

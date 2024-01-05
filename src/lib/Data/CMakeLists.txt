@@ -14,4 +14,4 @@ target_sources(Data
 )
 
 target_include_directories(Data INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(Data Error)
+target_link_libraries(Data Archive Error)
