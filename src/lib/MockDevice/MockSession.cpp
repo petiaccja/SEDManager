@@ -46,13 +46,11 @@ void MockSession::Input(std::span<const std::byte> data) {
         else {
             try {
                 const auto method = MethodFromValue(value);
-                uint64_t invokingId = 0;
-                FromBytes(items[1].Get<Bytes>(), invokingId);
-                if (invokingId == 0xFF) {
+                if (method.invokingId == Uid(0xFF)) {
                     SessionManagerInput(method);
                 }
                 else {
-                    SessionInput(invokingId, method);
+                    SessionInput(method);
                 }
             }
             catch (std::exception&) {
@@ -115,12 +113,12 @@ void MockSession::SessionManagerInput(const MethodCall& method) {
 }
 
 
-void MockSession::SessionInput(Uid invokingId, const MethodCall& method) {
+void MockSession::SessionInput(const MethodCall& method) {
     if (m_sp) {
         switch (core::eMethod(method.methodId)) {
-            case core::eMethod::Next: Next(m_sp->get(), invokingId, method); break;
-            case core::eMethod::Get: Get(m_sp->get(), invokingId, method); break;
-            case core::eMethod::Set: Set(m_sp->get(), invokingId, method); break;
+            case core::eMethod::Next: Next(m_sp->get(), method); break;
+            case core::eMethod::Get: Get(m_sp->get(), method); break;
+            case core::eMethod::Set: Set(m_sp->get(), method); break;
             default: break;
         }
     }
@@ -132,8 +130,8 @@ void MockSession::StartSession(const MethodCall& method) {
 
     // Handle if a session is already active
     if (m_tsn) {
-        MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::SP_BUSY };
-        EnqueueMethod(0xFF, reply);
+        MethodCall reply{ 0xFF, core::eMethod::SyncSession, {}, eMethodStatus::SP_BUSY };
+        EnqueueMethod(reply);
         return;
     }
 
@@ -161,20 +159,20 @@ void MockSession::StartSession(const MethodCall& method) {
 
         const auto spIt = std::ranges::find_if(*m_sps, [&](auto& sp) { return sp.GetUID() == spId; });
         if (spIt == m_sps->end()) {
-            MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
-            EnqueueMethod(0xFF, reply);
+            MethodCall reply{ 0xFF, core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
+            EnqueueMethod(reply);
         }
 
         m_sp = *spIt;
         m_tsn = nextTsn.fetch_add(1);
         m_hsn = hsn;
 
-        MethodCall reply{ core::eMethod::SyncSession, ArgsToValues(*m_hsn, *m_tsn), eMethodStatus::SUCCESS };
-        EnqueueMethod(0xFF, reply);
+        MethodCall reply{ 0xFF, core::eMethod::SyncSession, ArgsToValues(*m_hsn, *m_tsn), eMethodStatus::SUCCESS };
+        EnqueueMethod(reply);
     }
     catch (std::exception&) {
-        MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
-        EnqueueMethod(0xFF, reply);
+        MethodCall reply{ 0xFF, core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
+        EnqueueMethod(reply);
     }
 }
 
@@ -200,8 +198,8 @@ void MockSession::Properties(const MethodCall& method) {
         { "Asynchronous",     0    },
     };
 
-    MethodCall reply{ core::eMethod::SyncSession, ArgsToValues(tperProperties, hostProperties), eMethodStatus::SUCCESS };
-    EnqueueMethod(0xFF, reply);
+    MethodCall reply{ 0xFF, core::eMethod::SyncSession, ArgsToValues(tperProperties, hostProperties), eMethodStatus::SUCCESS };
+    EnqueueMethod(reply);
 }
 
 
@@ -214,10 +212,10 @@ void MockSession::EndSession() {
 }
 
 
-void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
+void MockSession::Next(MockSecurityProvider& sp, const MethodCall& method) {
     using Args = std::tuple<std::optional<Uid>, std::optional<uint32_t>>;
 
-    const auto maybeTable = sp.GetTable(invokingId);
+    const auto maybeTable = sp.GetTable(method.invokingId);
     try {
         Args args;
         std::apply([&]<class... Args>(Args&&... args) { ArgsFromValues(method.args, std::forward<Args>(args)...); }, args);
@@ -250,7 +248,7 @@ void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const MethodCal
 }
 
 
-void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
+void MockSession::Get(MockSecurityProvider& sp, const MethodCall& method) {
     using Args = std::tuple<CellBlock>;
 
     try {
@@ -258,7 +256,7 @@ void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const MethodCall
         std::apply([&]<class... Args>(Args&&... args) { ArgsFromValues(method.args, std::forward<Args>(args)...); }, args);
         const auto& [cellBlock] = args;
 
-        const auto maybeObject = sp.GetObject(invokingId);
+        const auto maybeObject = sp.GetObject(method.invokingId);
         auto& object = std::get<0>(maybeObject).get();
 
         const auto startColumn = cellBlock.startColumn.value_or(0);
@@ -279,7 +277,7 @@ void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const MethodCall
 }
 
 
-void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
+void MockSession::Set(MockSecurityProvider& sp, const MethodCall& method) {
     using Args = std::tuple<std::optional<Value>, std::optional<Value>>;
 
     try {
@@ -287,7 +285,7 @@ void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const MethodCall
         std::apply([&]<class... Args>(Args&&... args) { ArgsFromValues(method.args, std::forward<Args>(args)...); }, args);
         const auto& [where, values] = args;
 
-        const auto maybeObject = sp.GetObject(invokingId);
+        const auto maybeObject = sp.GetObject(method.invokingId);
         auto& object = std::get<0>(maybeObject).get();
 
         if (values) {
@@ -315,8 +313,8 @@ void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const MethodCall
 }
 
 
-void MockSession::EnqueueMethod(Uid invokingId, const MethodCall& method) {
-    return EnqueueResponse(MethodToValue(invokingId, method));
+void MockSession::EnqueueMethod(const MethodCall& method) {
+    return EnqueueResponse(MethodToValue(method));
 }
 
 

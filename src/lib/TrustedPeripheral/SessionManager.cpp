@@ -24,7 +24,7 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
 auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
     -> asyncpp::task<PropertiesResult> {
     using OutArgs = std::tuple<PropertyMap, std::optional<PropertyMap>>;
-    co_return FromTuple<PropertiesResult>(co_await InvokeMethod<OutArgs>(core::eMethod::Properties, hostProperties));
+    co_return FromTuple<PropertiesResult>(co_await InvokeMethod<OutArgs>(INVOKING_ID, core::eMethod::Properties, hostProperties));
 }
 
 
@@ -51,7 +51,8 @@ auto SessionManager::StartSession(
         std::optional<uint32_t>,
         std::optional<uint32_t>,
         std::optional<std::vector<std::byte>>>;
-    auto results = co_await InvokeMethod<OutArgs>(core::eMethod::StartSession,
+    auto results = co_await InvokeMethod<OutArgs>(INVOKING_ID,
+                                                  core::eMethod::StartSession,
                                                   hostSessionID,
                                                   spId,
                                                   write,
@@ -132,7 +133,7 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 asyncpp::task<MethodCall> SessionManager::InvokeMethod(const MethodCall& method) {
     const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
-        const Value request = MethodToValue(INVOKING_ID, method);
+        const Value request = MethodToValue(method);
         Log(std::format("Call '{}' [SessionManager]", methodIdStr), request);
         const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
         const auto requestBytes = Serialize(requestStream);

@@ -110,12 +110,12 @@ namespace impl {
     }
 
 
-    asyncpp::task<MethodResult> Template::InvokeMethod(Uid invokingId, const MethodCall& method) {
+    asyncpp::task<MethodResult> Template::InvokeMethod(const MethodCall& method) {
         const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
         try {
             assert(m_sessionManager);
 
-            const auto request = MethodToValue(invokingId, method);
+            const auto request = MethodToValue(method);
             Log(std::format("Call '{}' [Session]", methodIdStr), request);
             const auto requestStream = UnSurroundWithList(TokenStream{ Tokenize(request) });
             const auto requestBytes = Serialize(requestStream);

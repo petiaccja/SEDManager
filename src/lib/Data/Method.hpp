@@ -30,6 +30,7 @@ enum class eMethodStatus : uint8_t {
 
 
 struct MethodCall {
+    Uid invokingId;
     Uid methodId;
     std::vector<Value> args;
     eMethodStatus status = eMethodStatus::SUCCESS;
@@ -41,7 +42,7 @@ struct MethodResult {
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
 
-Value MethodToValue(Uid invokingId, const MethodCall& method);
+Value MethodToValue(const MethodCall& method);
 MethodCall MethodFromValue(const Value& stream);
 MethodResult MethodResultFromValue(const Value& stream);
 void MethodStatusToException(std::string_view methodName, eMethodStatus status);

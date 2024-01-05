@@ -6,10 +6,10 @@
 
 namespace sedmgr {
 
-Value MethodToValue(Uid invokingId, const MethodCall& method) {
+Value MethodToValue(const MethodCall& method) {
     Value stream = {
         eCommand::CALL,
-        ToBytes(uint64_t(invokingId)),
+        ToBytes(uint64_t(method.invokingId)),
         ToBytes(uint64_t(method.methodId)),
         method.args,
         eCommand::END_OF_DATA,
@@ -48,7 +48,10 @@ MethodCall MethodFromValue(const Value& stream) {
 
         uint64_t methodId;
         FromBytes(methodIdBytes, methodId);
+        uint64_t invokingId;
+        FromBytes(invokingIdBytes, invokingId);
         MethodCall method{
+            .invokingId = invokingId,
             .methodId = methodId,
             .args = {begin(args), end(args)},
             .status = static_cast<eMethodStatus>(statusCode),

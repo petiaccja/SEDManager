@@ -20,7 +20,7 @@ namespace impl {
                  uint32_t hostSessionNumber);
 
     protected:
-        asyncpp::task<MethodResult> InvokeMethod(Uid invokingId, const MethodCall& method);
+        asyncpp::task<MethodResult> InvokeMethod(const MethodCall& method);
 
         template <class OutArgs = std::tuple<>, class... InArgs>
         asyncpp::task<OutArgs> InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
@@ -114,9 +114,9 @@ namespace impl {
     template <class OutArgs, class... InArgs>
     asyncpp::task<OutArgs> Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
         std::vector<Value> args = ArgsToValues(inArgs...);
-        const MethodCall method{ .methodId = methodId, .args = std::move(args) };
+        const MethodCall method{ .invokingId = invokingId, .methodId = methodId, .args = std::move(args) };
 
-        const MethodResult result = co_await InvokeMethod(invokingId, method);
+        const MethodResult result = co_await InvokeMethod(method);
 
         OutArgs outArgs;
         try {

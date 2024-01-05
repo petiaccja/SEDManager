@@ -21,17 +21,17 @@ public:
 
 private:
     void SessionManagerInput(const MethodCall& method);
-    void SessionInput(Uid invokingId, const MethodCall& method);
+    void SessionInput(const MethodCall& method);
 
     void StartSession(const MethodCall& method);
     void Properties(const MethodCall& method);
     void EndSession();
 
-    void Next(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method);
-    void Get(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method);
-    void Set(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method);
+    void Next(MockSecurityProvider& sp, const MethodCall& method);
+    void Get(MockSecurityProvider& sp, const MethodCall& method);
+    void Set(MockSecurityProvider& sp, const MethodCall& method);
 
-    void EnqueueMethod(Uid invokingId, const MethodCall& method);
+    void EnqueueMethod(const MethodCall& method);
     void EnqueueMethodResult(const MethodResult& result);
     void EnqueueResponse(const Value& value);
 

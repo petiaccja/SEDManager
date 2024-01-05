@@ -66,7 +66,7 @@ private:
     asyncpp::task<MethodCall> InvokeMethod(const MethodCall& method);
 
     template <class OutArgs, class... InArgs>
-    asyncpp::task<OutArgs> InvokeMethod(Uid methodId, const InArgs&... inArgs);
+    asyncpp::task<OutArgs> InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
 
     const ModuleCollection& GetModules() const;
 
@@ -78,9 +78,9 @@ private:
 
 
 template <class OutArgs, class... InArgs>
-asyncpp::task<OutArgs> SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
+asyncpp::task<OutArgs> SessionManager::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
-    const MethodCall result = co_await InvokeMethod(MethodCall{ .methodId = methodId, .args = std::move(args) });
+    const MethodCall result = co_await InvokeMethod(MethodCall{ .invokingId = invokingId, .methodId = methodId, .args = std::move(args) });
 
     OutArgs outArgs;
     try {
