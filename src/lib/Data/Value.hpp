@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Archive/Token.hpp"
+#include "Token.hpp"
 #include <Error/Exception.hpp>
 
 #include <algorithm>

@@ -7,8 +7,6 @@ target_sources(Archive
         Conversion.hpp
         FlatBinaryArchive.cpp
         FlatBinaryArchive.hpp
-        Token.cpp
-        Token.hpp
 )
 
 target_sources(Archive

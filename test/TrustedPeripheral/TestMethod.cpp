@@ -8,14 +8,14 @@ using namespace sedmgr;
 
 
 TEST_CASE("Method: parse method roundtrip", "[Method]") {
-    const Method input = {
+    const MethodCall input = {
         .methodId = 0xDEADBEEF,
         .args = {1, 2, 3},
         .status = eMethodStatus::FAIL,
     };
 
     const auto value = MethodToValue(0xFF, input);
-    const Method output = MethodFromValue(value);
+    const MethodCall output = MethodFromValue(value);
 
     REQUIRE(output.methodId == input.methodId);
     REQUIRE(output.args.size() == 3);

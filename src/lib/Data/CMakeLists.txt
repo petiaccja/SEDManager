@@ -13,6 +13,10 @@ target_sources(Data
         SetupPackets.hpp
         TokenStream.cpp
         TokenStream.hpp
+        Token.cpp
+        Token.hpp
+        Method.cpp
+        Method.hpp
 )
 
 target_include_directories(Data INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

@@ -129,7 +129,7 @@ std::span<const std::byte> SessionManager::UnwrapPacket(const ComPacket& packet)
 }
 
 
-asyncpp::task<Method> SessionManager::InvokeMethod(const Method& method) {
+asyncpp::task<MethodCall> SessionManager::InvokeMethod(const MethodCall& method) {
     const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
     try {
         const Value request = MethodToValue(INVOKING_ID, method);

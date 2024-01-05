@@ -110,7 +110,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<MethodResult> Template::InvokeMethod(Uid invokingId, const Method& method) {
+    asyncpp::task<MethodResult> Template::InvokeMethod(Uid invokingId, const MethodCall& method) {
         const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
         try {
             assert(m_sessionManager);

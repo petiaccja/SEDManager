@@ -63,7 +63,7 @@ public:
     static std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
 
 private:
-    asyncpp::task<Method> InvokeMethod(const Method& method);
+    asyncpp::task<MethodCall> InvokeMethod(const MethodCall& method);
 
     template <class OutArgs, class... InArgs>
     asyncpp::task<OutArgs> InvokeMethod(Uid methodId, const InArgs&... inArgs);
@@ -80,7 +80,7 @@ private:
 template <class OutArgs, class... InArgs>
 asyncpp::task<OutArgs> SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
     std::vector<Value> args = ArgsToValues(inArgs...);
-    const Method result = co_await InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
+    const MethodCall result = co_await InvokeMethod(MethodCall{ .methodId = methodId, .args = std::move(args) });
 
     OutArgs outArgs;
     try {

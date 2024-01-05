@@ -106,7 +106,7 @@ void MockSession::Output(std::span<std::byte> data) {
 }
 
 
-void MockSession::SessionManagerInput(const Method& method) {
+void MockSession::SessionManagerInput(const MethodCall& method) {
     switch (core::eMethod(method.methodId)) {
         case core::eMethod::StartSession: StartSession(method); break;
         case core::eMethod::Properties: Properties(method); break;
@@ -115,7 +115,7 @@ void MockSession::SessionManagerInput(const Method& method) {
 }
 
 
-void MockSession::SessionInput(Uid invokingId, const Method& method) {
+void MockSession::SessionInput(Uid invokingId, const MethodCall& method) {
     if (m_sp) {
         switch (core::eMethod(method.methodId)) {
             case core::eMethod::Next: Next(m_sp->get(), invokingId, method); break;
@@ -127,12 +127,12 @@ void MockSession::SessionInput(Uid invokingId, const Method& method) {
 }
 
 
-void MockSession::StartSession(const Method& method) {
+void MockSession::StartSession(const MethodCall& method) {
     static std::atomic_uint32_t nextTsn = 0x1000;
 
     // Handle if a session is already active
     if (m_tsn) {
-        Method reply{ core::eMethod::SyncSession, {}, eMethodStatus::SP_BUSY };
+        MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::SP_BUSY };
         EnqueueMethod(0xFF, reply);
         return;
     }
@@ -161,7 +161,7 @@ void MockSession::StartSession(const Method& method) {
 
         const auto spIt = std::ranges::find_if(*m_sps, [&](auto& sp) { return sp.GetUID() == spId; });
         if (spIt == m_sps->end()) {
-            Method reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
+            MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
             EnqueueMethod(0xFF, reply);
         }
 
@@ -169,17 +169,17 @@ void MockSession::StartSession(const Method& method) {
         m_tsn = nextTsn.fetch_add(1);
         m_hsn = hsn;
 
-        Method reply{ core::eMethod::SyncSession, ArgsToValues(*m_hsn, *m_tsn), eMethodStatus::SUCCESS };
+        MethodCall reply{ core::eMethod::SyncSession, ArgsToValues(*m_hsn, *m_tsn), eMethodStatus::SUCCESS };
         EnqueueMethod(0xFF, reply);
     }
     catch (std::exception&) {
-        Method reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
+        MethodCall reply{ core::eMethod::SyncSession, {}, eMethodStatus::INVALID_PARAMETER };
         EnqueueMethod(0xFF, reply);
     }
 }
 
 
-void MockSession::Properties(const Method& method) {
+void MockSession::Properties(const MethodCall& method) {
     using PropertyMap = std::unordered_map<std::string, uint32_t>;
 
     using Args = std::tuple<std::optional<PropertyMap>>;
@@ -200,7 +200,7 @@ void MockSession::Properties(const Method& method) {
         { "Asynchronous",     0    },
     };
 
-    Method reply{ core::eMethod::SyncSession, ArgsToValues(tperProperties, hostProperties), eMethodStatus::SUCCESS };
+    MethodCall reply{ core::eMethod::SyncSession, ArgsToValues(tperProperties, hostProperties), eMethodStatus::SUCCESS };
     EnqueueMethod(0xFF, reply);
 }
 
@@ -214,7 +214,7 @@ void MockSession::EndSession() {
 }
 
 
-void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const Method& method) {
+void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
     using Args = std::tuple<std::optional<Uid>, std::optional<uint32_t>>;
 
     const auto maybeTable = sp.GetTable(invokingId);
@@ -250,7 +250,7 @@ void MockSession::Next(MockSecurityProvider& sp, Uid invokingId, const Method& m
 }
 
 
-void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const Method& method) {
+void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
     using Args = std::tuple<CellBlock>;
 
     try {
@@ -279,7 +279,7 @@ void MockSession::Get(MockSecurityProvider& sp, Uid invokingId, const Method& me
 }
 
 
-void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const Method& method) {
+void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const MethodCall& method) {
     using Args = std::tuple<std::optional<Value>, std::optional<Value>>;
 
     try {
@@ -315,7 +315,7 @@ void MockSession::Set(MockSecurityProvider& sp, Uid invokingId, const Method& me
 }
 
 
-void MockSession::EnqueueMethod(Uid invokingId, const Method& method) {
+void MockSession::EnqueueMethod(Uid invokingId, const MethodCall& method) {
     return EnqueueResponse(MethodToValue(invokingId, method));
 }
 
