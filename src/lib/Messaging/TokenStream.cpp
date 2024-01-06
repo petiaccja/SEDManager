@@ -1,8 +1,7 @@
 #include "TokenStream.hpp"
 
-#include <cassert>
 #include <format>
-#include <sstream>
+#include <array>
 
 namespace sedmgr {
 
@@ -17,8 +16,8 @@ TokenStream UnSurroundWithList(TokenStream stream) {
     if (!stream.stream.empty()
         && stream.stream.front().tag == eTag::START_LIST
         && stream.stream.back().tag == eTag::END_LIST) {
+        stream.stream.erase(stream.stream.end() - 1);
         stream.stream.erase(stream.stream.begin());
-        stream.stream.erase(stream.stream.end());
         return stream;
     }
     throw std::invalid_argument("stream must be a list");

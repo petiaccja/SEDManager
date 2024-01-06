@@ -18,6 +18,8 @@ target_sources(Messaging
         Method.cpp
         Method.hpp
 )
-
 target_include_directories(Messaging INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 target_link_libraries(Messaging Archive Error)
+
+find_package(asyncpp)
+target_link_libraries(Messaging asyncpp::asyncpp)

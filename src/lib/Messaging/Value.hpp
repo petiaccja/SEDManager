@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Token.hpp"
+
 #include <Error/Exception.hpp>
 
 #include <algorithm>
@@ -50,7 +51,7 @@ namespace impl {
     struct MatchVariant<Type, std::variant<Head, Rest...>> {
         using MyExact = std::conditional_t<std::is_same_v<Type, Head>, Head, void>;
         using Exact = std::conditional_t<!std::is_void_v<MyExact>, MyExact, typename MatchVariant<Type, std::variant<Rest...>>::Exact>;
-        using MyConvertible = std::conditional_t<std::is_convertible_v<Type, Head>&& std::is_void_v<MyExact>, std::tuple<Head>, std::tuple<>>;
+        using MyConvertible = std::conditional_t<std::is_convertible_v<Type, Head> && std::is_void_v<MyExact>, std::tuple<Head>, std::tuple<>>;
         using Convertible = decltype(std::tuple_cat(
             std::declval<MyConvertible>(),
             std::declval<typename MatchVariant<Type, std::variant<Rest...>>::Convertible>()));
@@ -107,8 +108,8 @@ public:
     auto Get() const -> std::conditional_t<Match::in_place, const T&, T>;
 
     template <class T, class Match = impl::MatchVariant<T, StorageType>>
-        requires(!std::is_void_v<typename Match::Exact>)
-    bool Is() const;
+        requires(!std::is_void_v<typename Match::Exact>) bool
+    Is() const;
 
     bool IsInteger() const;
 
@@ -226,8 +227,8 @@ T Value::GetConversion(std::tuple<>*) const {
 
 
 template <class T, class Match>
-    requires(!std::is_void_v<typename Match::Exact>)
-bool Value::Is() const {
+    requires(!std::is_void_v<typename Match::Exact>) bool
+Value::Is() const {
     if (!m_storage) {
         return false;
     }
@@ -267,7 +268,7 @@ std::string Value::GetTypeStr() {
 
 
 template <std::integral Integral>
-std::vector<Token> Tokenize(const Integral& value) {
+std::vector<Token> Tokenize(const Integral value) {
     const auto tag = Token::GetTag(sizeof(Integral));
     const auto isSigned = std::is_signed_v<Integral>;
     const auto isByte = false;
@@ -280,6 +281,7 @@ std::vector<Token> Tokenize(const Integral& value) {
         Token{.tag = tag, .isByte = isByte, .isSigned = isSigned, .data = std::move(data)}
     };
 }
+
 
 template <std::integral Integral>
 std::pair<Integral, std::span<const Token>> DeTokenize(Tokenized<Integral> tokens) {
@@ -306,6 +308,18 @@ std::pair<Integral, std::span<const Token>> DeTokenize(Tokenized<Integral> token
     }
     return { std::bit_cast<Integral>(value), tokens.tokens.subspan(1) };
 }
+
+
+inline std::vector<Token> Tokenize(bool value) {
+    return Tokenize(static_cast<uint8_t>(value));
+}
+
+
+inline std::pair<bool, std::span<const Token>> DeTokenize(Tokenized<bool> tokens) {
+    const auto [value, rest] = DeTokenize(Tokenized<uint8_t>{ tokens.tokens });
+    return { static_cast<bool>(value), rest };
+}
+
 
 std::vector<Token> Tokenize(const Bytes& value);
 std::pair<Bytes, std::span<const Token>> DeTokenize(Tokenized<Bytes> tokens);

@@ -18,6 +18,7 @@ target_sources(Test
         Mock/TestTrustedPeripheral.cpp
         Mock/TestSession.cpp
         Mock/TestSessionManager.cpp
+        Messaging/TestMethod.cpp
 )
 
 find_package(Catch2 3 REQUIRED)
