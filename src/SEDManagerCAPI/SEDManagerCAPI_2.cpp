@@ -56,28 +56,32 @@ struct CStorageDevice {
 
 
 struct CEncryptedDevice {
+    CEncryptedDevice(EncryptedDevice object) : object(std::make_shared<EncryptedDevice>(std::move(object))) {}
     std::shared_ptr<EncryptedDevice> object;
 };
 
 
-struct CFutureVoid {
-    asyncpp::task<void> object;
+template <class T>
+struct CFuture {
+    asyncpp::task<T> object;
 };
 
 
-struct CFutureEncryptedDevice {
-    asyncpp::task<EncryptedDevice> object;
+template <class T>
+struct CStream {
+    asyncpp::stream<T> object;
 };
 
 
-struct CFutureValue {
-    asyncpp::task<Value> object;
-};
+using CFutureVoid = CFuture<void>;
+using CFutureEncryptedDevice = CFuture<EncryptedDevice>;
+using CFutureValue = CFuture<Value>;
+using CFutureString = CFuture<std::string>;
+using CFutureUid = CFuture<Uid>;
 
 
-struct CStreamUid {
-    asyncpp::stream<Uid> object;
-};
+using CStreamUid = CStream<Uid>;
+using CStreamString = CStream<std::string>;
 
 
 //------------------------------------------------------------------------------
@@ -336,7 +340,7 @@ extern "C"
         return new CFutureEncryptedDevice{ EncryptedDevice::Start(storageDevice->object) };
     }
 
-    
+
     SEDMANAGER_EXPORT void CEncryptedDevice_Destroy(CEncryptedDevice* self) {
         delete self;
     }
@@ -368,8 +372,52 @@ extern "C"
     }
 
 
+    SEDMANAGER_EXPORT CFutureString* CEncryptedDevice_FindName(CEncryptedDevice* self,
+                                                               CUid uid,
+                                                               CUid securityProvider) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeSp = securityProvider != 0 ? std::optional(Uid(securityProvider)) : std::nullopt;
+        const auto maybeName = modules.FindName(uid, maybeSp);
+        return new CFutureString{ [maybeName]() -> asyncpp::task<std::string> {
+            if (!maybeName) {
+                throw std::invalid_argument("could not find table description");
+            }
+            co_return *maybeName;
+        }() };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureUid* CEncryptedDevice_FindUid(CEncryptedDevice* self,
+                                                           CString* name,
+                                                           CUid securityProvider) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeSp = securityProvider != 0 ? std::optional(Uid(securityProvider)) : std::nullopt;
+        const auto maybeUid = modules.FindUid(name->object, maybeSp);
+        return new CFutureUid{ [maybeUid]() -> asyncpp::task<Uid> {
+            if (!maybeUid) {
+                throw std::invalid_argument("could not find table description");
+            }
+            co_return *maybeUid;
+        }() };
+    }
+
+
     SEDMANAGER_EXPORT CStreamUid* CEncryptedDevice_GetTableRows(CEncryptedDevice* self, CUid table) {
         return new CStreamUid{ self->object->GetTableRows(table) };
+    }
+
+
+    SEDMANAGER_EXPORT CStreamString* CEncryptedDevice_GetTableColumns(CEncryptedDevice* self, CUid table) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeDesc = modules.FindTable(table);
+        return new CStreamString{ [maybeDesc]() -> asyncpp::stream<std::string> {
+            if (!maybeDesc) {
+                throw std::invalid_argument("could not find table description");
+            }
+            for (const auto& column : maybeDesc->columns) {
+                co_yield column.name;
+            }
+        }() };
     }
 
 
@@ -407,88 +455,138 @@ extern "C"
 // Futures
 //------------------------------------------------------------------------------
 
-extern "C"
-{
-    SEDMANAGER_EXPORT void CFutureVoid_Destroy(CFutureVoid* self) {
-        delete self;
-    }
+template <class Ty>
+void CFuture_Destroy(CFuture<Ty>* self) {
+    delete self;
+}
 
 
-    SEDMANAGER_EXPORT void CFutureVoid_Start(CFutureVoid* self, void (*callback)(void*)) {
-        launch([](auto task, auto callback) -> asyncpp::task<void> {
-            try {
+template <class Ty, class Wrapper>
+void CFuture_Start(CFuture<Ty>* self, void (*callback)(bool, Wrapper)) {
+    launch([](auto task, auto callback) -> asyncpp::task<void> {
+        try {
+            if constexpr (std::is_void_v<Ty>) {
                 co_await task;
-                callback(reinterpret_cast<void*>(1));
+                callback(true, nullptr);
             }
-            catch (...) {
-                SetLastException();
-                callback(nullptr);
-            }
-        }(std::move(self->object), callback));
-    }
-
-
-    SEDMANAGER_EXPORT void CFutureEncryptedDevice_Destroy(CFutureEncryptedDevice* self) {
-        delete self;
-    }
-
-
-    SEDMANAGER_EXPORT void CFutureEncryptedDevice_Start(CFutureEncryptedDevice* self, void (*callback)(CEncryptedDevice*)) {
-        launch([](auto task, auto callback) -> asyncpp::task<void> {
-            try {
-                auto device = co_await task;
-                callback(new CEncryptedDevice{ std::make_shared<EncryptedDevice>(std::move(device)) });
-            }
-            catch (...) {
-                SetLastException();
-                callback(nullptr);
-            }
-        }(std::move(self->object), callback));
-    }
-
-
-    SEDMANAGER_EXPORT void CFutureValue_Destroy(CFutureValue* self) {
-        delete self;
-    }
-
-
-    SEDMANAGER_EXPORT void CFutureValue_Start(CFutureValue* self, void (*callback)(CValue*)) {
-        launch([](auto task, auto callback) -> asyncpp::task<void> {
-            try {
+            else {
                 auto result = co_await task;
-                callback(new CValue{ std::move(result) });
+                if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
+                    callback(true, new std::remove_pointer_t<Wrapper>{ std::move(result) });
+                }
+                else {
+                    callback(true, std::move(result));
+                }
             }
-            catch (...) {
-                SetLastException();
-                callback(nullptr);
-            }
-        }(std::move(self->object), callback));
-    }
+        }
+        catch (...) {
+            SetLastException();
+            callback(false, Wrapper{});
+        }
+    }(std::move(self->object), callback));
+}
 
 
-    SEDMANAGER_EXPORT void CStreamUid_Destroy(CStreamUid* self) {
-        delete self;
-    }
+template <class Ty>
+void CStream_Destroy(CStream<Ty>* self) {
+    delete self;
+}
 
 
-    SEDMANAGER_EXPORT void CStreamUid_Start(CStreamUid* self, void (*callback)(bool, CUid)) {
-        launch([](auto stream, auto callback) -> asyncpp::task<void> {
-            std::optional<Uid> result;
-            do {
+template <class Ty, class Wrapper>
+void CStream_Start(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
+    launch([](auto stream, auto callback) -> asyncpp::task<void> {
+        asyncpp::await_result_t<std::decay_t<decltype(stream)>> result;
+        do {
+            result = co_await stream;
+            if (result) {
                 try {
-                    result = co_await stream;
-                    if (result) {
-                        callback(true, *result);
+                    if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
+                        callback(true, true, new std::remove_pointer_t<Wrapper>{ std::move(*result) });
                     }
                     else {
-                        callback(false, 0);
+                        callback(true, true, std::move(*result));
                     }
                 }
                 catch (...) {
                     SetLastException();
-                    callback(true, 0);
+                    callback(true, false, Wrapper{});
                 }
-            } while (result);
-        }(std::move(self->object), callback));
+            }
+        } while (result);
+        callback(false, false, Wrapper{});
+    }(std::move(self->object), callback));
+}
+
+
+extern "C"
+{
+    SEDMANAGER_EXPORT void CFutureVoid_Destroy(CFutureVoid* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureVoid_Start(CFutureVoid* self, void (*callback)(bool, void*)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureString_Destroy(CFutureString* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureString_Start(CFutureString* self, void (*callback)(bool, CString*)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureValue_Destroy(CFutureValue* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureValue_Start(CFutureValue* self, void (*callback)(bool, CValue*)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureUid_Destroy(CFutureUid* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureUid_Start(CFutureUid* self, void (*callback)(bool, CUid)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureEncryptedDevice_Destroy(CFutureEncryptedDevice* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureEncryptedDevice_Start(CFutureEncryptedDevice* self, void (*callback)(bool, CEncryptedDevice*)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CStreamUid_Destroy(CStreamUid* self) {
+        CStream_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CStreamUid_Start(CStreamUid* self, void (*callback)(bool, bool, CUid)) {
+        CStream_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CStreamString_Destroy(CStreamString* self) {
+        CStream_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CStreamString_Start(CStreamString* self, void (*callback)(bool, bool, CEncryptedDevice*)) {
+        CStream_Start(self, callback);
     }
 }
