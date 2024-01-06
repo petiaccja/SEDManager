@@ -2,15 +2,13 @@
 
 #include "Token.hpp"
 
+#include <Archive/Conversion.hpp>
+
+
 namespace sedmgr {
 
 struct TokenStream {
     std::vector<Token> stream;
-};
-
-template <class T>
-struct Serialized {
-    std::span<const std::byte> bytes;
 };
 
 TokenStream SurroundWithList(TokenStream stream);

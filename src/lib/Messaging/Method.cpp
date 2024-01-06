@@ -7,7 +7,7 @@
 namespace sedmgr {
 
 Value MethodCallToValue(const MethodCall& method) {
-    Value stream = {
+    Value value = {
         eCommand::CALL,
         ToBytes(uint64_t(method.invokingId)),
         ToBytes(uint64_t(method.methodId)),
@@ -15,7 +15,7 @@ Value MethodCallToValue(const MethodCall& method) {
         eCommand::END_OF_DATA,
         {uint8_t(method.status), uint8_t(0), uint8_t(0)},
     };
-    return stream;
+    return value;
 }
 
 
@@ -82,7 +82,7 @@ MethodResult MethodResultFromValue(const Value& value) {
             throw std::invalid_argument(std::format("failed to parse results (result was a call): {}", ex.what()));
         }
         if (uint64_t(method.methodId) == 0xFF06) {
-            throw InvocationError("CloseSession", "received CloseSession as response, session terminated by TPer");
+            return MethodResult{ .values = {}, .status = eMethodStatus::FAIL };
         }
     }
 
@@ -108,6 +108,16 @@ MethodResult MethodResultFromValue(const Value& value) {
     catch (std::exception& ex) {
         throw std::invalid_argument(std::format("failed to parse results: {}", ex.what()));
     }
+}
+
+
+Value MethodResultToValue(const MethodResult& result) {
+    Value value = {
+        result.values,
+        eCommand::END_OF_DATA,
+        {uint8_t(result.status), uint8_t(0), uint8_t(0)},
+    };
+    return value;
 }
 
 

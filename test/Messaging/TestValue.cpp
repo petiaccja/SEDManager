@@ -218,11 +218,10 @@ TEST_CASE("Value: tokenize list", "[Value]") {
 
 TEST_CASE("Value: tokenize empty value", "[Value]") {
     Value value;
-    const std::vector<Token> tokens = { };
+    const std::vector<Token> tokens = {};
 
     SECTION("Value to native") {
-        const auto conv = Tokenize(value);
-        REQUIRE(conv == tokens);
+        REQUIRE_THROWS_AS(Tokenize(value), std::invalid_argument);
     }
     SECTION("native to Value") {
         const auto [conv, rest] = DeTokenize(Tokenized<Value>{ tokens });

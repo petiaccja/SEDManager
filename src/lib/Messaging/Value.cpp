@@ -200,7 +200,7 @@ std::pair<Named, std::span<const Token>> DeTokenize(Tokenized<Named> tokens) {
 
 std::vector<Token> Tokenize(const Value& value) {
     if (!value.HasValue()) {
-        return {};
+        throw std::invalid_argument("cannot serialize empty Value");
     }
     const auto visitor = [](const auto& value) {
         return Tokenize(value);

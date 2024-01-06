@@ -46,16 +46,76 @@ struct MethodResult {
 Value MethodCallToValue(const MethodCall& method);
 MethodCall MethodCallFromValue(const Value& value);
 MethodResult MethodResultFromValue(const Value& value);
+Value MethodResultToValue(const MethodResult& result);
 void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 
 struct CallContext {
     Uid invokingId;
-    std::function<asyncpp::task<MethodResult>(const MethodCall&)> callRemoteProcedure;
+    std::function<asyncpp::task<MethodResult>(MethodCall)> callRemoteMethod;
     std::function<std::string(Uid)> getMethodName = {};
 };
 
-namespace impl {
+
+namespace impl_method {
+
+    template <class Required, class Optional>
+    struct ParameterList;
+
+    template <class... Requireds, class... Optionals>
+    struct ParameterList<std::tuple<Requireds...>, std::tuple<Optionals...>> {
+        using Unpacked = std::tuple<typename Requireds::Native..., typename Optionals::Native...>;
+
+        static std::vector<Value> Pack(const typename Requireds::Native&... requiredIns,
+                                       const typename Optionals::Native&... optionalIns) {
+            std::vector<Value> args;
+            (..., args.push_back(requiredIns));
+            (..., PushOptional(args, MakeOptional(Optionals::key, optionalIns)));
+            return args;
+        }
+
+        static Unpacked Unpack(std::span<const Value> results, std::string_view methodName = "<unknown method>") {
+            if (results.size() < sizeof...(Requireds)) {
+                throw InvocationError(methodName,
+                                      std::format("expected {} required results, got {}", results.size(), sizeof...(Requireds)));
+            }
+            auto requireds = std::tuple(std::move(results[Requireds::key])...);
+            const auto optionalSubset = results.subspan(sizeof...(Requireds));
+            std::unordered_map<int, Value> presentOptionals;
+            for (auto& result : optionalSubset) {
+                if (!result.Is<Named>()) {
+                    throw InvocationError(methodName,
+                                          std::format("expected named values for optional results, got {}", result.GetTypeStr()));
+                }
+                auto [name, value] = std::move(result.Get<Named>());
+                if (!name.IsInteger()) {
+                    throw InvocationError(methodName,
+                                          std::format("expected named value with integer key, key was {}", name.GetTypeStr()));
+                }
+                presentOptionals.insert_or_assign(name.Get<int>(), std::move(value));
+            }
+            auto optionals = std::tuple((std::move(presentOptionals.contains(Optionals::key)
+                                                       ? std::optional(std::move(presentOptionals.find(Optionals::key)->second))
+                                                       : std::nullopt))...);
+            return std::tuple_cat(std::move(requireds), std::move(optionals));
+        }
+
+    private:
+        static std::optional<Value> MakeOptional(int key, std::optional<Value> value) {
+            if (value) {
+                return Value(Named{ uint16_t(key), *value });
+            }
+            return std::nullopt;
+        }
+
+        static void PushOptional(std::vector<Value>& out, std::optional<Value> value) {
+            if (value) {
+                out.push_back(std::move(*value));
+            }
+        }
+    };
+
+
     template <Uid MethodId,
               class RequiredParams,
               class OptionalParams,
@@ -73,74 +133,38 @@ namespace impl {
                  std::tuple<OptionalParams...>,
                  std::tuple<RequiredResults...>,
                  std::tuple<OptionalResults...>> {
-        using Result = std::tuple<typename RequiredResults::Native..., typename OptionalResults::Native...>;
+        using InputList = ParameterList<std::tuple<RequiredParams...>, std::tuple<OptionalParams...>>;
+        using OutputList = ParameterList<std::tuple<RequiredResults...>, std::tuple<OptionalResults...>>;
+        using ResultType = typename OutputList::Unpacked;
 
     public:
-        asyncpp::task<Result> operator()(const CallContext& context,
-                                         const typename RequiredParams::Native&... requiredIns,
-                                         const typename OptionalParams::Native&... optionalIns) {
-            std::vector<Value> args = ConstructArguments(requiredIns..., optionalIns...);
+        asyncpp::task<ResultType> operator()(const CallContext& context,
+                                             const typename RequiredParams::Native&... requiredIns,
+                                             const typename OptionalParams::Native&... optionalIns) const {
+            std::vector<Value> args = InputList::Pack(requiredIns..., optionalIns...);
 
-            const MethodCall call{
+            MethodCall call{
                 .invokingId = context.invokingId,
                 .methodId = MethodId,
                 .args = std::move(args),
                 .status = eMethodStatus::SUCCESS,
             };
-            MethodResult result = co_await context.callRemoteProcedure(call);
+            MethodResult result = co_await context.callRemoteMethod(std::move(call));
+
+            const std::string methodName = context.getMethodName ? context.getMethodName(MethodId) : "<method name unspecified>";
             if (result.status != eMethodStatus::SUCCESS) {
-                MethodStatusToException(context.getMethodName(MethodId), result.status);
+                MethodStatusToException(methodName, result.status);
             }
 
-            co_return ConstructResults(context, result.values);
+            co_return OutputList::Unpack(result.values, methodName);
         }
 
-    private:
-        std::optional<Value> ConstructOptional(int key, std::optional<Value> value) {
-            if (value) {
-                return Value(Named{ uint16_t(key), *value });
-            }
-            return std::nullopt;
-        }
-
-        void PushOptional(std::vector<Value>& out, std::optional<Value> value) {
-            if (value) {
-                out.push_back(std::move(*value));
-            }
-        }
-
-        std::vector<Value> ConstructArguments(const typename RequiredParams::Native&... requiredIns,
-                                              const typename OptionalParams::Native&... optionalIns) {
-            std::vector<Value> args;
-            (..., args.push_back(requiredIns));
-            (..., PushOptional(args, ConstructOptional(OptionalParams::key, optionalIns)));
-            return args;
-        }
-
-        Result ConstructResults(const CallContext& context, std::span<Value> results) {
-            if (results.size() < sizeof...(RequiredResults)) {
-                throw InvocationError(context.getMethodName(MethodId),
-                                      std::format("expected {} required results, got {}", results.size(), sizeof...(RequiredResults)));
-            }
-            auto requireds = std::tuple(std::move(results[RequiredResults::key])...);
-            const auto optionalSubset = results.subspan(sizeof...(RequiredResults));
-            std::unordered_map<int, Value> presentOptionals;
-            for (auto& result : optionalSubset) {
-                if (!result.Is<Named>()) {
-                    throw InvocationError(context.getMethodName(MethodId),
-                                          std::format("expected named values for optional results, got {}", result.GetTypeStr()));
-                }
-                auto [name, value] = std::move(result.Get<Named>());
-                if (!name.IsInteger()) {
-                    throw InvocationError(context.getMethodName(MethodId),
-                                          std::format("expected named value with integer key, key was {}", name.GetTypeStr()));
-                }
-                presentOptionals.insert_or_assign(name.Get<int>(), std::move(value));
-            }
-            auto optionals = std::tuple((std::move(presentOptionals.contains(OptionalResults::key)
-                                                       ? std::optional(std::move(presentOptionals.find(OptionalResults::key)->second))
-                                                       : std::nullopt))...);
-            return std::tuple_cat(std::move(requireds), std::move(optionals));
+        template <class Executor>
+        std::pair<std::vector<Value>, eMethodStatus> Execute(Executor&& executor,
+                                                             std::span<const Value> args) const {
+            const auto input = InputList::Unpack(args);
+            const auto [result, status] = std::apply(executor, input);
+            return { std::apply(&OutputList::Pack, result), status };
         }
     };
 
@@ -166,15 +190,15 @@ namespace impl {
         using type = MakeMethodPackHelper<std::make_integer_sequence<int, Count>, Optional>::type;
     };
 
-} // namespace impl
+} // namespace impl_method
 
 
 template <Uid MethodId, int RequiredParams, int OptionalParams, int RequiredResults, int OptionalResults>
-class Method : public impl::Method<MethodId,
-                                   typename impl::MakeMethodPack<RequiredParams, false>::type,
-                                   typename impl::MakeMethodPack<OptionalParams, true>::type,
-                                   typename impl::MakeMethodPack<RequiredResults, false>::type,
-                                   typename impl::MakeMethodPack<OptionalResults, true>::type> {
+class Method : public impl_method::Method<MethodId,
+                                          typename impl_method::MakeMethodPack<RequiredParams, false>::type,
+                                          typename impl_method::MakeMethodPack<OptionalParams, true>::type,
+                                          typename impl_method::MakeMethodPack<RequiredResults, false>::type,
+                                          typename impl_method::MakeMethodPack<OptionalResults, true>::type> {
 public:
     static constexpr auto GetMethodId() {
         return MethodId;

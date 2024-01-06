@@ -50,6 +50,21 @@ struct CellBlock {
 std::string to_string(Uid uid);
 Uid stouid(std::string_view str);
 
+
+template <class Archive>
+void save(Archive& ar, const Uid& object) {
+    ar(uint64_t(object));
+}
+
+
+template <class Archive>
+void load(Archive& ar, Uid& object) {
+    uint64_t value = 0;
+    ar(value);
+    object = Uid(value);
+}
+
+
 } // namespace sedmgr
 
 namespace std {

@@ -73,7 +73,8 @@ TEST_CASE("Method: parse results - CloseSession", "[Method]") {
         eCommand::END_OF_DATA,
         { 0, 0, 0 }
     };
-    REQUIRE_THROWS_AS(MethodResultFromValue(input), InvocationError);
+    const MethodResult output = MethodResultFromValue(input);
+    REQUIRE(output.status == eMethodStatus::FAIL);
 }
 
 
@@ -113,7 +114,7 @@ TEST_CASE("Method: call method - required args only", "[Method]") {
     ReqInMethod method;
     CallContext context{
         invokingId,
-        [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+        [](MethodCall call) -> asyncpp::task<MethodResult> {
             REQUIRE(call.args.size() == 2);
             REQUIRE(call.args[0] == 0);
             REQUIRE(call.args[1] == 1);
@@ -145,7 +146,7 @@ TEST_CASE("Method: call method - optional args only", "[Method]") {
     SECTION("one arg") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 1);
                 REQUIRE(call.args[0].Is<Named>());
                 REQUIRE(call.args[0].Get<Named>().name.Get<uint16_t>() == 0);
@@ -161,7 +162,7 @@ TEST_CASE("Method: call method - optional args only", "[Method]") {
     SECTION("other arg") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 1);
                 REQUIRE(call.args[0].Is<Named>());
                 REQUIRE(call.args[0].Get<Named>().name.Get<uint16_t>() == 1);
@@ -177,10 +178,10 @@ TEST_CASE("Method: call method - optional args only", "[Method]") {
     SECTION("both args") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 2);
                 REQUIRE(call.args[0].Is<Named>());
-                // Order maybe be important! (Check TCG core specification.)
+                // Order may be important! (Check TCG core specification.)
                 REQUIRE(call.args[0].Get<Named>().name.Get<uint16_t>() == 0);
                 REQUIRE(call.args[0].Get<Named>().value.Get<int>() == 10);
                 REQUIRE(call.args[1].Get<Named>().name.Get<uint16_t>() == 1);
@@ -200,7 +201,7 @@ TEST_CASE("Method: call method - required results only", "[Method]") {
     ReqOutMethod method;
     CallContext context{
         invokingId,
-        [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+        [](MethodCall call) -> asyncpp::task<MethodResult> {
             REQUIRE(call.args.size() == 0);
             co_return MethodResult{
                 .values = {0, 1},
@@ -219,7 +220,7 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
     SECTION("zero results") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 0);
                 co_return MethodResult{
                     .values = {},
@@ -234,7 +235,7 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
     SECTION("one result") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 0);
                 co_return MethodResult{
                     .values = { Named(0, 10) },
@@ -250,7 +251,7 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
     SECTION("other result") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 0);
                 co_return MethodResult{
                     .values = { Named(1, 11) },
@@ -266,7 +267,7 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
     SECTION("both results") {
         CallContext context{
             invokingId,
-            [](const MethodCall& call) -> asyncpp::task<MethodResult> {
+            [](MethodCall call) -> asyncpp::task<MethodResult> {
                 REQUIRE(call.args.size() == 0);
                 co_return MethodResult{
                     .values = {Named(0, 10), Named(1, 11)},
@@ -280,4 +281,23 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
         REQUIRE(std::get<1>(result) != std::nullopt);
         REQUIRE(std::get<1>(result)->Get<int>() == 11);
     }
+}
+
+
+TEST_CASE("Method: execute method", "[Method]") {
+    const auto method = Method<0xFF, 2, 0, 3, 0>{};
+
+    const auto executor = [](Value in1, Value in2) {
+        const auto v1 = in1.Get<int>();
+        const auto v2 = in2.Get<int>();
+        return std::pair(std::tuple(Value(v1 - v2), Value(v1 + v2), Value(v1 * v2)),
+                         eMethodStatus::SUCCESS);
+    };
+
+    const auto [results, ec] = method.Execute(executor, List{ 1, 2 });
+    REQUIRE(ec == eMethodStatus::SUCCESS);
+    REQUIRE(results.size() == 3);
+    REQUIRE(results[0].Get<int>() == -1);
+    REQUIRE(results[1].Get<int>() == 3);
+    REQUIRE(results[2].Get<int>() == 2);
 }

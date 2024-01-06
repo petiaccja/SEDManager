@@ -15,6 +15,12 @@ constexpr std::byte operator""_b(unsigned long long value) {
 }
 
 
+template <class T>
+struct Serialized {
+    std::span<const std::byte> bytes;
+};
+
+
 template <class Object>
 std::vector<std::byte> ToBytes(const Object& object) {
     std::stringstream buffer(std::ios::binary | std::ios::out);
@@ -34,6 +40,40 @@ void FromBytes(std::span<const std::byte> bytes, Object& object) {
     buffer.str(std::string{ view });
     FlatBinaryInputArchive ar(buffer);
     ar(object);
+}
+
+
+template <class Object>
+    requires requires(const Object& obj, FlatBinaryOutputArchive& ar) {
+                 {
+                     ar(obj)
+                 };
+             }
+std::vector<std::byte> Serialize(const Object& object) {
+    std::stringstream buffer(std::ios::binary | std::ios::out);
+    FlatBinaryOutputArchive ar(buffer);
+    ar(object);
+    const auto chars = buffer.view();
+    const auto bytes = reinterpret_cast<const std::byte*>(chars.data());
+    return { bytes, bytes + chars.size() };
+}
+
+
+template <class Object>
+    requires requires(Object& obj, FlatBinaryInputArchive& ar) {
+                 {
+                     ar(obj)
+                 };
+             }
+Object DeSerialize(const Serialized<Object>& bytes) {
+    std::stringstream buffer(std::ios::binary | std::ios::in);
+    const auto chars = reinterpret_cast<const char*>(bytes.bytes.data());
+    const auto view = std::string_view{ chars, chars + bytes.bytes.size() };
+    buffer.str(std::string{ view });
+    FlatBinaryInputArchive ar(buffer);
+    Object object;
+    ar(object);
+    return object;
 }
 
 

@@ -39,6 +39,21 @@ constexpr Uid DescriptorToTable(Uid descriptor) {
 }
 
 
+constexpr Uid GetTableOfObject(Uid object) {
+    return uint64_t(object) & 0xFFFF'FFFF'0000'0000ull;
+}
+
+
+constexpr bool IsTable(Uid object) {
+    return (uint64_t(object) & 0x0000'0000'FFFF'FFFFull) == 0;
+}
+
+
+constexpr bool IsObject(Uid object) {
+    return !IsTable(object);
+}
+
+
 class NameSequence {
 public:
     constexpr NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)

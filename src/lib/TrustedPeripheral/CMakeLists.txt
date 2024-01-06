@@ -14,8 +14,8 @@ target_sources(TrustedPeripheral
         SessionManager.hpp
         TrustedPeripheral.cpp
         TrustedPeripheral.hpp
-        Method.cpp
-        Method.hpp
+        MethodUtils.cpp
+        MethodUtils.hpp
         ModuleCollection.cpp
         ModuleCollection.hpp
 )

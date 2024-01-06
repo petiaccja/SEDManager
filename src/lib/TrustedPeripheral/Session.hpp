@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Method.hpp"
+#include "MethodUtils.hpp"
 #include "SessionManager.hpp"
 
-#include <Error/Exception.hpp>
-
 #include <memory>
+
+#include <Specification/Opal/OpalModule.hpp>
 
 
 namespace sedmgr {
@@ -20,16 +20,8 @@ namespace impl {
                  uint32_t hostSessionNumber);
 
     protected:
-        asyncpp::task<MethodResult> InvokeMethod(const MethodCall& method);
-
-        template <class OutArgs = std::tuple<>, class... InArgs>
-        asyncpp::task<OutArgs> InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs);
-
         const ModuleCollection& GetModules() const;
-
-    private:
-        ComPacket CreatePacket(std::vector<std::byte> payload);
-        std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
+        CallContext GetCallContext(Uid invokingId) const;
 
     protected:
         static constexpr Uid THIS_SP = 0x0000'0000'0000'0001;
@@ -53,10 +45,15 @@ namespace impl {
         asyncpp::task<void> Set(Uid object, uint32_t columns, const Value& value);
         asyncpp::task<std::vector<Uid>> Next(Uid table, std::optional<Uid> row, uint32_t count);
         asyncpp::task<std::optional<Uid>> Next(Uid table, std::optional<Uid> row);
-
         asyncpp::task<void> Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof);
-
         asyncpp::task<void> GenKey(Uid object, std::optional<uint32_t> publicExponent = {}, std::optional<uint32_t> pinLength = {});
+
+    private:
+        static constexpr auto getMethod = Method<Uid(core::eMethod::Get), 1, 0, 1, 0>{};
+        static constexpr auto setMethod = Method<Uid(core::eMethod::Set), 0, 2, 0, 0>{};
+        static constexpr auto nextMethod = Method<Uid(core::eMethod::Next), 0, 2, 1, 0>{};
+        static constexpr auto authenticateMethod = Method<Uid(core::eMethod::Authenticate), 1, 1, 1, 0>{};
+        static constexpr auto genKeyMethod = Method<Uid(core::eMethod::GenKey), 0, 2, 0, 0>{};
     };
 
 
@@ -66,6 +63,10 @@ namespace impl {
 
         asyncpp::task<void> Revert(Uid securityProvider);
         asyncpp::task<void> Activate(Uid securityProvider);
+
+    private:
+        static constexpr auto revertMethod = Method<Uid(opal::eMethod::Revert), 0, 0, 0, 0>{};
+        static constexpr auto activateMethod = Method<Uid(opal::eMethod::Activate), 0, 0, 0, 0>{};
     };
 
 
@@ -80,8 +81,8 @@ public:
             std::optional<Uid> authority = {});
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
-    Session(Session&&) = default;
-    Session& operator=(Session&&);
+    Session(Session&&) noexcept = default;
+    Session& operator=(Session&&) noexcept;
     ~Session();
 
     static asyncpp::task<Session> Start(std::shared_ptr<SessionManager> sessionManager,
@@ -108,27 +109,5 @@ private:
     uint32_t m_hostSessionNumber;
 };
 
-
-namespace impl {
-
-    template <class OutArgs, class... InArgs>
-    asyncpp::task<OutArgs> Template::InvokeMethod(Uid invokingId, Uid methodId, const InArgs&... inArgs) {
-        std::vector<Value> args = ArgsToValues(inArgs...);
-        const MethodCall method{ .invokingId = invokingId, .methodId = methodId, .args = std::move(args) };
-
-        const MethodResult result = co_await InvokeMethod(method);
-
-        OutArgs outArgs;
-        try {
-            std::apply([&result](auto&... outArgs) { ArgsFromValues(result.values, outArgs...); }, outArgs);
-        }
-        catch (std::exception& ex) {
-            throw InvalidResponseError(GetModules().FindName(methodId).value_or(to_string(methodId)), ex.what());
-        }
-        co_return outArgs;
-    }
-
-
-} // namespace impl
 
 } // namespace sedmgr

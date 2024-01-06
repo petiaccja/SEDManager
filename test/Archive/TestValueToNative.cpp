@@ -22,34 +22,6 @@ TEST_CASE("value_cast: Value", "[ValueToNative]") {
 }
 
 
-TEST_CASE("value_cast: optional", "[ValueToNative]") {
-    SECTION("assigned") {
-        const Value value = uint32_t(37);
-        const std::optional native = uint32_t(37);
-        SECTION("Value to native") {
-            const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
-            REQUIRE(conv == native);
-        }
-        SECTION("native to Value") {
-            const auto conv = value_cast(native);
-            REQUIRE(conv == value);
-        }
-    }
-    SECTION("empty") {
-        const Value value;
-        const std::optional<int> native;
-        SECTION("Value to native") {
-            const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
-            REQUIRE(conv == native);
-        }
-        SECTION("native to Value") {
-            const auto conv = value_cast(native);
-            REQUIRE(conv == value);
-        }
-    }
-}
-
-
 TEST_CASE("value_cast: integer", "[ValueToNative]") {
     const Value value = uint32_t(37);
     const auto native = uint32_t(37);

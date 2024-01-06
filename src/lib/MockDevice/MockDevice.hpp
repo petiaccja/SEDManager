@@ -1,21 +1,187 @@
 #pragma once
 
 
-#include "MockSecurityProvider.hpp"
+#include "State.hpp"
 
 #include <Messaging/ComPacket.hpp>
+#include <Specification/Core/Defs/UIDs.hpp>
+#include <Specification/Opal/OpalModule.hpp>
 #include <StorageDevice/Common/StorageDevice.hpp>
-#include <TrustedPeripheral/Method.hpp>
+#include <TrustedPeripheral/MethodUtils.hpp>
 
-#include <bit>
-#include <functional>
 #include <map>
-#include <queue>
 #include <span>
 #include <vector>
 
 
 namespace sedmgr {
+
+namespace mock {
+
+    class MessageHandler {
+    public:
+        virtual bool SecuritySend(uint8_t securityProtocol,
+                                  uint16_t comId,
+                                  std::span<const std::byte> data) = 0;
+        virtual bool SecurityReceive(uint8_t securityProtocol,
+                                     uint16_t comId,
+                                     std::span<std::byte> data) = 0;
+    };
+
+    class DiscoveryHandler : public MessageHandler {
+    public:
+        DiscoveryHandler(uint16_t baseComId);
+        bool SecuritySend(uint8_t securityProtocol,
+                          uint16_t comId,
+                          std::span<const std::byte> data) override;
+        bool SecurityReceive(uint8_t securityProtocol,
+                             uint16_t comId,
+                             std::span<std::byte> data) override;
+
+        void Discovery(std::span<std::byte> data);
+
+    private:
+        uint16_t m_baseComId;
+    };
+
+    class ResetHandler : public MessageHandler {
+    public:
+        bool SecuritySend(uint8_t securityProtocol,
+                          uint16_t comId,
+                          std::span<const std::byte> data) override;
+        bool SecurityReceive(uint8_t securityProtocol,
+                             uint16_t comId,
+                             std::span<std::byte> data) override;
+    };
+
+    class RequestComIdHandler : public MessageHandler {
+    public:
+        bool SecuritySend(uint8_t securityProtocol,
+                          uint16_t comId,
+                          std::span<const std::byte> data) override;
+        bool SecurityReceive(uint8_t securityProtocol,
+                             uint16_t comId,
+                             std::span<std::byte> data) override;
+    };
+
+    class CommunicationLayerHandler : public MessageHandler {
+    public:
+        CommunicationLayerHandler(uint16_t comId, uint16_t comIdExt);
+        bool SecuritySend(uint8_t securityProtocol,
+                          uint16_t comId,
+                          std::span<const std::byte> data) override;
+        bool SecurityReceive(uint8_t securityProtocol,
+                             uint16_t comId,
+                             std::span<std::byte> data) override;
+
+    private:
+        void VerifyComIdValid();
+        void StackReset();
+
+    private:
+        uint16_t m_comId;
+        uint16_t m_comIdExt;
+        std::optional<std::vector<std::byte>> m_response;
+    };
+
+    class SessionLayerHandler : public MessageHandler {
+        struct SessionId {
+            uint32_t tsn;
+            uint32_t hsn;
+            auto operator<=>(const SessionId&) const noexcept = default;
+        };
+        struct Session {
+            std::shared_ptr<SecurityProvider> securityProvider;
+        };
+
+    public:
+        SessionLayerHandler(uint16_t comId,
+                            uint16_t comIdExt,
+                            std::vector<std::shared_ptr<SecurityProvider>> securityProviders);
+        bool SecuritySend(uint8_t securityProtocol,
+                          uint16_t comId,
+                          std::span<const std::byte> data) override;
+        bool SecurityReceive(uint8_t securityProtocol,
+                             uint16_t comId,
+                             std::span<std::byte> data) override;
+
+    private:
+        void DecodeMethod(const Value& call, uint32_t tsn, uint32_t hsn);
+        void DispatchMethod(const MethodCall&, uint32_t tsn, uint32_t hsn);
+        void DispatchMethod(const MethodCall&);
+        ComPacket Packetize(uint32_t tsn, uint32_t hsn, std::vector<std::byte> payload) const;
+
+        template <class Executor, class Definition>
+        MethodResult CallMethod(const MethodCall& query,
+                                Session& session,
+                                Executor&& executor,
+                                Definition&& definition) ;
+
+        template <class Executor, class Definition>
+        MethodResult CallMethod(const MethodCall& query,
+                                Executor&& executor,
+                                Definition&& definition) ;
+
+        void EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
+
+        auto Properties(std::optional<std::unordered_map<std::string, uint32_t>>) const
+            -> std::pair<std::tuple<std::unordered_map<std::string, uint32_t>,
+                                    std::optional<std::unordered_map<std::string, uint32_t>>>,
+                         eMethodStatus>;
+
+        auto StartSession(uint32_t hostSessionID,
+                          Uid spId,
+                          bool write,
+                          std::optional<std::vector<std::byte>> hostChallenge,
+                          std::optional<Uid> hostExchangeAuthority,
+                          std::optional<std::vector<std::byte>> hostExchangeCert,
+                          std::optional<Uid> hostSigningAuthority,
+                          std::optional<std::vector<std::byte>> hostSigningCert,
+                          std::optional<uint32_t> sessionTimeout,
+                          std::optional<uint32_t> transTimeout,
+                          std::optional<uint32_t> initialCredit,
+                          std::optional<std::vector<std::byte>> signedHash) 
+            -> std::pair<std::tuple<uint32_t,
+                                    uint32_t,
+                                    std::optional<Bytes>,
+                                    std::optional<Bytes>,
+                                    std::optional<Bytes>,
+                                    std::optional<uint32_t>,
+                                    std::optional<uint32_t>,
+                                    std::optional<Bytes>>,
+                         eMethodStatus>;
+
+        auto Get(Session& session, Uid invokingId, CellBlock cellBlock) const
+            -> std::pair<std::tuple<List>, eMethodStatus>;
+
+        auto Set(Session& session, Uid invokingId, std::optional<Value> where, std::optional<Value> values) const
+            -> std::pair<std::tuple<>, eMethodStatus>;
+
+        auto Next(Session& session, Uid invokingId, std::optional<Uid> where, std::optional<uint32_t> count) const
+            -> std::pair<std::tuple<List>, eMethodStatus>;
+
+    private:
+        static constexpr auto propertiesMethod = Method<Uid(core::eMethod::Properties), 0, 1, 1, 1>{};
+        static constexpr auto startSessionMethod = Method<Uid(core::eMethod::StartSession), 3, 9, 2, 6>{};
+
+        static constexpr auto getMethod = Method<Uid(core::eMethod::Get), 1, 0, 1, 0>{};
+        static constexpr auto setMethod = Method<Uid(core::eMethod::Set), 0, 2, 0, 0>{};
+        static constexpr auto nextMethod = Method<Uid(core::eMethod::Next), 0, 2, 1, 0>{};
+        static constexpr auto authenticateMethod = Method<Uid(core::eMethod::Authenticate), 1, 1, 1, 0>{};
+        static constexpr auto genKeyMethod = Method<Uid(core::eMethod::GenKey), 0, 2, 0, 0>{};
+        static constexpr auto revertMethod = Method<Uid(opal::eMethod::Revert), 0, 0, 0, 0>{};
+        static constexpr auto activateMethod = Method<Uid(opal::eMethod::Activate), 0, 0, 0, 0>{};
+
+        uint16_t m_comId;
+        uint16_t m_comIdExt;
+        std::vector<std::shared_ptr<SecurityProvider>> m_securityProviders;
+        std::optional<std::vector<std::byte>> m_response;
+        std::map<SessionId, Session> m_sessions;
+        mutable uint32_t m_nextTsn = 5000;
+    };
+
+} // namespace mock
+
 
 class MockDevice : public StorageDevice {
     struct SessionParams {
@@ -35,22 +201,9 @@ public:
                          std::span<std::byte> data) override;
 
 private:
-    using InputHandler = std::function<void(std::span<const std::byte>)>;
-    using OutputHandler = std::function<void(std::span<std::byte>)>;
-    void AddInputHandler(uint8_t protocol, uint16_t comId, InputHandler handler);
-    void AddOutputHandler(uint8_t protocol, uint16_t comId, OutputHandler handler);
-    void RemoveInputHandler(uint8_t protocol, uint16_t comId);
-    void RemoveOutputHandler(uint8_t protocol, uint16_t comId);
-    bool HasInputHandler(uint8_t protocol, uint16_t comId) const;
-    bool HasOutputHandler(uint8_t protocol, uint16_t comId) const;
-
-    static void Discovery(std::span<std::byte> data);
-
-private:
-    static constexpr uint16_t baseComId = 0xBEEF;
-    std::shared_ptr<std::vector<MockSecurityProvider>> m_sps;
-    std::map<std::tuple<uint8_t, uint16_t>, InputHandler> m_inputHandlers;
-    std::map<std::tuple<uint8_t, uint16_t>, OutputHandler> m_outputHandlers;
+    std::vector<std::shared_ptr<mock::SecurityProvider>> m_securityProviders;
+    std::vector<std::unique_ptr<mock::MessageHandler>> m_messageHandlers;
+    static constexpr uint16_t baseComId = 4097;
 };
 
 } // namespace sedmgr

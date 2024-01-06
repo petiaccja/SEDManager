@@ -12,8 +12,7 @@ target_sources(Test
         Messaging/TestSetupPackets.cpp
         Messaging/TestValue.cpp
         Specification/TestUtility.cpp
-        Specification/TestModule.cpp
-        TrustedPeripheral/TestMethod.cpp
+        Specification/TestModule.cpp        
         TrustedPeripheral/TestDiscovery.cpp
         Mock/TestTrustedPeripheral.cpp
         Mock/TestSession.cpp

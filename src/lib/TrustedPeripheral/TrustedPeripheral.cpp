@@ -1,6 +1,6 @@
 #include "TrustedPeripheral.hpp"
 
-#include "Method.hpp"
+#include "MethodUtils.hpp"
 #include <async++/join.hpp>
 #include <async++/sleep.hpp>
 
@@ -13,7 +13,6 @@
 
 #include <array>
 #include <stdexcept>
-#include <thread>
 
 
 namespace sedmgr {
