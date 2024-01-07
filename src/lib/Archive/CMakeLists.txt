@@ -4,7 +4,7 @@ target_compile_features(Archive PRIVATE cxx_std_20)
 
 target_sources(Archive
     PRIVATE
-        Conversion.hpp
+        Serialization.hpp
         FlatBinaryArchive.cpp
         FlatBinaryArchive.hpp
 )

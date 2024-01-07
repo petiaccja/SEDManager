@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Conversion.hpp"
+#include "../Serialization.hpp"
 
 #include <Messaging/NativeTypes.hpp>
 #include <Messaging/Value.hpp>
