@@ -20,6 +20,7 @@ namespace mock {
 
     class MessageHandler {
     public:
+        virtual ~MessageHandler() = default;
         virtual bool SecuritySend(uint8_t securityProtocol,
                                   uint16_t comId,
                                   std::span<const std::byte> data) = 0;
