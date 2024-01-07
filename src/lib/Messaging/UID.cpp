@@ -6,7 +6,7 @@
 
 namespace sedmgr {
 
-std::string to_string(Uid uid) {
+std::string to_string(UID uid) {
     std::string result;
     result.reserve(19);
     constexpr std::string_view fmt = "{:04X}";
@@ -21,7 +21,7 @@ std::string to_string(Uid uid) {
 }
 
 
-Uid stouid(std::string_view str) {
+UID stouid(std::string_view str) {
     std::string withoutSeparators;
     for (auto c : str) {
         if (c != '\'') {

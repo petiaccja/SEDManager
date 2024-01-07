@@ -32,9 +32,9 @@ TEST_CASE("Method: parse method - roundtrip", "[Method]") {
 
 TEST_CASE("Method: parse method - invalid input", "[Method]") {
     const Value input = {
-        value_cast(Uid(0xFF)),
+        value_cast(UID(0xFF)),
         eCommand::CALL, // Should be the first in the stream.
-        value_cast(Uid(core::eMethod::CloseSession)),
+        value_cast(UID(core::eMethod::CloseSession)),
         { 0, 0 },
         eCommand::END_OF_DATA,
         { 0, 0, 0 }
@@ -67,8 +67,8 @@ TEST_CASE("Method: parse results - roundtrip", "[Method]") {
 TEST_CASE("Method: parse results - CloseSession", "[Method]") {
     const Value input = {
         eCommand::CALL,
-        value_cast(Uid(0xFF)),
-        value_cast(Uid(core::eMethod::CloseSession)),
+        value_cast(UID(0xFF)),
+        value_cast(UID(core::eMethod::CloseSession)),
         { 0, 0 },
         eCommand::END_OF_DATA,
         { 0, 0, 0 }
@@ -81,9 +81,9 @@ TEST_CASE("Method: parse results - CloseSession", "[Method]") {
 TEST_CASE("Method: parse results - any method", "[Method]") {
     const Value input = {
         eCommand::CALL,
-        value_cast(Uid(0xFF)),
-        value_cast(Uid(core::eMethod::Authenticate)),
-        { value_cast(Uid(0)) },
+        value_cast(UID(0xFF)),
+        value_cast(UID(core::eMethod::Authenticate)),
+        { value_cast(UID(0)) },
         eCommand::END_OF_DATA,
         { 0, 0, 0 }
     };
@@ -101,8 +101,8 @@ TEST_CASE("Method: parse results - invalid input", "[Method]") {
 }
 
 
-constexpr Uid methodId = 0xFF;
-constexpr Uid invokingId = 564;
+constexpr UID methodId = 0xFF;
+constexpr UID invokingId = 564;
 
 using ReqInMethod = Method<methodId, 2, 0, 0, 0>;
 using OptInMethod = Method<methodId, 0, 2, 0, 0>;

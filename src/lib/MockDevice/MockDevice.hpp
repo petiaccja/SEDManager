@@ -130,12 +130,12 @@ namespace mock {
                          eMethodStatus>;
 
         auto StartSession(uint32_t hostSessionID,
-                          Uid spId,
+                          UID spId,
                           bool write,
                           std::optional<std::vector<std::byte>> hostChallenge,
-                          std::optional<Uid> hostExchangeAuthority,
+                          std::optional<UID> hostExchangeAuthority,
                           std::optional<std::vector<std::byte>> hostExchangeCert,
-                          std::optional<Uid> hostSigningAuthority,
+                          std::optional<UID> hostSigningAuthority,
                           std::optional<std::vector<std::byte>> hostSigningCert,
                           std::optional<uint32_t> sessionTimeout,
                           std::optional<uint32_t> transTimeout,
@@ -151,26 +151,26 @@ namespace mock {
                                     std::optional<Bytes>>,
                          eMethodStatus>;
 
-        auto Get(Session& session, Uid invokingId, CellBlock cellBlock) const
+        auto Get(Session& session, UID invokingId, CellBlock cellBlock) const
             -> std::pair<std::tuple<List>, eMethodStatus>;
 
-        auto Set(Session& session, Uid invokingId, std::optional<Value> where, std::optional<Value> values) const
+        auto Set(Session& session, UID invokingId, std::optional<Value> where, std::optional<Value> values) const
             -> std::pair<std::tuple<>, eMethodStatus>;
 
-        auto Next(Session& session, Uid invokingId, std::optional<Uid> where, std::optional<uint32_t> count) const
+        auto Next(Session& session, UID invokingId, std::optional<UID> where, std::optional<uint32_t> count) const
             -> std::pair<std::tuple<List>, eMethodStatus>;
 
     private:
-        static constexpr auto propertiesMethod = Method<Uid(core::eMethod::Properties), 0, 1, 1, 1>{};
-        static constexpr auto startSessionMethod = Method<Uid(core::eMethod::StartSession), 3, 9, 2, 6>{};
+        static constexpr auto propertiesMethod = Method<UID(core::eMethod::Properties), 0, 1, 1, 1>{};
+        static constexpr auto startSessionMethod = Method<UID(core::eMethod::StartSession), 3, 9, 2, 6>{};
 
-        static constexpr auto getMethod = Method<Uid(core::eMethod::Get), 1, 0, 1, 0>{};
-        static constexpr auto setMethod = Method<Uid(core::eMethod::Set), 0, 2, 0, 0>{};
-        static constexpr auto nextMethod = Method<Uid(core::eMethod::Next), 0, 2, 1, 0>{};
-        static constexpr auto authenticateMethod = Method<Uid(core::eMethod::Authenticate), 1, 1, 1, 0>{};
-        static constexpr auto genKeyMethod = Method<Uid(core::eMethod::GenKey), 0, 2, 0, 0>{};
-        static constexpr auto revertMethod = Method<Uid(opal::eMethod::Revert), 0, 0, 0, 0>{};
-        static constexpr auto activateMethod = Method<Uid(opal::eMethod::Activate), 0, 0, 0, 0>{};
+        static constexpr auto getMethod = Method<UID(core::eMethod::Get), 1, 0, 1, 0>{};
+        static constexpr auto setMethod = Method<UID(core::eMethod::Set), 0, 2, 0, 0>{};
+        static constexpr auto nextMethod = Method<UID(core::eMethod::Next), 0, 2, 1, 0>{};
+        static constexpr auto authenticateMethod = Method<UID(core::eMethod::Authenticate), 1, 1, 1, 0>{};
+        static constexpr auto genKeyMethod = Method<UID(core::eMethod::GenKey), 0, 2, 0, 0>{};
+        static constexpr auto revertMethod = Method<UID(opal::eMethod::Revert), 0, 0, 0, 0>{};
+        static constexpr auto activateMethod = Method<UID(opal::eMethod::Activate), 0, 0, 0, 0>{};
 
         uint16_t m_comId;
         uint16_t m_comIdExt;

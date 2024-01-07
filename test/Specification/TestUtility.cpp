@@ -9,12 +9,12 @@ using namespace sedmgr;
 
 
 TEST_CASE("Specification: table to descriptor", "[Specification]") {
-    REQUIRE(TableToDescriptor(0x0000'BEEF'0000'0000) == Uid(0x0000'0001'0000'BEEF));
+    REQUIRE(TableToDescriptor(0x0000'BEEF'0000'0000) == UID(0x0000'0001'0000'BEEF));
 }
 
 
 TEST_CASE("Specification: descriptor to table", "[Specification]") {
-    REQUIRE(DescriptorToTable(0x0000'0001'0000'BEEF) == Uid(0x0000'BEEF'0000'0000));
+    REQUIRE(DescriptorToTable(0x0000'0001'0000'BEEF) == UID(0x0000'BEEF'0000'0000));
 }
 
 
@@ -52,18 +52,18 @@ TEST_CASE("Specification: name sequence find name", "[Specification]") {
     SECTION("First") {
         const auto result = seq.Find("name6");
         REQUIRE(!!result);
-        REQUIRE(*result == Uid(106));
+        REQUIRE(*result == UID(106));
     }
     SECTION("Last") {
         const auto result = seq.Find("name15");
         REQUIRE(!!result);
-        REQUIRE(*result == Uid(115));
+        REQUIRE(*result == UID(115));
     }
 }
 
 
 TEST_CASE("Specification: finder", "[Specification]") {
-    const std::initializer_list<std::pair<Uid, std::string_view>> pairs = {
+    const std::initializer_list<std::pair<UID, std::string_view>> pairs = {
         {1,  "1"},
         { 2, "2"},
     };
@@ -80,16 +80,16 @@ TEST_CASE("Specification: finder", "[Specification]") {
         REQUIRE(finder.Find(21) == "t1");
     }
     SECTION("by name") {
-        REQUIRE(finder.Find("1") == Uid(1));
-        REQUIRE(finder.Find("2") == Uid(2));
-        REQUIRE(finder.Find("s4") == Uid(14));
-        REQUIRE(finder.Find("t1") == Uid(21));
+        REQUIRE(finder.Find("1") == UID(1));
+        REQUIRE(finder.Find("2") == UID(2));
+        REQUIRE(finder.Find("s4") == UID(14));
+        REQUIRE(finder.Find("t1") == UID(21));
     }
 }
 
 
 TEST_CASE("Specification: finder UID collision", "[Specification]") {
-    const std::initializer_list<std::pair<Uid, std::string_view>> pairs = {
+    const std::initializer_list<std::pair<UID, std::string_view>> pairs = {
         {1,  "1"},
         { 1, "2"},
     };
@@ -99,7 +99,7 @@ TEST_CASE("Specification: finder UID collision", "[Specification]") {
 
 
 TEST_CASE("Specification: finder name collision", "[Specification]") {
-    const std::initializer_list<std::pair<Uid, std::string_view>> pairs = {
+    const std::initializer_list<std::pair<UID, std::string_view>> pairs = {
         {1,  "1"},
         { 2, "1"},
     };
@@ -121,9 +121,9 @@ TEST_CASE("Specification: sp finder", "[Specification]") {
         REQUIRE(!finder.Find(2, 100));
     }
     SECTION("by name") {
-        REQUIRE(finder.Find("1", 100) == Uid(1));
+        REQUIRE(finder.Find("1", 100) == UID(1));
         REQUIRE(!finder.Find("1", 101));
-        REQUIRE(finder.Find("2", 101) == Uid(2));
+        REQUIRE(finder.Find("2", 101) == UID(2));
         REQUIRE(!finder.Find("2", 100));
     }
 }

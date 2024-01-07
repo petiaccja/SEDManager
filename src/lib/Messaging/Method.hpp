@@ -31,8 +31,8 @@ enum class eMethodStatus : uint8_t {
 
 
 struct MethodCall {
-    Uid invokingId;
-    Uid methodId;
+    UID invokingId;
+    UID methodId;
     std::vector<Value> args;
     eMethodStatus status = eMethodStatus::SUCCESS;
 };
@@ -51,9 +51,9 @@ void MethodStatusToException(std::string_view methodName, eMethodStatus status);
 
 
 struct CallContext {
-    Uid invokingId;
+    UID invokingId;
     std::function<asyncpp::task<MethodResult>(MethodCall)> callRemoteMethod;
-    std::function<std::string(Uid)> getMethodName = {};
+    std::function<std::string(UID)> getMethodName = {};
 };
 
 
@@ -116,14 +116,14 @@ namespace impl_method {
     };
 
 
-    template <Uid MethodId,
+    template <UID MethodId,
               class RequiredParams,
               class OptionalParams,
               class RequiredResults,
               class OptionalResults>
     class Method;
 
-    template <Uid MethodId,
+    template <UID MethodId,
               class... RequiredParams,
               class... OptionalParams,
               class... RequiredResults,
@@ -193,7 +193,7 @@ namespace impl_method {
 } // namespace impl_method
 
 
-template <Uid MethodId, int RequiredParams, int OptionalParams, int RequiredResults, int OptionalResults>
+template <UID MethodId, int RequiredParams, int OptionalParams, int RequiredResults, int OptionalResults>
 class Method : public impl_method::Method<MethodId,
                                           typename impl_method::MakeMethodPack<RequiredParams, false>::type,
                                           typename impl_method::MakeMethodPack<OptionalParams, true>::type,

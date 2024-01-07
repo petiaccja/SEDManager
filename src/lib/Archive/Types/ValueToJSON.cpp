@@ -69,7 +69,7 @@ namespace impl {
 
         class ValueToJSONConverter {
         public:
-            ValueToJSONConverter(std::function<std::optional<std::string>(Uid)> nameConverter = {})
+            ValueToJSONConverter(std::function<std::optional<std::string>(UID)> nameConverter = {})
                 : m_nameConverter(nameConverter) {}
 
             nlohmann::json Convert(const Value& value, const Type& type) const;
@@ -87,13 +87,13 @@ namespace impl {
 
         private:
             TypeFormatter m_formatter;
-            std::function<std::optional<std::string>(Uid)> m_nameConverter;
+            std::function<std::optional<std::string>(UID)> m_nameConverter;
         };
 
 
         class JSONToValueConverter {
         public:
-            JSONToValueConverter(std::function<std::optional<Uid>(std::string_view)> nameConverter = {})
+            JSONToValueConverter(std::function<std::optional<UID>(std::string_view)> nameConverter = {})
                 : m_nameConverter(nameConverter) {}
             Value Convert(const nlohmann::json& value, const Type& type) const;
             Value operator()(const nlohmann::json& value, const Type& type) const { return Convert(value, type); }
@@ -110,7 +110,7 @@ namespace impl {
 
         private:
             TypeFormatter m_formatter;
-            std::function<std::optional<Uid>(std::string_view)> m_nameConverter;
+            std::function<std::optional<UID>(std::string_view)> m_nameConverter;
         };
 
 
@@ -241,7 +241,7 @@ namespace impl {
                 }
                 uint32_t altUidLower = 0;
                 FromBytes(currentType.Get<Bytes>(), altUidLower);
-                const Uid altUid = uint64_t(altUidLower) | baseTypeUid;
+                const UID altUid = uint64_t(altUidLower) | baseTypeUid;
                 const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
                     try {
                         return type_uid(alt) == altUid;
@@ -316,12 +316,12 @@ namespace impl {
                 uint64_t uid;
                 FromBytes(value.Get<Bytes>(), uid);
                 if (m_nameConverter) {
-                    const auto maybeName = m_nameConverter(Uid(uid));
+                    const auto maybeName = m_nameConverter(UID(uid));
                     if (maybeName) {
                         return "ref:" + *maybeName;
                     }
                 }
-                return "ref:" + to_string(Uid(uid));
+                return "ref:" + to_string(UID(uid));
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
         }
@@ -398,7 +398,7 @@ namespace impl {
             const auto& valueJson = json.begin().value();
             uint64_t altUidBits = 0;
             FromBytes(Convert(altJson, ReferenceType{}).Get<Bytes>(), altUidBits);
-            const Uid altUid = altUidBits;
+            const UID altUid = altUidBits;
 
             const auto& alts = type.Types();
             const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
@@ -481,7 +481,7 @@ namespace impl {
                         return ToBytes(uint64_t(*maybeValue));
                     }
                 }
-                const Uid value = stouid(str.substr(4));
+                const UID value = stouid(str.substr(4));
                 return ToBytes(uint64_t(value));
             }
             throw UnexpectedTypeError("string");
@@ -598,7 +598,7 @@ namespace impl {
         bool InterpretAsString(const BytesType& type) {
             try {
                 const auto uid = type_uid(type);
-                if (uid == Uid(core::eType::name) || uid == Uid(core::eType::password)) {
+                if (uid == UID(core::eType::name) || uid == UID(core::eType::password)) {
                     return true;
                 }
             }
@@ -698,13 +698,13 @@ std::string GetTypeStr(const Type& type) {
 }
 
 
-nlohmann::json ValueToJSON(const Value& value, const Type& type, std::function<std::optional<std::string>(Uid)> nameConverter) {
+nlohmann::json ValueToJSON(const Value& value, const Type& type, std::function<std::optional<std::string>(UID)> nameConverter) {
     impl::ValueToJSONConverter converter(std::move(nameConverter));
     return converter.Convert(value, type);
 }
 
 
-Value JSONToValue(const nlohmann::json& value, const Type& type, std::function<std::optional<Uid>(std::string_view)> nameConverter) {
+Value JSONToValue(const nlohmann::json& value, const Type& type, std::function<std::optional<UID>(std::string_view)> nameConverter) {
     impl::JSONToValueConverter converter(std::move(nameConverter));
     return converter.Convert(value, type);
 }

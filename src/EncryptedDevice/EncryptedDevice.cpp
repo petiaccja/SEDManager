@@ -62,12 +62,12 @@ const ModuleCollection& EncryptedDevice::GetModules() const {
 }
 
 
-asyncpp::task<void> EncryptedDevice::Login(Uid securityProvider) {
+asyncpp::task<void> EncryptedDevice::Login(UID securityProvider) {
     m_session = std::make_shared<Session>(co_await Session::Start(m_sessionManager, securityProvider));
 }
 
 
-asyncpp::task<void> EncryptedDevice::Authenticate(Uid authority, std::optional<std::span<const std::byte>> password) {
+asyncpp::task<void> EncryptedDevice::Authenticate(UID authority, std::optional<std::span<const std::byte>> password) {
     if (m_session) {
         return m_session->base.Authenticate(authority, password);
     }
@@ -83,7 +83,7 @@ asyncpp::task<void> EncryptedDevice::End() {
 }
 
 
-asyncpp::stream<Uid> EncryptedDevice::GetTableRows(Uid table) {
+asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
     const auto desc = GetModules().FindTable(table);
     if (!desc) {
         throw std::invalid_argument("could not find table description");
@@ -92,9 +92,9 @@ asyncpp::stream<Uid> EncryptedDevice::GetTableRows(Uid table) {
         co_yield *desc->singleRow;
     }
     else {
-        std::optional<Uid> lastUid = std::nullopt;
+        std::optional<UID> lastUid = std::nullopt;
         while (const auto rowUid = co_await m_session->base.Next(table, lastUid)) {
-            if (*rowUid != Uid(0)) {
+            if (*rowUid != UID(0)) {
                 co_yield *rowUid;
             }
             lastUid = *rowUid;
@@ -103,7 +103,7 @@ asyncpp::stream<Uid> EncryptedDevice::GetTableRows(Uid table) {
 }
 
 
-asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(Uid table, Uid object) {
+asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID table, UID object) {
     const auto maybeTableDesc = GetModules().FindTable(table);
     if (!maybeTableDesc) {
         throw std::invalid_argument("could not find table description");
@@ -116,33 +116,33 @@ asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(Uid table, Uid object) 
 }
 
 
-asyncpp::task<Value> EncryptedDevice::GetObjectColumn(Uid object, uint32_t column) {
+asyncpp::task<Value> EncryptedDevice::GetObjectColumn(UID object, uint32_t column) {
     co_return co_await m_session->base.Get(object, column);
 }
 
 
-asyncpp::task<void> EncryptedDevice::SetObjectColumn(Uid object, uint32_t column, Value value) {
+asyncpp::task<void> EncryptedDevice::SetObjectColumn(UID object, uint32_t column, Value value) {
     co_await m_session->base.Set(object, column, value);
 }
 
 
-asyncpp::task<void> EncryptedDevice::GenMEK(Uid lockingRange) {
+asyncpp::task<void> EncryptedDevice::GenMEK(UID lockingRange) {
     co_await m_session->base.GenKey(lockingRange);
 }
 
 
-asyncpp::task<void> EncryptedDevice::GenPIN(Uid credentialObject, uint32_t length) {
+asyncpp::task<void> EncryptedDevice::GenPIN(UID credentialObject, uint32_t length) {
     co_await m_session->base.GenKey(credentialObject, std::nullopt, length);
 }
 
 
-asyncpp::task<void> EncryptedDevice::Revert(Uid securityProvider) {
+asyncpp::task<void> EncryptedDevice::Revert(UID securityProvider) {
     co_await m_session->opal.Revert(securityProvider);
     co_await End();
 }
 
 
-asyncpp::task<void> EncryptedDevice::Activate(Uid securityProvider) {
+asyncpp::task<void> EncryptedDevice::Activate(UID securityProvider) {
     co_await m_session->opal.Activate(securityProvider);
 }
 

@@ -345,7 +345,7 @@ namespace mock {
     void SessionLayerHandler::DecodeMethod(const Value& value, uint32_t tsn, uint32_t hsn) {
         try {
             const auto call = MethodCallFromValue(value);
-            if (call.invokingId == Uid(0xFF)) {
+            if (call.invokingId == UID(0xFF)) {
                 DispatchMethod(call);
             }
             else {
@@ -492,12 +492,12 @@ namespace mock {
 
 
     auto SessionLayerHandler::StartSession(uint32_t hostSessionID,
-                                           Uid spId,
+                                           UID spId,
                                            bool write,
                                            std::optional<std::vector<std::byte>> hostChallenge,
-                                           std::optional<Uid> hostExchangeAuthority,
+                                           std::optional<UID> hostExchangeAuthority,
                                            std::optional<std::vector<std::byte>> hostExchangeCert,
-                                           std::optional<Uid> hostSigningAuthority,
+                                           std::optional<UID> hostSigningAuthority,
                                            std::optional<std::vector<std::byte>> hostSigningCert,
                                            std::optional<uint32_t> sessionTimeout,
                                            std::optional<uint32_t> transTimeout,
@@ -529,7 +529,7 @@ namespace mock {
     }
 
 
-    auto SessionLayerHandler::Get(Session& session, Uid invokingId, CellBlock cellBlock) const
+    auto SessionLayerHandler::Get(Session& session, UID invokingId, CellBlock cellBlock) const
         -> std::pair<std::tuple<List>, eMethodStatus> {
         if (IsObject(invokingId)) {
             const auto securityProvider = *session.securityProvider;
@@ -562,7 +562,7 @@ namespace mock {
     }
 
 
-    auto SessionLayerHandler::Set(Session& session, Uid invokingId, std::optional<Value> where, std::optional<Value> values) const
+    auto SessionLayerHandler::Set(Session& session, UID invokingId, std::optional<Value> where, std::optional<Value> values) const
         -> std::pair<std::tuple<>, eMethodStatus> {
         if (IsObject(invokingId)) {
             auto& securityProvider = *session.securityProvider;
@@ -610,7 +610,7 @@ namespace mock {
     }
 
 
-    auto SessionLayerHandler::Next(Session& session, Uid invokingId, std::optional<Uid> where, std::optional<uint32_t> count) const
+    auto SessionLayerHandler::Next(Session& session, UID invokingId, std::optional<UID> where, std::optional<uint32_t> count) const
         -> std::pair<std::tuple<List>, eMethodStatus> {
         auto& securityProvider = *session.securityProvider;
         if (!securityProvider.contains(invokingId)) {

@@ -6,7 +6,7 @@ namespace sedmgr {
 namespace mock {
 
 
-    Object::Object(Uid uid, std::initializer_list<Value> values)
+    Object::Object(UID uid, std::initializer_list<Value> values)
         : m_uid(uid) {
         m_values.push_back(Value(Serialize(uid)));
         m_values.insert(m_values.end(), values);
@@ -30,12 +30,12 @@ namespace mock {
     }
 
 
-    Uid Object::GetUID() const {
+    UID Object::GetUID() const {
         return m_uid;
     }
 
 
-    Table::Table(Uid uid, std::initializer_list<Object> objects)
+    Table::Table(UID uid, std::initializer_list<Object> objects)
         : m_uid(uid) {
         std::optional<size_t> numColumns;
         for (const auto& object : objects) {
@@ -50,61 +50,61 @@ namespace mock {
     }
 
 
-    bool Table::contains(Uid object) const {
+    bool Table::contains(UID object) const {
         return m_objects.contains(object);
     }
 
 
-    std::unordered_map<Uid, Object>::iterator Table::find(Uid object) {
+    std::unordered_map<UID, Object>::iterator Table::find(UID object) {
         return m_objects.find(object);
     }
 
 
-    std::unordered_map<Uid, Object>::const_iterator Table::find(Uid object) const {
+    std::unordered_map<UID, Object>::const_iterator Table::find(UID object) const {
         return m_objects.find(object);
     }
 
 
-    std::unordered_map<Uid, Object>::iterator Table::begin() {
+    std::unordered_map<UID, Object>::iterator Table::begin() {
         return m_objects.begin();
     }
 
 
-    std::unordered_map<Uid, Object>::const_iterator Table::begin() const {
+    std::unordered_map<UID, Object>::const_iterator Table::begin() const {
         return m_objects.begin();
     }
 
 
-    std::unordered_map<Uid, Object>::iterator Table::end() {
+    std::unordered_map<UID, Object>::iterator Table::end() {
         return m_objects.end();
     }
 
 
-    std::unordered_map<Uid, Object>::const_iterator Table::end() const {
+    std::unordered_map<UID, Object>::const_iterator Table::end() const {
         return m_objects.end();
     }
 
 
-    Object& Table::operator[](Uid object) {
+    Object& Table::operator[](UID object) {
         const auto it = m_objects.find(object);
         assert(it != m_objects.end());
         return it->second;
     }
 
 
-    const Object& Table::operator[](Uid object) const {
+    const Object& Table::operator[](UID object) const {
         const auto it = m_objects.find(object);
         assert(it != m_objects.end());
         return it->second;
     }
 
 
-    Uid Table::GetUID() const {
+    UID Table::GetUID() const {
         return m_uid;
     }
 
 
-    SecurityProvider::SecurityProvider(Uid uid, std::initializer_list<Table> tables)
+    SecurityProvider::SecurityProvider(UID uid, std::initializer_list<Table> tables)
         : m_uid(uid) {
         for (const auto& table : tables) {
             m_tables.insert_or_assign(table.GetUID(), table);
@@ -112,26 +112,26 @@ namespace mock {
     }
 
 
-    bool SecurityProvider::contains(Uid table) const {
+    bool SecurityProvider::contains(UID table) const {
         return m_tables.contains(table);
     }
 
 
-    Table& SecurityProvider::operator[](Uid table) {
+    Table& SecurityProvider::operator[](UID table) {
         const auto it = m_tables.find(table);
         assert(it != m_tables.end());
         return it->second;
     }
 
 
-    const Table& SecurityProvider::operator[](Uid table) const {
+    const Table& SecurityProvider::operator[](UID table) const {
         const auto it = m_tables.find(table);
         assert(it != m_tables.end());
         return it->second;
     }
 
 
-    Uid SecurityProvider::GetUID() const {
+    UID SecurityProvider::GetUID() const {
         return m_uid;
     }
 

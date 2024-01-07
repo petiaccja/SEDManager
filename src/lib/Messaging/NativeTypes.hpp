@@ -11,7 +11,7 @@
 namespace sedmgr {
 
 struct CellBlock {
-    std::optional<std::variant<Uid, uint32_t>> startRow;
+    std::optional<std::variant<UID, uint32_t>> startRow;
     std::optional<uint32_t> endRow;
     std::optional<uint32_t> startColumn;
     std::optional<uint32_t> endColumn;

@@ -66,7 +66,7 @@ TEST_CASE("value_cast: string_view", "[ValueToNative]") {
 
 TEST_CASE("value_cast: Uid", "[ValueToNative]") {
     const Value value = std::array{ 0_b, 0_b, 0_b, 0_b, 0xDE_b, 0xAD_b, 0xBE_b, 0xEF_b };
-    const auto native = Uid(0xDEADBEEF);
+    const auto native = UID(0xDEADBEEF);
     SECTION("Value to native") {
         const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
         REQUIRE(conv == native);
@@ -86,7 +86,7 @@ TEST_CASE("value_cast: CellBlock", "[ValueToNative]") {
         Named{ uint16_t(4), uint32_t(40)                                                    },
     };
     const auto native = CellBlock{
-        .startRow = Uid(0xDEADBEEF),
+        .startRow = UID(0xDEADBEEF),
         .endRow = 20,
         .startColumn = 30,
         .endColumn = 40,

@@ -12,7 +12,7 @@ namespace sedmgr {
 
 namespace core {
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tables = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> tables = {
         {eTable::Table,          "Table"        }, // Base
         { eTable::SPInfo,        "SPInfo"       }, // Base
         { eTable::SPTemplates,   "SPTemplates"  }, // Base
@@ -62,7 +62,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> tablesDescriptors = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> tablesDescriptors = {
         {TableToDescriptor(eTable::Table),          "Table::Table"        }, // Base
         { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       }, // Base
         { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  }, // Base
@@ -112,7 +112,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> methods = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> methods = {
         {eMethod::Properties,           "MethodID::Properties"         },
         { eMethod::StartSession,        "MethodID::StartSession"       },
         { eMethod::SyncSession,         "MethodID::SyncSession"        },
@@ -176,7 +176,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> singleRowTables = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> singleRowTables = {
         {eTableSingleRows::SPInfo,       "SPInfo::SPInfo"          },
         { eTableSingleRows::TPerInfo,    "TPerInfo::TPerInfo"      },
         { eTableSingleRows::LockingInfo, "LockingInfo::LockingInfo"},
@@ -184,7 +184,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> authorities = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> authorities = {
         {0x0000'0009'0000'0001,  "Authority::Anybody"  }, // Base
         { 0x0000'0009'0000'0002, "Authority::Admins"   }, // Base
         { 0x0000'0009'0000'0003, "Authority::Makers"   }, // Base
@@ -205,7 +205,7 @@ namespace core {
     };
 
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> types = {
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> types = {
         {eType::unknown_type,            "Type::unknown_type"          },
         { eType::boolean,                "Type::boolean"               },
         { eType::integer_1,              "Type::integer_1"             },
@@ -297,20 +297,20 @@ eModuleKind CoreModule::ModuleKind() const {
 }
 
 
-std::optional<std::string> CoreModule::FindName(Uid uid, std::optional<Uid>) const {
+std::optional<std::string> CoreModule::FindName(UID uid, std::optional<UID>) const {
     return core::GetFinder().Find(uid);
 }
 
 
-std::optional<Uid> CoreModule::FindUid(std::string_view name, std::optional<Uid>) const {
+std::optional<UID> CoreModule::FindUid(std::string_view name, std::optional<UID>) const {
     return core::GetFinder().Find(name);
 }
 
 
-std::optional<TableDesc> CoreModule::FindTable(Uid table) const {
+std::optional<TableDesc> CoreModule::FindTable(UID table) const {
     using namespace core;
     static const auto lut = [] {
-        std::unordered_map<Uid, TableDescStatic> lut;
+        std::unordered_map<UID, TableDescStatic> lut;
         for (auto& [uid, desc] : TableDescs()) {
             lut.insert({ uid, desc });
         }
@@ -328,10 +328,10 @@ std::optional<TableDesc> CoreModule::FindTable(Uid table) const {
 }
 
 
-std::optional<Type> CoreModule::FindType(Uid lookupUid) const {
+std::optional<Type> CoreModule::FindType(UID lookupUid) const {
     using namespace core;
     static const auto lut = [] {
-        std::unordered_map<Uid, Type> lut;
+        std::unordered_map<UID, Type> lut;
         for (auto& [uid, def] : core::TypeDefs()) {
             lut.insert_or_assign(uid, def);
         }

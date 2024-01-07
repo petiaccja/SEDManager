@@ -23,7 +23,7 @@ void ModuleCollection::Load(std::shared_ptr<Module> mod) {
 }
 
 
-std::optional<std::string> ModuleCollection::FindName(Uid uid, std::optional<Uid> sp) const {
+std::optional<std::string> ModuleCollection::FindName(UID uid, std::optional<UID> sp) const {
     for (const auto& mod : m_modules) {
         const auto maybeName = mod->FindName(uid, sp);
         if (maybeName) {
@@ -34,7 +34,7 @@ std::optional<std::string> ModuleCollection::FindName(Uid uid, std::optional<Uid
 }
 
 
-std::optional<Uid> ModuleCollection::FindUid(std::string_view name, std::optional<Uid> sp) const {
+std::optional<UID> ModuleCollection::FindUid(std::string_view name, std::optional<UID> sp) const {
     for (const auto& mod : m_modules) {
         const auto maybeUid = mod->FindUid(name, sp);
         if (maybeUid) {
@@ -45,7 +45,7 @@ std::optional<Uid> ModuleCollection::FindUid(std::string_view name, std::optiona
 }
 
 
-std::optional<TableDesc> ModuleCollection::FindTable(Uid table) const {
+std::optional<TableDesc> ModuleCollection::FindTable(UID table) const {
     for (const auto& mod : m_modules) {
         const auto maybeTable = mod->FindTable(table);
         if (maybeTable) {
@@ -56,7 +56,7 @@ std::optional<TableDesc> ModuleCollection::FindTable(Uid table) const {
 }
 
 
-std::optional<Type> ModuleCollection::FindType(Uid uid) const {
+std::optional<Type> ModuleCollection::FindType(UID uid) const {
     for (const auto& mod : m_modules) {
         const auto maybeType = mod->FindType(uid);
         if (maybeType) {

@@ -42,12 +42,12 @@ public:
 
     asyncpp::task<StartSessionResult> StartSession(
         uint32_t hostSessionID,
-        Uid spId,
+        UID spId,
         bool write,
         std::optional<std::span<const std::byte>> hostChallenge = {},
-        std::optional<Uid> hostExchangeAuthority = {},
+        std::optional<UID> hostExchangeAuthority = {},
         std::optional<std::span<const std::byte>> hostExchangeCert = {},
-        std::optional<Uid> hostSigningAuthority = {},
+        std::optional<UID> hostSigningAuthority = {},
         std::optional<std::span<const std::byte>> hostSigningCert = {},
         std::optional<uint32_t> sessionTimeout = {},
         std::optional<uint32_t> transTimeout = {},
@@ -64,10 +64,10 @@ private:
     CallContext GetCallContext() const;
 
 private:
-    static constexpr Uid INVOKING_ID = 0xFF;
+    static constexpr UID INVOKING_ID = 0xFF;
     static constexpr uint8_t PROTOCOL = 0x01;
-    static constexpr auto propertiesMethod = Method<Uid(core::eMethod::Properties), 0, 1, 1, 1>{};
-    static constexpr auto startSessionMethod = Method<Uid(core::eMethod::StartSession), 3, 9, 2, 6>{};
+    static constexpr auto propertiesMethod = Method<UID(core::eMethod::Properties), 0, 1, 1, 1>{};
+    static constexpr auto startSessionMethod = Method<UID(core::eMethod::StartSession), 3, 9, 2, 6>{};
 
     std::shared_ptr<TrustedPeripheral> m_tper;
 };

@@ -62,12 +62,12 @@ namespace impl {
 
 
     template <>
-    struct ValueCast<Uid> {
-        static Value To(const Uid& v) { return Value(ToBytes(uint64_t(v))); }
-        static Uid From(const Value& v) {
+    struct ValueCast<UID> {
+        static Value To(const UID& v) { return Value(ToBytes(uint64_t(v))); }
+        static UID From(const Value& v) {
             uint64_t uid;
             FromBytes(v.Get<Bytes>(), uid);
-            return Uid(uid);
+            return UID(uid);
         }
     };
 
@@ -99,7 +99,7 @@ namespace impl {
                 const auto id = named.name.Get<uint16_t>();
                 switch (id) {
                     case 0: break; // Table name
-                    case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<Uid>(named.value); break;
+                    case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<UID>(named.value); break;
                     case 2: parsed.endRow = named.value.HasValue() ? std::optional(named.value.Get<uint32_t>()) : std::optional<uint32_t>{}; break;
                     case 3: parsed.startColumn = named.value.Get<uint32_t>(); break;
                     case 4: parsed.endColumn = named.value.Get<uint32_t>(); break;

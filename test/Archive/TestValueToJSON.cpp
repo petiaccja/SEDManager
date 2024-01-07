@@ -171,11 +171,11 @@ TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
     const Value value = ToBytes(0x1234'5678'9876'5432);
     const nlohmann::json json = "ref:Macilaci";
 
-    const auto uidConverter = [](Uid uid) -> std::optional<std::string> {
-        return uid == Uid(0x1234'5678'9876'5432) ? std::optional<std::string>("Macilaci") : std::nullopt;
+    const auto uidConverter = [](UID uid) -> std::optional<std::string> {
+        return uid == UID(0x1234'5678'9876'5432) ? std::optional<std::string>("Macilaci") : std::nullopt;
     };
-    const auto nameConverter = [](std::string_view name) -> std::optional<Uid> {
-        return name == "Macilaci" ? std::optional(Uid(0x1234'5678'9876'5432)) : std::nullopt;
+    const auto nameConverter = [](std::string_view name) -> std::optional<UID> {
+        return name == "Macilaci" ? std::optional(UID(0x1234'5678'9876'5432)) : std::nullopt;
     };
 
     SECTION("Value to JSON") {

@@ -99,7 +99,7 @@ std::string FormatName(std::string_view name, const std::optional<std::string> c
 }
 
 
-std::optional<Uid> FindAuthority(EncryptedDevice& manager, std::string_view name) {
+std::optional<UID> FindAuthority(EncryptedDevice& manager, std::string_view name) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
     const auto maybeUid = ParseObjectRef(manager, std::format("Authority::{}", name), lockingSpUid);
     if (maybeUid) {
@@ -122,7 +122,7 @@ std::optional<Uid> FindAuthority(EncryptedDevice& manager, std::string_view name
 }
 
 
-std::optional<Uid> TryGetUser(EncryptedDevice& manager) {
+std::optional<UID> TryGetUser(EncryptedDevice& manager) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {
@@ -144,7 +144,7 @@ std::optional<Uid> TryGetUser(EncryptedDevice& manager) {
 }
 
 
-bool TryLoginUser(EncryptedDevice& manager, Uid authority) {
+bool TryLoginUser(EncryptedDevice& manager, UID authority) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {

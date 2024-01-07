@@ -9,7 +9,7 @@ namespace sedmgr {
 
 namespace core {
 
-    inline const std::initializer_list<std::pair<Uid, Type>>& TypeDefs() {
+    inline const std::initializer_list<std::pair<UID, Type>>& TypeDefs() {
         static const Type unknown_type = IdentifiedType<Type, uint64_t(eType::unknown_type)>();
         static const Type boolean = IdentifiedType<EnumerationType, uint64_t(eType::boolean)>(0, 1);
 
@@ -112,7 +112,7 @@ namespace core {
         static const Type life_cycle_state = IdentifiedType<EnumerationType, uint64_t(eType::life_cycle_state)>(0, 15);
         static const Type SSC = IdentifiedType<ListType, uint64_t(eType::SSC)>(name);
 
-        static const std::initializer_list<std::pair<Uid, Type>> typeDefs = {
+        static const std::initializer_list<std::pair<UID, Type>> typeDefs = {
             {eType::unknown_type,            unknown_type          },
             { eType::boolean,                boolean               },
             { eType::integer_1,              integer_1             },

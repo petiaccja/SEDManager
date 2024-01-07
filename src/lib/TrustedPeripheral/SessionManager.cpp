@@ -18,12 +18,12 @@ auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties
 
 auto SessionManager::StartSession(
     uint32_t hostSessionID,
-    Uid spId,
+    UID spId,
     bool write,
     std::optional<std::span<const std::byte>> hostChallenge,
-    std::optional<Uid> hostExchangeAuthority,
+    std::optional<UID> hostExchangeAuthority,
     std::optional<std::span<const std::byte>> hostExchangeCert,
-    std::optional<Uid> hostSigningAuthority,
+    std::optional<UID> hostSigningAuthority,
     std::optional<std::span<const std::byte>> hostSigningCert,
     std::optional<uint32_t> sessionTimeout,
     std::optional<uint32_t> transTimeout,
@@ -74,7 +74,7 @@ CallContext SessionManager::GetCallContext() const {
     auto callRemoteMethod = [tper = m_tper](MethodCall call) -> asyncpp::task<MethodResult> {
         co_return co_await CallRemoteSessionMethod(tper, PROTOCOL, 0, 0, std::move(call));
     };
-    auto getMethodName = [tper = m_tper](Uid methodId) {
+    auto getMethodName = [tper = m_tper](UID methodId) {
         const auto maybeMethodName = tper->GetModules().FindName(methodId);
         return maybeMethodName.value_or(to_string(methodId));
     };

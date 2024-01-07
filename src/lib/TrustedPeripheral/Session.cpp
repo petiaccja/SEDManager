@@ -16,9 +16,9 @@
 namespace sedmgr {
 
 Session::Session(std::shared_ptr<SessionManager> sessionManager,
-                 Uid securityProvider,
+                 UID securityProvider,
                  std::optional<std::span<const std::byte>> password,
-                 std::optional<Uid> authority)
+                 std::optional<UID> authority)
 
     : Session(join(Start(sessionManager, securityProvider, password, authority))) {
 }
@@ -60,9 +60,9 @@ Session::~Session() {
 
 
 asyncpp::task<Session> Session::Start(std::shared_ptr<SessionManager> sessionManager,
-                                      Uid securityProvider,
+                                      UID securityProvider,
                                       std::optional<std::span<const std::byte>> password,
-                                      std::optional<Uid> authority) {
+                                      std::optional<UID> authority) {
     const auto hostSessionNumber = NewHostSessionNumber();
     const auto result = co_await sessionManager->StartSession(hostSessionNumber,
                                                               securityProvider,
@@ -120,13 +120,13 @@ namespace impl {
     }
 
 
-    CallContext Template::GetCallContext(Uid invokingId) const {
+    CallContext Template::GetCallContext(UID invokingId) const {
         auto callRemoteMethod = [tper = m_sessionManager->GetTrustedPeripheral(),
                                  tsn = m_tperSessionNumber,
                                  hsn = m_hostSessionNumber](MethodCall call) -> asyncpp::task<MethodResult> {
             co_return co_await CallRemoteMethod(tper, PROTOCOL, tsn, hsn, std::move(call));
         };
-        auto getMethodName = [tper = m_sessionManager->GetTrustedPeripheral()](Uid methodId) {
+        auto getMethodName = [tper = m_sessionManager->GetTrustedPeripheral()](UID methodId) {
             const auto maybeMethodName = tper->GetModules().FindName(methodId);
             return maybeMethodName.value_or(to_string(methodId));
         };
@@ -139,7 +139,7 @@ namespace impl {
     //------------------------------------------------------------------------------
 
 
-    asyncpp::task<std::vector<Value>> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t endColumn) {
+    asyncpp::task<std::vector<Value>> BaseTemplate::Get(UID object, uint32_t startColumn, uint32_t endColumn) {
         CellBlock cellBlock{
             .startColumn = startColumn,
             .endColumn = endColumn - 1,
@@ -157,7 +157,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<Value> BaseTemplate::Get(Uid object, uint32_t column) {
+    asyncpp::task<Value> BaseTemplate::Get(UID object, uint32_t column) {
         auto values = co_await Get(object, column, column + 1);
         if (values.empty()) {
             throw InvalidResponseError("Get", "zero columns");
@@ -166,7 +166,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
+    asyncpp::task<void> BaseTemplate::Set(UID object, std::span<const uint32_t> columns, std::span<const Value> values) {
         std::vector<Value> labeledValues;
         for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
              colIt != columns.end() && valIt != values.end();
@@ -177,22 +177,22 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
+    asyncpp::task<void> BaseTemplate::Set(UID object, uint32_t column, const Value& value) {
         co_await Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
     }
 
 
-    asyncpp::task<std::vector<Uid>> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
+    asyncpp::task<std::vector<UID>> BaseTemplate::Next(UID table, std::optional<UID> row, uint32_t count) {
         auto [results] = co_await nextMethod(GetCallContext(table), ConvertArg(row), ConvertArg(count));
-        std::vector<Uid> nextUids;
-        std::ranges::transform(results.Get<List>(), std::back_inserter(nextUids), [](const auto& value) -> Uid {
+        std::vector<UID> nextUids;
+        std::ranges::transform(results.Get<List>(), std::back_inserter(nextUids), [](const auto& value) -> UID {
             return ConvertResult(value);
         });
         co_return nextUids;
     }
 
 
-    asyncpp::task<std::optional<Uid>> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
+    asyncpp::task<std::optional<UID>> BaseTemplate::Next(UID table, std::optional<UID> row) {
         const auto nexts = co_await Next(table, row, 1);
         if (!nexts.empty()) {
             co_return nexts[0];
@@ -201,7 +201,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
+    asyncpp::task<void> BaseTemplate::Authenticate(UID authority, std::optional<std::span<const std::byte>> proof) {
         auto [result] = co_await authenticateMethod(GetCallContext(THIS_SP), ConvertArg(authority), ConvertArg(proof));
         if (result.IsInteger()) {
             const auto success = result.Get<uint8_t>();
@@ -215,7 +215,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
+    asyncpp::task<void> BaseTemplate::GenKey(UID object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
         co_await genKeyMethod(GetCallContext(object), ConvertArg(publicExponent), ConvertArg(pinLength));
     }
 
@@ -224,12 +224,12 @@ namespace impl {
     // Base template
     //------------------------------------------------------------------------------
 
-    asyncpp::task<void> OpalTemplate::Revert(Uid securityProvider) {
+    asyncpp::task<void> OpalTemplate::Revert(UID securityProvider) {
         co_await revertMethod(GetCallContext(securityProvider));
     }
 
 
-    asyncpp::task<void> OpalTemplate::Activate(Uid securityProvider) {
+    asyncpp::task<void> OpalTemplate::Activate(UID securityProvider) {
         co_await activateMethod(GetCallContext(securityProvider));
     }
 

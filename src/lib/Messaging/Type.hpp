@@ -45,7 +45,7 @@ protected:
     friend bool type_isa(const In& in);
 
     template <class In>
-    friend Uid type_uid(const In& in);
+    friend UID type_uid(const In& in);
 
 private:
     std::shared_ptr<Storage> m_storage;
@@ -115,7 +115,7 @@ bool type_isa(const In& in) {
 
 
 template <class Type>
-Uid type_uid(const Type& in) {
+UID type_uid(const Type& in) {
     const auto idStorage = std::dynamic_pointer_cast<typename TypeIdentifier::Storage>(in.m_storage);
     if (idStorage) {
         return idStorage->Id();
