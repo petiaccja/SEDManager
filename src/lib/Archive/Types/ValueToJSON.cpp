@@ -239,8 +239,7 @@ namespace impl {
                 if (!currentType.Is<Bytes>()) {
                     throw UnexpectedTypeError(m_formatter(currentTypeType), value.GetTypeStr());
                 }
-                uint32_t altUidLower = 0;
-                FromBytes(currentType.Get<Bytes>(), altUidLower);
+                const auto altUidLower = DeSerialize(Serialized<uint32_t >{currentType.Get<Bytes>()});
                 const UID altUid = UID(uint64_t(altUidLower) | 0x0000'0005'0000'0000);
                 const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
                     try {
@@ -255,7 +254,7 @@ namespace impl {
                 }
 
                 return nlohmann::json({
-                    {Convert(ToBytes(uint64_t(altUid)), ReferenceType{}), Convert(currentValue, *altIter)}
+                    {Convert(Serialize(uint64_t(altUid)), ReferenceType{}), Convert(currentValue, *altIter)}
                 });
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
@@ -313,15 +312,14 @@ namespace impl {
 
         nlohmann::json ValueToJSONConverter::Convert(const Value& value, const ReferenceType& type) const {
             if (value.Is<Bytes>()) {
-                uint64_t uid;
-                FromBytes(value.Get<Bytes>(), uid);
+                const auto uid = DeSerialize(Serialized<UID>{value.Get<Bytes>()});
                 if (m_nameConverter) {
-                    const auto maybeName = m_nameConverter(UID(uid));
+                    const auto maybeName = m_nameConverter(uid);
                     if (maybeName) {
                         return "ref:" + *maybeName;
                     }
                 }
-                return "ref:" + UID(uid).ToString();
+                return "ref:" + uid.ToString();
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
         }
@@ -396,9 +394,7 @@ namespace impl {
             }
             const auto& altJson = json.begin().key();
             const auto& valueJson = json.begin().value();
-            uint64_t altUidBits = 0;
-            FromBytes(Convert(altJson, ReferenceType{}).Get<Bytes>(), altUidBits);
-            const UID altUid = altUidBits;
+            const UID altUid = DeSerialize(Serialized<UID>{Convert(altJson, ReferenceType{}).Get<Bytes>()});
 
             const auto& alts = type.Types();
             const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
@@ -414,7 +410,7 @@ namespace impl {
             }
 
             return Named{
-                ToBytes(uint32_t(uint64_t(altUid))),
+                Serialize(uint32_t(uint64_t(altUid))),
                 Convert(valueJson, *altIter),
             };
         }
@@ -478,11 +474,11 @@ namespace impl {
                 if (m_nameConverter) {
                     const auto maybeValue = m_nameConverter(str.substr(4));
                     if (maybeValue) {
-                        return ToBytes(uint64_t(*maybeValue));
+                        return Serialize(*maybeValue);
                     }
                 }
                 const UID value = UID::Parse(str.substr(4));
-                return ToBytes(uint64_t(value));
+                return Serialize(value);
             }
             throw UnexpectedTypeError("string");
         }

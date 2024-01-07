@@ -261,8 +261,7 @@ namespace mock {
                                            uint16_t comId,
                                            std::span<const std::byte> data) {
         if (securityProtocol == 0x01 && comId == m_comId) {
-            ComPacket comPacket;
-            FromBytes(data, comPacket);
+            const auto comPacket = DeSerialize(Serialized<ComPacket>{ data });
             if (comPacket.comId != m_comId || comPacket.comIdExtension) {
                 throw DeviceError("packet contains invalid ComID or ComIDExtension");
             }
@@ -305,7 +304,7 @@ namespace mock {
                 .outstandingData = 0,
                 .minTransfer = 0,
             };
-            static const auto emptyResponse = ToBytes(emptyPacket);
+            static const auto emptyResponse = Serialize(emptyPacket);
 
             if (!m_response) {
                 if (emptyResponse.size() <= data.size()) {
@@ -327,7 +326,7 @@ namespace mock {
                         .outstandingData = uint32_t(m_response->size()),
                         .minTransfer = uint32_t(m_response->size()),
                     };
-                    const auto outstandingResponse = ToBytes(outstandingPacket);
+                    const auto outstandingResponse = Serialize(outstandingPacket);
                     if (outstandingResponse.size() <= data.size()) {
                         std::ranges::copy(outstandingResponse, data.begin());
                     }

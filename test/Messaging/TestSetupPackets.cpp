@@ -13,7 +13,7 @@ TEST_CASE("SetupPackets: VerifyComIdValidRequest to bytes", "[SetupPackets]") {
         0xDE_b, 0xAD_b, 0xBE_b, 0xEF_b, // 0-3: Extended ComID
         0x00_b, 0x00_b, 0x00_b, 0x01_b, // 4-7: Request code
     };
-    const auto& output = ToBytes(input);
+    const auto& output = Serialize(input);
     REQUIRE(output == expected);
 }
 
@@ -24,7 +24,7 @@ TEST_CASE("SetupPackets: StackResetRequest to bytes", "[SetupPackets]") {
         0xDE_b, 0xAD_b, 0xBE_b, 0xEF_b, // 0-3: Extended ComID
         0x00_b, 0x00_b, 0x00_b, 0x02_b, // 4-7: Request code
     };
-    const auto& output = ToBytes(input);
+    const auto& output = Serialize(input);
     REQUIRE(output == expected);
 }
 
@@ -41,8 +41,7 @@ TEST_CASE("SetupPackets: bytes to VerifyComIdValidReponse", "[SetupPackets]") {
         0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, // 36-45: Current time
     };
 
-    VerifyComIdValidResponse output;
-    FromBytes(input, output);
+    const auto output = DeSerialize(Serialized<VerifyComIdValidResponse>{ input });
     REQUIRE(output.comId == 0xDEAD);
     REQUIRE(output.comIdExtension == 0xBEEF);
     REQUIRE(output.requestCode == 0x01);
@@ -60,8 +59,7 @@ TEST_CASE("SetupPackets: bytes to StackResetResponse", "[SetupPackets]") {
         0x00_b, 0x00_b, 0x00_b, 0x01_b, // 12-15: Success/Failure
     };
 
-    StackResetResponse output;
-    FromBytes(input, output);
+    StackResetResponse output = DeSerialize(Serialized<StackResetResponse>{ input });
     REQUIRE(output.comId == 0xDEAD);
     REQUIRE(output.comIdExtension == 0xBEEF);
     REQUIRE(output.requestCode == 0x02);

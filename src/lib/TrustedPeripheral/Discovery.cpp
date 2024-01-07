@@ -13,8 +13,7 @@ template <class... DescOptions>
 void ParseDesc(std::span<const std::byte> featurePayloadBytes, uint16_t featureCode, std::optional<std::variant<DescOptions...>>& out) {
     const auto parsePayload = [&]<class Desc> {
         if (featureCode == Desc::featureCode) {
-            Desc desc;
-            FromBytes(featurePayloadBytes, desc);
+            auto desc = DeSerialize(Serialized<Desc>{featurePayloadBytes});
             out = std::variant<DescOptions...>(std::move(desc));
         }
     };
@@ -32,8 +31,7 @@ TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     const auto headerBytes = bytes.subspan(0, headerSizeBytes);
     const auto featureBytes = bytes.subspan(headerSizeBytes);
 
-    DiscoveryHeader discoveryHeader;
-    FromBytes(headerBytes, discoveryHeader);
+    const auto discoveryHeader = DeSerialize(Serialized<DiscoveryHeader>{ headerBytes });
 
     TPerDesc tperDesc;
 
@@ -41,18 +39,15 @@ TPerDesc ParseTPerDesc(std::span<const std::byte> bytes) {
     int64_t offset = 0;
 
     while (offset < size) {
-        FeatureDescHeader featureHeader;
         const auto featureHeaderBytes = featureBytes.subspan(offset, 4);
-        FromBytes(featureHeaderBytes, featureHeader);
+        const auto featureHeader = DeSerialize(Serialized<FeatureDescHeader>{ featureHeaderBytes });
         const auto featurePayloadBytes = featureBytes.subspan(offset + 4, featureHeader.length);
         if (featureHeader.featureCode == TPerFeatureDesc::featureCode) {
-            TPerFeatureDesc desc;
-            FromBytes(featurePayloadBytes, desc);
+            const auto desc = DeSerialize(Serialized<TPerFeatureDesc>{ featurePayloadBytes });
             tperDesc.tperDesc = desc;
         }
         if (featureHeader.featureCode == LockingFeatureDesc::featureCode) {
-            LockingFeatureDesc desc;
-            FromBytes(featurePayloadBytes, desc);
+            const auto desc = DeSerialize(Serialized<LockingFeatureDesc>{ featurePayloadBytes });
             tperDesc.lockingDesc = desc;
         }
         else {

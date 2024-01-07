@@ -5,9 +5,9 @@
 #include <async++/sleep.hpp>
 
 #include <Archive/Conversion.hpp>
+#include <Error/Exception.hpp>
 #include <Messaging/ComPacket.hpp>
 #include <Messaging/SetupPackets.hpp>
-#include <Error/Exception.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
 
@@ -97,7 +97,7 @@ asyncpp::task<eComIdState> TrustedPeripheral::VerifyComId() {
         .comId = m_comId,
         .comIdExtension = m_comIdExtension,
     };
-    const auto payloadBytes = ToBytes(payload);
+    const auto payloadBytes = Serialize(payload);
     SecuritySend(0x02, m_comId, payloadBytes);
 
     // Get VERIFY_COMID_VALID response.
@@ -106,7 +106,7 @@ asyncpp::task<eComIdState> TrustedPeripheral::VerifyComId() {
         std::array<std::byte, 46> responseBytes;
         std::ranges::fill(responseBytes, 0_b);
         SecurityReceive(0x02, m_comId, responseBytes);
-        FromBytes(responseBytes, response);
+        response = DeSerialize(Serialized<VerifyComIdValidResponse>{ responseBytes });
 
         if (response.requestCode == 0) {
             throw NoResponseError("VERIFY_COMID_VALID");
@@ -143,7 +143,7 @@ static asyncpp::task<void> Sleep(std::chrono::duration<Rep, Period> time) {
 
 
 asyncpp::task<ComPacket> TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
-    const auto request = ToBytes(packet);
+    const auto request = Serialize(packet);
 
     SecuritySend(protocol, GetComId(), request);
     auto packets = co_await FlushResponses(protocol);
@@ -166,9 +166,8 @@ asyncpp::task<std::vector<ComPacket>> TrustedPeripheral::FlushResponses(uint8_t 
     std::vector<std::byte> bytes(2048, 0_b);
     auto currentSleepTime = 50us;
     do {
-        ComPacket packet;
         SecurityReceive(protocol, GetComId(), bytes);
-        FromBytes(bytes, packet);
+        const auto packet = DeSerialize(Serialized<ComPacket>{ bytes });
         more = packet.outstandingData != 0;
 
         if (packet.minTransfer > bytes.size()) {
@@ -215,10 +214,8 @@ std::pair<uint16_t, uint16_t> TrustedPeripheral::RequestComId() {
     std::array<std::byte, 4> response;
     std::ranges::fill(response, 0xFF_b);
     SecurityReceive(0x02, 0x0000, response);
-    uint16_t comId = 0;
-    FromBytes(response, comId);
-    uint16_t comIdExtension = 0;
-    FromBytes(std::span{ response }.subspan(2), comId);
+    const auto comId = DeSerialize(Serialized<uint16_t>{ response });
+    const auto comIdExtension = DeSerialize(Serialized<uint16_t>{ std::span{ response }.subspan(2) });
     return { comId, comIdExtension };
 }
 
@@ -229,7 +226,7 @@ asyncpp::task<void> TrustedPeripheral::StackReset() {
         .comId = m_comId,
         .comIdExtension = m_comIdExtension
     };
-    const auto payloadBytes = ToBytes(payload);
+    const auto payloadBytes = Serialize(payload);
     SecuritySend(0x02, m_comId, payloadBytes);
 
     // Get STACK_RESET response.
@@ -238,7 +235,7 @@ asyncpp::task<void> TrustedPeripheral::StackReset() {
         std::array<std::byte, 20> responseBytes;
         std::ranges::fill(responseBytes, 0_b);
         SecurityReceive(0x02, m_comId, responseBytes);
-        FromBytes(responseBytes, response);
+        response = DeSerialize(Serialized<StackResetResponse>{ responseBytes });
 
         if (response.requestCode == 0) {
             throw NoResponseError("STACK_RESET");

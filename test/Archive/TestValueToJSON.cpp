@@ -90,7 +90,7 @@ TEST_CASE("ValueToJSON: ListType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON: AlternativeType", "[ValueToJSON]") {
     const Type type = AlternativeType(uinteger_4, bytes_2);
-    const Value value = Named(ToBytes(uint32_t(id_uinteger_4.value)), uint32_t(37));
+    const Value value = Named(Serialize(uint32_t(id_uinteger_4.value)), uint32_t(37));
     const auto json = nlohmann::json({
         {"ref:0000'0005'0000'0002", 37}
     });
@@ -168,14 +168,14 @@ TEST_CASE("ValueToJSON:StructType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
     const Type type = ReferenceType();
-    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const Value value = Serialize(0x1234'5678'9876'5432_uid);
     const nlohmann::json json = "ref:Macilaci";
 
     const auto uidConverter = [](UID uid) -> std::optional<std::string> {
         return uid == UID(0x1234'5678'9876'5432) ? std::optional<std::string>("Macilaci") : std::nullopt;
     };
     const auto nameConverter = [](std::string_view name) -> std::optional<UID> {
-        return name == "Macilaci" ? std::optional(UID(0x1234'5678'9876'5432)) : std::nullopt;
+        return name == "Macilaci" ? std::optional(0x1234'5678'9876'5432_uid) : std::nullopt;
     };
 
     SECTION("Value to JSON") {
@@ -191,7 +191,7 @@ TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
     const Type type = RestrictedReferenceType(0x201);
-    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const Value value = Serialize(0x1234'5678'9876'5432_uid);
     const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {
@@ -207,7 +207,7 @@ TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON:GeneralReferenceType", "[ValueToJSON]") {
     const Type type = GeneralReferenceType();
-    const Value value = ToBytes(0x1234'5678'9876'5432);
+    const Value value = Serialize(0x1234'5678'9876'5432_uid);
     const nlohmann::json json = "ref:1234'5678'9876'5432";
 
     SECTION("Value to JSON") {

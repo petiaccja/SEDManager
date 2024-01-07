@@ -25,12 +25,11 @@ TEST_CASE("ComPacket: ComPacket empty", "[ComPacket]") {
     };
 
     SECTION("Serialize") {
-        const auto ser = ToBytes(packet);
+        const auto ser = Serialize(packet);
         REQUIRE(ser == bytes);
     }
     SECTION("Deserialize") {
-        ComPacket des;
-        FromBytes(bytes, des);
+        const auto des = DeSerialize(Serialized<ComPacket>{ bytes });
         REQUIRE(des == packet);
     }
 }
@@ -56,12 +55,11 @@ TEST_CASE("ComPacket: Packet empty", "[ComPacket]") {
     };
 
     SECTION("Serialize") {
-        const auto ser = ToBytes(packet);
+        const auto ser = Serialize(packet);
         REQUIRE(ser == bytes);
     }
     SECTION("Deserialize") {
-        Packet des;
-        FromBytes(bytes, des);
+        const auto des = DeSerialize(Serialized<Packet>{ bytes });
         REQUIRE(des == packet);
     }
 }
@@ -79,12 +77,11 @@ TEST_CASE("ComPacket: SubPacket empty", "[ComPacket]") {
     };
 
     SECTION("Serialize") {
-        const auto ser = ToBytes(packet);
+        const auto ser = Serialize(packet);
         REQUIRE(ser == bytes);
     }
     SECTION("Deserialize") {
-        SubPacket des;
-        FromBytes(bytes, des);
+        const auto des = DeSerialize(Serialized<SubPacket>{ bytes });
         REQUIRE(des == packet);
     }
 }
@@ -139,12 +136,11 @@ TEST_CASE("ComPacket: filled", "[ComPacket]") {
     };
 
     SECTION("Serialize") {
-        const auto ser = ToBytes(cp);
+        const auto ser = Serialize(cp);
         REQUIRE(ser == bytes);
     }
     SECTION("Deserialize") {
-        ComPacket des;
-        FromBytes(bytes, des);
+        const auto des = DeSerialize(Serialized<ComPacket>{ bytes });
         REQUIRE(des == cp);
     }
 }

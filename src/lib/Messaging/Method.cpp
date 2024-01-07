@@ -9,8 +9,8 @@ namespace sedmgr {
 Value MethodCallToValue(const MethodCall& method) {
     Value value = {
         eCommand::CALL,
-        ToBytes(uint64_t(method.invokingId)),
-        ToBytes(uint64_t(method.methodId)),
+        Serialize(method.invokingId),
+        Serialize(method.methodId),
         method.args,
         eCommand::END_OF_DATA,
         {uint8_t(method.status), uint8_t(0), uint8_t(0)},
@@ -46,10 +46,8 @@ MethodCall MethodCallFromValue(const Value& value) {
         }
         const auto statusCode = statusList[0].Get<unsigned>();
 
-        uint64_t methodId;
-        FromBytes(methodIdBytes, methodId);
-        uint64_t invokingId;
-        FromBytes(invokingIdBytes, invokingId);
+        const auto methodId = DeSerialize(Serialized<UID>{ methodIdBytes });
+        const auto invokingId = DeSerialize(Serialized<UID>{ invokingIdBytes });
         MethodCall method{
             .invokingId = invokingId,
             .methodId = methodId,

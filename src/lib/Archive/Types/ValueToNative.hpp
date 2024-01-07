@@ -63,11 +63,9 @@ namespace impl {
 
     template <>
     struct ValueCast<UID> {
-        static Value To(const UID& v) { return Value(ToBytes(uint64_t(v))); }
+        static Value To(const UID& v) { return Value(Serialize(v)); }
         static UID From(const Value& v) {
-            uint64_t uid;
-            FromBytes(v.Get<Bytes>(), uid);
-            return UID(uid);
+            return DeSerialize(Serialized<UID>{v.Get<Bytes>()});
         }
     };
 
