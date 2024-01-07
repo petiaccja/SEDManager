@@ -7,8 +7,7 @@ target_sources(Messaging
         ComPacket.hpp
         Value.cpp
         Value.hpp
-        Type.hpp
-        NativeTypes.cpp
+        Type.hpp        
         NativeTypes.hpp
         SetupPackets.hpp
         TokenStream.cpp
@@ -17,6 +16,8 @@ target_sources(Messaging
         Token.hpp
         Method.cpp
         Method.hpp
+        UID.cpp
+        UID.hpp
 )
 target_include_directories(Messaging INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 target_link_libraries(Messaging Archive Error)
