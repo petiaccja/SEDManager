@@ -8,22 +8,22 @@ std::span<const std::shared_ptr<Module>> Module::Features() const {
 }
 
 
-std::optional<std::string> Module::FindName(Uid uid, std::optional<Uid> sp) const {
+std::optional<std::string> Module::FindName(UID uid, std::optional<UID> sp) const {
     return std::nullopt;
 }
 
 
-std::optional<Uid> Module::FindUid(std::string_view name, std::optional<Uid> sp) const {
+std::optional<UID> Module::FindUid(std::string_view name, std::optional<UID> sp) const {
     return std::nullopt;
 }
 
 
-std::optional<TableDesc> Module::FindTable(Uid table) const {
+std::optional<TableDesc> Module::FindTable(UID table) const {
     return std::nullopt;
 }
 
 
-std::optional<Type> Module::FindType(Uid uid) const {
+std::optional<Type> Module::FindType(UID uid) const {
     return std::nullopt;
 }
 

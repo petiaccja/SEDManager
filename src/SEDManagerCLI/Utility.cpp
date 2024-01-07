@@ -65,13 +65,13 @@ std::string GetMultiline(std::string_view terminator) {
 }
 
 
-std::optional<Uid> ParseObjectRef(EncryptedDevice& app, std::string_view nameOrUid, std::optional<Uid> sp) {
+std::optional<UID> ParseObjectRef(EncryptedDevice& app, std::string_view nameOrUid, std::optional<UID> sp) {
     const auto maybeUid = app.GetModules().FindUid(nameOrUid, sp);
     if (maybeUid) {
         return *maybeUid;
     }
     try {
-        return stouid(nameOrUid);
+        return UID::Parse(nameOrUid);
     }
     catch (...) {
         // Fallthrough
@@ -80,12 +80,12 @@ std::optional<Uid> ParseObjectRef(EncryptedDevice& app, std::string_view nameOrU
 }
 
 
-std::string FormatObjectRef(EncryptedDevice& app, Uid uid, std::optional<Uid> sp) {
+std::string FormatObjectRef(EncryptedDevice& app, UID uid, std::optional<UID> sp) {
     const auto maybeName = app.GetModules().FindName(uid, sp);
     if (maybeName) {
         return *maybeName;
     }
-    return to_string(uid);
+    return uid.ToString();
 }
 
 

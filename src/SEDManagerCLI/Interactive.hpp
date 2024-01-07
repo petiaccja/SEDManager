@@ -15,8 +15,8 @@ public:
     Interactive& operator=(const Interactive&) = delete;
     Interactive& operator=(Interactive&&) = delete;
 
-    std::optional<sedmgr::Uid> GetCurrentSecurityProvider() const;
-    std::unordered_set<sedmgr::Uid> GetCurrentAuthorities() const;
+    std::optional<sedmgr::UID> GetCurrentSecurityProvider() const;
+    std::unordered_set<sedmgr::UID> GetCurrentAuthorities() const;
     int Run();
 
 private:
@@ -43,14 +43,14 @@ private:
     void RegisterCallbackReset();
 
     void ClearCurrents();
-    auto ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<sedmgr::Uid, sedmgr::Uid, int32_t>>;
+    auto ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<sedmgr::UID, sedmgr::UID, int32_t>>;
     void PrintCaret() const;
     void PrintHelp(const std::string& command) const;
 
 private:
     sedmgr::EncryptedDevice& m_manager;
     CLI::App m_cli;
-    std::optional<sedmgr::Uid> m_currentSecurityProvider;
-    std::unordered_set<sedmgr::Uid> m_currentAuthorities;
+    std::optional<sedmgr::UID> m_currentSecurityProvider;
+    std::unordered_set<sedmgr::UID> m_currentAuthorities;
     bool m_finished = false;
 };

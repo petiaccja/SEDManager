@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Data/NativeTypes.hpp>
-#include <Data/Type.hpp>
+#include <Messaging/Native.hpp>
+#include <Messaging/Type.hpp>
 
 
 namespace sedmgr {
@@ -23,7 +23,7 @@ struct TableDesc {
     std::string name;
     eTableKind kind;
     std::vector<ColumnDesc> columns = {};
-    std::optional<Uid> singleRow = std::nullopt;
+    std::optional<UID> singleRow = std::nullopt;
 };
 
 } // namespace sedmgr

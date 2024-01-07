@@ -1,8 +1,5 @@
 #include "Logging.hpp"
 
-#include <Archive/TokenDebugArchive.hpp>
-#include <Archive/Types/ValueToToken.hpp>
-
 #include <filesystem>
 #include <fstream>
 
@@ -49,9 +46,8 @@ void Log(std::string_view event, const Value& request) {
         file << "#--------------------------------------------------------------" << std::endl;
         file << "\n";
 
-        TokenDebugArchive ar(file);
+        file << "TODO: write a Value.hpp: std::string DebugDump(Value) method to replace the TokenDebugArchive";
 
-        save_strip_list(ar, request);
         file << "\n";
         file << "\n";
     }

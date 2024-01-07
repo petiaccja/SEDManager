@@ -218,7 +218,7 @@ namespace core {
         };
 
 
-        static const std::initializer_list<std::pair<Uid, TableDescStatic>> tableDescs = {
+        static const std::initializer_list<std::pair<UID, TableDescStatic>> tableDescs = {
             {eTable::Table,          TableDescStatic{ "Table", eTableKind::OBJECT, columnsTable }                                           },
             { eTable::SPInfo,        TableDescStatic{ "SPInfo", eTableKind::OBJECT, columnsSPInfo, eTableSingleRows::SPInfo }               },
             { eTable::SPTemplates,   TableDescStatic{ "SPTemplates", eTableKind::OBJECT, columnsSPTemplates }                               },

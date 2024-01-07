@@ -13,7 +13,7 @@ TEST_CASE("Specification: module find UID", "[Specification]") {
     SECTION("valid") {
         const auto result = mod->FindUid("Table");
         REQUIRE(!!result);
-        REQUIRE(*result == Uid(core::eTable::Table));
+        REQUIRE(*result == UID(core::eTable::Table));
     }
     SECTION("invalid") {
         REQUIRE(!mod->FindUid("INVALID_NAME"));
@@ -51,7 +51,7 @@ TEST_CASE("Specification: CoreModule find type", "[Specification]") {
     SECTION("valid") {
         const auto result = mod->FindType(core::eType::MethodID_object_ref);
         REQUIRE(!!result);
-        REQUIRE(type_uid(result.value()) == Uid(core::eType::MethodID_object_ref));
+        REQUIRE(type_uid(result.value()) == UID(core::eType::MethodID_object_ref));
     }
     SECTION("invalid") {
         REQUIRE(!mod->FindTable(0xFFFF'FFFF'FFFF'CCCC));

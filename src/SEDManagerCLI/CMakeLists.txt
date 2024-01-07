@@ -13,7 +13,7 @@ target_sources(SEDManagerCLI
         Utility.hpp
 )
 
-target_link_libraries(SEDManagerCLI SEDManager)
+target_link_libraries(SEDManagerCLI EncryptedDevice)
 find_package(CLI11)
 target_link_libraries(SEDManagerCLI CLI11::CLI11)
 find_package(rang)

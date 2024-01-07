@@ -31,14 +31,14 @@ struct SessionFixture {
 
 TEST_CASE_METHOD(SessionFixture, "Session: Next", "Session") {
     auto first = join(session->base.Next(tableTableUid, {}));
-    REQUIRE(first != Uid(0));
+    REQUIRE(first != UID(0));
     auto second = join(session->base.Next(tableTableUid, first));
-    REQUIRE(second != Uid(0));
+    REQUIRE(second != UID(0));
 }
 
 
 TEST_CASE_METHOD(SessionFixture, "Session: Get", "Session") {
-    REQUIRE(value_cast<Uid>(join(session->base.Get(adminSpUid, 0))) == adminSpUid);
+    REQUIRE(value_cast<UID>(join(session->base.Get(adminSpUid, 0))) == adminSpUid);
     const auto all = join(session->base.Get(adminSpUid, 0, 8));
     REQUIRE(value_cast<std::string>(all[1]) == "Admin");
     REQUIRE(value_cast<int>(all[6]) == 0);

@@ -11,7 +11,7 @@
 namespace sedmgr {
 
 struct NamedObject {
-    Uid uid = 0;
+    UID uid = 0;
     std::optional<std::string> name = std::nullopt;
 };
 
@@ -29,21 +29,21 @@ public:
     const TPerDesc& GetDesc() const;
     const ModuleCollection& GetModules() const;
 
-    asyncpp::task<void> Login(Uid securityProvider);
-    asyncpp::task<void> Authenticate(Uid authority, std::optional<std::span<const std::byte>> password = {});
+    asyncpp::task<void> Login(UID securityProvider);
+    asyncpp::task<void> Authenticate(UID authority, std::optional<std::span<const std::byte>> password = {});
     asyncpp::task<void> StackReset();
     asyncpp::task<void> Reset();
     asyncpp::task<void> End();
 
-    asyncpp::stream<Uid> GetTableRows(Uid table);
-    asyncpp::stream<Value> GetObjectColumns(Uid table, Uid object);
-    asyncpp::task<Value> GetObjectColumn(Uid object, uint32_t column);
-    asyncpp::task<void> SetObjectColumn(Uid object, uint32_t column, Value value);
+    asyncpp::stream<UID> GetTableRows(UID table);
+    asyncpp::stream<Value> GetObjectColumns(UID table, UID object);
+    asyncpp::task<Value> GetObjectColumn(UID object, uint32_t column);
+    asyncpp::task<void> SetObjectColumn(UID object, uint32_t column, Value value);
 
-    asyncpp::task<void> GenMEK(Uid lockingRange);
-    asyncpp::task<void> GenPIN(Uid credentialObject, uint32_t length);
-    asyncpp::task<void> Revert(Uid securityProvider);
-    asyncpp::task<void> Activate(Uid securityProvider);
+    asyncpp::task<void> GenMEK(UID lockingRange);
+    asyncpp::task<void> GenPIN(UID credentialObject, uint32_t length);
+    asyncpp::task<void> Revert(UID securityProvider);
+    asyncpp::task<void> Activate(UID securityProvider);
 
 private:
     EncryptedDevice(std::shared_ptr<StorageDevice> device,
