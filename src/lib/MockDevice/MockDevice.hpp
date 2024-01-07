@@ -116,12 +116,12 @@ namespace mock {
         MethodResult CallMethod(const MethodCall& query,
                                 Session& session,
                                 Executor&& executor,
-                                Definition&& definition) ;
+                                Definition&& definition);
 
         template <class Executor, class Definition>
         MethodResult CallMethod(const MethodCall& query,
                                 Executor&& executor,
-                                Definition&& definition) ;
+                                Definition&& definition);
 
         void EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
 
@@ -141,7 +141,7 @@ namespace mock {
                           std::optional<uint32_t> sessionTimeout,
                           std::optional<uint32_t> transTimeout,
                           std::optional<uint32_t> initialCredit,
-                          std::optional<std::vector<std::byte>> signedHash) 
+                          std::optional<std::vector<std::byte>> signedHash)
             -> std::pair<std::tuple<uint32_t,
                                     uint32_t,
                                     std::optional<Bytes>,

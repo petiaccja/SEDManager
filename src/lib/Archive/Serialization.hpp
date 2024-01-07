@@ -23,10 +23,10 @@ struct Serialized {
 
 template <class Object>
     requires requires(const Object& obj, FlatBinaryOutputArchive& ar) {
-                 {
-                     ar(obj)
-                 };
-             }
+        {
+            ar(obj)
+        };
+    }
 std::vector<std::byte> Serialize(const Object& object) {
     std::stringstream buffer(std::ios::binary | std::ios::out);
     FlatBinaryOutputArchive ar(buffer);
@@ -39,10 +39,10 @@ std::vector<std::byte> Serialize(const Object& object) {
 
 template <class Object>
     requires requires(Object& obj, FlatBinaryInputArchive& ar) {
-                 {
-                     ar(obj)
-                 };
-             }
+        {
+            ar(obj)
+        };
+    }
 Object DeSerialize(const Serialized<Object>& bytes) {
     std::stringstream buffer(std::ios::binary | std::ios::in);
     const auto chars = reinterpret_cast<const char*>(bytes.bytes.data());

@@ -3,9 +3,8 @@
 #include "Utility.hpp"
 #include <async++/join.hpp>
 
-#include <EncryptedDevice/ValueToJSON.hpp>
-
 #include <CLI/App.hpp>
+#include <EncryptedDevice/ValueToJSON.hpp>
 
 #include <iostream>
 #include <ostream>

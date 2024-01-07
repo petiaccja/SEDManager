@@ -3,8 +3,8 @@
 #include "TrustedPeripheral.hpp"
 #include <async++/task.hpp>
 
-#include <Messaging/Native.hpp>
 #include <Messaging/Method.hpp>
+#include <Messaging/Native.hpp>
 
 
 namespace sedmgr {

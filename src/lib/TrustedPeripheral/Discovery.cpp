@@ -13,7 +13,7 @@ template <class... DescOptions>
 void ParseDesc(std::span<const std::byte> featurePayloadBytes, uint16_t featureCode, std::optional<std::variant<DescOptions...>>& out) {
     const auto parsePayload = [&]<class Desc> {
         if (featureCode == Desc::featureCode) {
-            auto desc = DeSerialize(Serialized<Desc>{featurePayloadBytes});
+            auto desc = DeSerialize(Serialized<Desc>{ featurePayloadBytes });
             out = std::variant<DescOptions...>(std::move(desc));
         }
     };

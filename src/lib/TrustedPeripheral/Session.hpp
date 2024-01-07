@@ -3,9 +3,9 @@
 #include "MethodUtils.hpp"
 #include "SessionManager.hpp"
 
-#include <memory>
-
 #include <Specification/Opal/OpalModule.hpp>
+
+#include <memory>
 
 
 namespace sedmgr {

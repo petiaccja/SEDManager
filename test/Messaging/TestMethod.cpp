@@ -1,7 +1,7 @@
 #include <async++/join.hpp>
 
-#include <Messaging/Native.hpp>
 #include <Messaging/Method.hpp>
+#include <Messaging/Native.hpp>
 #include <Specification/Core/Defs/UIDs.hpp>
 
 #include <catch2/catch_test_macros.hpp>

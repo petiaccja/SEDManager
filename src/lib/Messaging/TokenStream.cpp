@@ -1,7 +1,7 @@
 #include "TokenStream.hpp"
 
-#include <format>
 #include <array>
+#include <format>
 
 namespace sedmgr {
 

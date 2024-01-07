@@ -108,7 +108,8 @@ public:
     auto Get() const -> std::conditional_t<Match::in_place, const T&, T>;
 
     template <class T, class Match = impl::MatchVariant<T, StorageType>>
-        requires(!std::is_void_v<typename Match::Exact>) bool
+        requires(!std::is_void_v<typename Match::Exact>)
+    bool
     Is() const;
 
     bool IsInteger() const;
@@ -227,8 +228,8 @@ T Value::GetConversion(std::tuple<>*) const {
 
 
 template <class T, class Match>
-    requires(!std::is_void_v<typename Match::Exact>) bool
-Value::Is() const {
+    requires(!std::is_void_v<typename Match::Exact>)
+bool Value::Is() const {
     if (!m_storage) {
         return false;
     }
