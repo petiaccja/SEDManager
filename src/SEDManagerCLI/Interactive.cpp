@@ -3,7 +3,7 @@
 #include "Utility.hpp"
 #include <async++/join.hpp>
 
-#include <Archive/Types/ValueToJSON.hpp>
+#include <EncryptedDevice/ValueToJSON.hpp>
 
 #include <CLI/App.hpp>
 

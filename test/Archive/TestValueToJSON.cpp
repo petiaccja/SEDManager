@@ -1,5 +1,5 @@
 #include <Archive/Serialization.hpp>
-#include <Archive/Types/ValueToJSON.hpp>
+#include <EncryptedDevice/ValueToJSON.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

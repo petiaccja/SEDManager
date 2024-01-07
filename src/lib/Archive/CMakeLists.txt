@@ -9,12 +9,6 @@ target_sources(Archive
         FlatBinaryArchive.hpp
 )
 
-target_sources(Archive
-    PRIVATE
-        Types/ValueToJSON.cpp
-        Types/ValueToJSON.hpp
-)
-
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 find_package(cereal REQUIRED)
 find_package(nlohmann_json REQUIRED)

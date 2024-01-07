@@ -22,5 +22,5 @@ target_sources(Test
 
 find_package(Catch2 3 REQUIRED)
 
-target_link_libraries(Test Archive Messaging Specification TrustedPeripheral MockDevice)
+target_link_libraries(Test Archive Messaging Specification TrustedPeripheral MockDevice EncryptedDevice)
 target_link_libraries(Test Catch2::Catch2)
