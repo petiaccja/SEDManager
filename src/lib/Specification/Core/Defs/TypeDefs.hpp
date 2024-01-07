@@ -10,107 +10,107 @@ namespace sedmgr {
 namespace core {
 
     inline const std::initializer_list<std::pair<UID, Type>>& TypeDefs() {
-        static const Type unknown_type = IdentifiedType<Type, uint64_t(eType::unknown_type)>();
-        static const Type boolean = IdentifiedType<EnumerationType, uint64_t(eType::boolean)>(0, 1);
+        static const Type unknown_type = IdentifiedType<Type, UID(eType::unknown_type)>();
+        static const Type boolean = IdentifiedType<EnumerationType, UID(eType::boolean)>(0, 1);
 
-        static const Type integer_1 = IdentifiedType<SignedIntType, uint64_t(eType::integer_1)>(1);
-        static const Type integer_2 = IdentifiedType<SignedIntType, uint64_t(eType::integer_2)>(2);
-        static const Type uinteger_1 = IdentifiedType<UnsignedIntType, uint64_t(eType::uinteger_1)>(1);
-        static const Type uinteger_2 = IdentifiedType<UnsignedIntType, uint64_t(eType::uinteger_2)>(2);
-        static const Type uinteger_4 = IdentifiedType<UnsignedIntType, uint64_t(eType::uinteger_4)>(4);
-        static const Type uinteger_8 = IdentifiedType<UnsignedIntType, uint64_t(eType::uinteger_8)>(8);
+        static const Type integer_1 = IdentifiedType<SignedIntType, UID(eType::integer_1)>(1);
+        static const Type integer_2 = IdentifiedType<SignedIntType, UID(eType::integer_2)>(2);
+        static const Type uinteger_1 = IdentifiedType<UnsignedIntType, UID(eType::uinteger_1)>(1);
+        static const Type uinteger_2 = IdentifiedType<UnsignedIntType, UID(eType::uinteger_2)>(2);
+        static const Type uinteger_4 = IdentifiedType<UnsignedIntType, UID(eType::uinteger_4)>(4);
+        static const Type uinteger_8 = IdentifiedType<UnsignedIntType, UID(eType::uinteger_8)>(8);
 
-        static const Type max_bytes_32 = IdentifiedType<CappedBytesType, uint64_t(eType::max_bytes_32)>(32);
-        static const Type max_bytes_64 = IdentifiedType<CappedBytesType, uint64_t(eType::max_bytes_64)>(64);
-        static const Type bytes_4 = IdentifiedType<FixedBytesType, uint64_t(eType::bytes_4)>(4);
-        static const Type bytes_12 = IdentifiedType<FixedBytesType, uint64_t(eType::bytes_12)>(12);
-        static const Type bytes_16 = IdentifiedType<FixedBytesType, uint64_t(eType::bytes_16)>(16);
-        static const Type bytes_32 = IdentifiedType<FixedBytesType, uint64_t(eType::bytes_32)>(32);
-        static const Type bytes_64 = IdentifiedType<FixedBytesType, uint64_t(eType::bytes_64)>(64);
+        static const Type max_bytes_32 = IdentifiedType<CappedBytesType, UID(eType::max_bytes_32)>(32);
+        static const Type max_bytes_64 = IdentifiedType<CappedBytesType, UID(eType::max_bytes_64)>(64);
+        static const Type bytes_4 = IdentifiedType<FixedBytesType, UID(eType::bytes_4)>(4);
+        static const Type bytes_12 = IdentifiedType<FixedBytesType, UID(eType::bytes_12)>(12);
+        static const Type bytes_16 = IdentifiedType<FixedBytesType, UID(eType::bytes_16)>(16);
+        static const Type bytes_32 = IdentifiedType<FixedBytesType, UID(eType::bytes_32)>(32);
+        static const Type bytes_64 = IdentifiedType<FixedBytesType, UID(eType::bytes_64)>(64);
 
-        static const Type key_128 = IdentifiedType<AlternativeType, uint64_t(eType::key_128)>(bytes_16, bytes_32);
-        static const Type key_256 = IdentifiedType<AlternativeType, uint64_t(eType::key_256)>(bytes_32, bytes_64);
+        static const Type key_128 = IdentifiedType<AlternativeType, UID(eType::key_128)>(bytes_16, bytes_32);
+        static const Type key_256 = IdentifiedType<AlternativeType, UID(eType::key_256)>(bytes_32, bytes_64);
 
-        static const Type type_def = IdentifiedType<CappedBytesType, uint64_t(eType::type_def)>(65536);
-        static const Type name = IdentifiedType<CappedBytesType, uint64_t(eType::name)>(32);
-        static const Type password = IdentifiedType<CappedBytesType, uint64_t(eType::password)>(32);
-        static const Type year_enum = IdentifiedType<EnumerationType, uint64_t(eType::year_enum)>(1970, 9999);
-        static const Type month_enum = IdentifiedType<EnumerationType, uint64_t(eType::month_enum)>(1, 12);
-        static const Type day_enum = IdentifiedType<EnumerationType, uint64_t(eType::day_enum)>(1, 31);
-        static const Type Year = IdentifiedType<NameValueUintegerType, uint64_t(eType::Year)>(0, year_enum);
-        static const Type Month = IdentifiedType<NameValueUintegerType, uint64_t(eType::Month)>(1, month_enum);
-        static const Type Day = IdentifiedType<NameValueUintegerType, uint64_t(eType::Day)>(2, day_enum);
-        static const Type date = IdentifiedType<StructType, uint64_t(eType::date)>(Year, Month, Day);
+        static const Type type_def = IdentifiedType<CappedBytesType, UID(eType::type_def)>(65536);
+        static const Type name = IdentifiedType<CappedBytesType, UID(eType::name)>(32);
+        static const Type password = IdentifiedType<CappedBytesType, UID(eType::password)>(32);
+        static const Type year_enum = IdentifiedType<EnumerationType, UID(eType::year_enum)>(1970, 9999);
+        static const Type month_enum = IdentifiedType<EnumerationType, UID(eType::month_enum)>(1, 12);
+        static const Type day_enum = IdentifiedType<EnumerationType, UID(eType::day_enum)>(1, 31);
+        static const Type Year = IdentifiedType<NameValueUintegerType, UID(eType::Year)>(0, year_enum);
+        static const Type Month = IdentifiedType<NameValueUintegerType, UID(eType::Month)>(1, month_enum);
+        static const Type Day = IdentifiedType<NameValueUintegerType, UID(eType::Day)>(2, day_enum);
+        static const Type date = IdentifiedType<StructType, UID(eType::date)>(Year, Month, Day);
 
-        static const Type messaging_type = IdentifiedType<EnumerationType, uint64_t(eType::messaging_type)>(0, 255);
-        static const Type hash_protocol = IdentifiedType<EnumerationType, uint64_t(eType::hash_protocol)>(0, 15);
-        static const Type auth_method = IdentifiedType<EnumerationType, uint64_t(eType::auth_method)>(0, 23);
-        static const Type log_select = IdentifiedType<EnumerationType, uint64_t(eType::log_select)>(0, 3);
-        static const Type protect_types = IdentifiedType<SetType, uint64_t(eType::protect_types)>(0, 255);
-        static const Type reencrypt_request = IdentifiedType<EnumerationType, uint64_t(eType::reencrypt_request)>(1, 16);
-        static const Type reencrypt_state = IdentifiedType<EnumerationType, uint64_t(eType::reencrypt_state)>(1, 16);
-        static const Type reset_types = IdentifiedType<SetType, uint64_t(eType::reset_types)>(1, 31);
-        static const Type adv_key_mode = IdentifiedType<EnumerationType, uint64_t(eType::adv_key_mode)>(0, 7);
-        static const Type verify_mode = IdentifiedType<EnumerationType, uint64_t(eType::verify_mode)>(0, 7);
-        static const Type last_reenc_stat = IdentifiedType<EnumerationType, uint64_t(eType::last_reenc_stat)>(0, 7);
-        static const Type gen_status = IdentifiedType<SetType, uint64_t(eType::gen_status)>(0, 63);
-        static const Type enc_supported = IdentifiedType<EnumerationType, uint64_t(eType::enc_supported)>(0, 15);
-        static const Type keys_avail_conds = IdentifiedType<EnumerationType, uint64_t(eType::keys_avail_conds)>(0, 7);
-        static const Type symmetric_mode_media = IdentifiedType<EnumerationType, uint64_t(eType::symmetric_mode_media)>(0, 23);
+        static const Type messaging_type = IdentifiedType<EnumerationType, UID(eType::messaging_type)>(0, 255);
+        static const Type hash_protocol = IdentifiedType<EnumerationType, UID(eType::hash_protocol)>(0, 15);
+        static const Type auth_method = IdentifiedType<EnumerationType, UID(eType::auth_method)>(0, 23);
+        static const Type log_select = IdentifiedType<EnumerationType, UID(eType::log_select)>(0, 3);
+        static const Type protect_types = IdentifiedType<SetType, UID(eType::protect_types)>(0, 255);
+        static const Type reencrypt_request = IdentifiedType<EnumerationType, UID(eType::reencrypt_request)>(1, 16);
+        static const Type reencrypt_state = IdentifiedType<EnumerationType, UID(eType::reencrypt_state)>(1, 16);
+        static const Type reset_types = IdentifiedType<SetType, UID(eType::reset_types)>(1, 31);
+        static const Type adv_key_mode = IdentifiedType<EnumerationType, UID(eType::adv_key_mode)>(0, 7);
+        static const Type verify_mode = IdentifiedType<EnumerationType, UID(eType::verify_mode)>(0, 7);
+        static const Type last_reenc_stat = IdentifiedType<EnumerationType, UID(eType::last_reenc_stat)>(0, 7);
+        static const Type gen_status = IdentifiedType<SetType, UID(eType::gen_status)>(0, 63);
+        static const Type enc_supported = IdentifiedType<EnumerationType, UID(eType::enc_supported)>(0, 15);
+        static const Type keys_avail_conds = IdentifiedType<EnumerationType, UID(eType::keys_avail_conds)>(0, 7);
+        static const Type symmetric_mode_media = IdentifiedType<EnumerationType, UID(eType::symmetric_mode_media)>(0, 23);
 
-        static const Type uid = IdentifiedType<FixedBytesType, uint64_t(eType::uid)>(8);
+        static const Type uid = IdentifiedType<FixedBytesType, UID(eType::uid)>(8);
 
-        static const Type table_kind = IdentifiedType<EnumerationType, uint64_t(eType::table_kind)>(1, 8);
-        static const Type object_ref = IdentifiedType<GeneralObjectReferenceType, uint64_t(eType::object_ref)>();
-        static const Type table_ref = IdentifiedType<GeneralTableReferenceType, uint64_t(eType::table_ref)>();
-        static const Type byte_table_ref = IdentifiedType<GeneralByteTableReferenceType, uint64_t(eType::byte_table_ref)>();
-        static const Type table_or_object_ref = IdentifiedType<AlternativeType, uint64_t(eType::table_or_object_ref)>(object_ref, table_ref);
+        static const Type table_kind = IdentifiedType<EnumerationType, UID(eType::table_kind)>(1, 8);
+        static const Type object_ref = IdentifiedType<GeneralObjectReferenceType, UID(eType::object_ref)>();
+        static const Type table_ref = IdentifiedType<GeneralTableReferenceType, UID(eType::table_ref)>();
+        static const Type byte_table_ref = IdentifiedType<GeneralByteTableReferenceType, UID(eType::byte_table_ref)>();
+        static const Type table_or_object_ref = IdentifiedType<AlternativeType, UID(eType::table_or_object_ref)>(object_ref, table_ref);
 
-        static const Type Authority_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::Authority_object_ref)>(uint64_t(eTable::Authority));
-        static const Type Table_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::Table_object_ref)>(uint64_t(eTable::Table));
-        static const Type MethodID_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::MethodID_object_ref)>(uint64_t(eTable::MethodID));
-        static const Type SPTemplates_object = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::SPTemplates_object)>(uint64_t(eTable::SPTemplates));
-        static const Type Column_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::Column_object_ref)>(uint64_t(eTable::Column));
-        static const Type Template_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::Template_object_ref)>(uint64_t(eTable::Template));
-        static const Type LogList_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::LogList_object_ref)>(uint64_t(eTable::LogList));
-        static const Type cred_object_uidref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::cred_object_uidref)>(std::vector{
-            uint64_t(eTable::C_PIN),
-            uint64_t(eTable::C_AES_128),
-            uint64_t(eTable::C_AES_256),
-            uint64_t(eTable::C_RSA_1024),
-            uint64_t(eTable::C_RSA_2048),
-            uint64_t(eTable::C_EC_160),
-            uint64_t(eTable::C_EC_192),
-            uint64_t(eTable::C_EC_224),
-            uint64_t(eTable::C_EC_256),
-            uint64_t(eTable::C_EC_384),
-            uint64_t(eTable::C_EC_521),
-            uint64_t(eTable::C_EC_163),
-            uint64_t(eTable::C_EC_233),
-            uint64_t(eTable::C_EC_283),
-            uint64_t(eTable::C_HMAC_160),
-            uint64_t(eTable::C_HMAC_256),
-            uint64_t(eTable::C_HMAC_384),
-            uint64_t(eTable::C_HMAC_512),
+        static const Type Authority_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::Authority_object_ref)>(UID(eTable::Authority));
+        static const Type Table_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::Table_object_ref)>(UID(eTable::Table));
+        static const Type MethodID_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::MethodID_object_ref)>(UID(eTable::MethodID));
+        static const Type SPTemplates_object = IdentifiedType<RestrictedObjectReferenceType, UID(eType::SPTemplates_object)>(UID(eTable::SPTemplates));
+        static const Type Column_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::Column_object_ref)>(UID(eTable::Column));
+        static const Type Template_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::Template_object_ref)>(UID(eTable::Template));
+        static const Type LogList_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::LogList_object_ref)>(UID(eTable::LogList));
+        static const Type cred_object_uidref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::cred_object_uidref)>(std::vector{
+            UID(eTable::C_PIN),
+            UID(eTable::C_AES_128),
+            UID(eTable::C_AES_256),
+            UID(eTable::C_RSA_1024),
+            UID(eTable::C_RSA_2048),
+            UID(eTable::C_EC_160),
+            UID(eTable::C_EC_192),
+            UID(eTable::C_EC_224),
+            UID(eTable::C_EC_256),
+            UID(eTable::C_EC_384),
+            UID(eTable::C_EC_521),
+            UID(eTable::C_EC_163),
+            UID(eTable::C_EC_233),
+            UID(eTable::C_EC_283),
+            UID(eTable::C_HMAC_160),
+            UID(eTable::C_HMAC_256),
+            UID(eTable::C_HMAC_384),
+            UID(eTable::C_HMAC_512),
         });
-        static const Type mediakey_object_uidref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::mediakey_object_uidref)>(std::vector{
-            uint64_t(eTable::K_AES_128),
-            uint64_t(eTable::K_AES_256),
+        static const Type mediakey_object_uidref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::mediakey_object_uidref)>(std::vector{
+            UID(eTable::K_AES_128),
+            UID(eTable::K_AES_256),
         });
 
-        static const Type boolean_ACE = IdentifiedType<EnumerationType, uint64_t(eType::boolean_ACE)>(0, 2, std::initializer_list<std::pair<uint16_t, std::string_view>>{
-                                                                                                                {0,  "And"},
-                                                                                                                { 1, "Or" },
-                                                                                                                { 2, "Not"}
+        static const Type boolean_ACE = IdentifiedType<EnumerationType, UID(eType::boolean_ACE)>(0, 2, std::initializer_list<std::pair<uint16_t, std::string_view>>{
+                                                                                                           {0,  "And"},
+                                                                                                           { 1, "Or" },
+                                                                                                           { 2, "Not"}
         });
-        static const Type ACE_expression = IdentifiedType<AlternativeType, uint64_t(eType::ACE_expression)>(Authority_object_ref, boolean_ACE);
-        static const Type AC_element = IdentifiedType<ListType, uint64_t(eType::AC_element)>(ACE_expression);
-        static const Type ACE_object_ref = IdentifiedType<RestrictedObjectReferenceType, uint64_t(eType::ACE_object_ref)>(uint64_t(eTable::ACE));
-        static const Type ACL = IdentifiedType<ListType, uint64_t(eType::ACL)>(ACE_object_ref);
-        static const Type ACE_columns = IdentifiedType<SetType, uint64_t(eType::ACE_columns)>(0, std::numeric_limits<uint16_t>::max());
+        static const Type ACE_expression = IdentifiedType<AlternativeType, UID(eType::ACE_expression)>(Authority_object_ref, boolean_ACE);
+        static const Type AC_element = IdentifiedType<ListType, UID(eType::AC_element)>(ACE_expression);
+        static const Type ACE_object_ref = IdentifiedType<RestrictedObjectReferenceType, UID(eType::ACE_object_ref)>(UID(eTable::ACE));
+        static const Type ACL = IdentifiedType<ListType, UID(eType::ACL)>(ACE_object_ref);
+        static const Type ACE_columns = IdentifiedType<SetType, UID(eType::ACE_columns)>(0, std::numeric_limits<uint16_t>::max());
 
-        static const Type life_cycle_state = IdentifiedType<EnumerationType, uint64_t(eType::life_cycle_state)>(0, 15);
-        static const Type SSC = IdentifiedType<ListType, uint64_t(eType::SSC)>(name);
+        static const Type life_cycle_state = IdentifiedType<EnumerationType, UID(eType::life_cycle_state)>(0, 15);
+        static const Type SSC = IdentifiedType<ListType, UID(eType::SSC)>(name);
 
         static const std::initializer_list<std::pair<UID, Type>> typeDefs = {
             {eType::unknown_type,            unknown_type          },

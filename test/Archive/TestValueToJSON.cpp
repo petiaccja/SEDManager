@@ -7,10 +7,10 @@
 using namespace sedmgr;
 
 
-constexpr uint64_t id_bytes_2 = baseTypeUid | 0x01;
-constexpr uint64_t id_uinteger_4 = baseTypeUid | 0x02;
-constexpr uint64_t id_optional_bytes_2 = baseTypeUid | 0x101;
-constexpr uint64_t id_optional_uinteger_4 = baseTypeUid | 0x102;
+constexpr auto id_bytes_2 = 0x0000'0005'0000'0001_uid;
+constexpr auto id_uinteger_4 = 0x0000'0005'0000'0002_uid;
+constexpr auto id_optional_bytes_2 = 0x0000'0005'0000'0101_uid;
+constexpr auto id_optional_uinteger_4 = 0x0000'0005'0000'0102_uid;
 
 
 const Type bytes_2 = IdentifiedType<BytesType, id_bytes_2>(2, true);
@@ -90,7 +90,7 @@ TEST_CASE("ValueToJSON: ListType", "[ValueToJSON]") {
 
 TEST_CASE("ValueToJSON: AlternativeType", "[ValueToJSON]") {
     const Type type = AlternativeType(uinteger_4, bytes_2);
-    const Value value = Named(ToBytes(uint32_t(id_uinteger_4)), uint32_t(37));
+    const Value value = Named(ToBytes(uint32_t(id_uinteger_4.value)), uint32_t(37));
     const auto json = nlohmann::json({
         {"ref:0000'0005'0000'0002", 37}
     });

@@ -72,7 +72,7 @@ asyncpp::task<MethodResult> CallRemoteMethod(std::shared_ptr<TrustedPeripheral> 
                                              uint32_t hostSessionNumber,
                                              MethodCall call) {
     const auto maybeMethodName = tper->GetModules().FindName(call.methodId);
-    const auto methodName = maybeMethodName.value_or(to_string(call.methodId));
+    const auto methodName = maybeMethodName.value_or(call.methodId.ToString());
 
     const auto request = MethodCallToValue(call);
     Log(std::format("Call '{}' [Session]", methodName), request);
@@ -91,7 +91,7 @@ asyncpp::task<MethodResult> CallRemoteSessionMethod(std::shared_ptr<TrustedPerip
                                                     uint32_t hostSessionNumber,
                                                     MethodCall call) {
     const auto maybeMethodName = tper->GetModules().FindName(call.methodId);
-    const auto methodName = maybeMethodName.value_or(to_string(call.methodId));
+    const auto methodName = maybeMethodName.value_or(call.methodId.ToString());
 
     const auto request = MethodCallToValue(call);
     Log(std::format("Call '{}' [Session]", methodName), request);

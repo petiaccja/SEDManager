@@ -6,22 +6,22 @@
 
 namespace sedmgr {
 
-std::string to_string(UID uid) {
+std::string UID::ToString() const {
     std::string result;
     result.reserve(19);
     constexpr std::string_view fmt = "{:04X}";
-    result += std::format(fmt, uint16_t(uint64_t(uid) >> 48));
+    result += std::format(fmt, uint16_t(value >> 48));
     result += '\'';
-    result += std::format(fmt, uint16_t(uint64_t(uid) >> 32));
+    result += std::format(fmt, uint16_t(value >> 32));
     result += '\'';
-    result += std::format(fmt, uint16_t(uint64_t(uid) >> 16));
+    result += std::format(fmt, uint16_t(value >> 16));
     result += '\'';
-    result += std::format(fmt, uint16_t(uint64_t(uid)));
+    result += std::format(fmt, uint16_t(value));
     return result;
 }
 
 
-UID stouid(std::string_view str) {
+UID UID::Parse(std::string_view str) {
     std::string withoutSeparators;
     for (auto c : str) {
         if (c != '\'') {

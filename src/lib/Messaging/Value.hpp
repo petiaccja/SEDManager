@@ -273,7 +273,7 @@ std::vector<Token> Tokenize(const Integral value) {
     const auto isSigned = std::is_signed_v<Integral>;
     const auto isByte = false;
     auto data = std::vector<std::byte>{};
-    for (auto [iter, chunk] = std::tuple(0, value); iter != sizeof(Integral); ++iter, chunk >>= 8) {
+    for (auto [iter, chunk] = std::tuple(0, value); iter < sizeof(Integral); ++iter, chunk >>= 8) {
         data.push_back(std::byte{ static_cast<uint8_t>(chunk) });
     }
     std::ranges::reverse(data);

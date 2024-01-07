@@ -29,31 +29,6 @@ struct TableDescStatic {
 };
 
 
-constexpr UID TableToDescriptor(UID table) {
-    return (uint64_t(table) >> 32) | (1ull << 32);
-}
-
-
-constexpr UID DescriptorToTable(UID descriptor) {
-    return uint64_t(descriptor) << 32;
-}
-
-
-constexpr UID GetTableOfObject(UID object) {
-    return uint64_t(object) & 0xFFFF'FFFF'0000'0000ull;
-}
-
-
-constexpr bool IsTable(UID object) {
-    return (uint64_t(object) & 0x0000'0000'FFFF'FFFFull) == 0;
-}
-
-
-constexpr bool IsObject(UID object) {
-    return !IsTable(object);
-}
-
-
 class NameSequence {
 public:
     constexpr NameSequence(UID base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
@@ -96,7 +71,7 @@ NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequ
             const auto [it1, ins1] = m_uidToName.insert({ pair.first, pair.second });
             const auto [it2, ins2] = m_nameToUid.insert({ pair.second, pair.first });
             if (!ins1) {
-                throw std::invalid_argument(std::format("all UIDs must be unique, duplicate: {}", to_string(pair.first)));
+                throw std::invalid_argument(std::format("all UIDs must be unique, duplicate: {}", pair.first.ToString()));
             }
             if (!ins2) {
                 throw std::invalid_argument(std::format("all names must be unique, duplicate: {}", pair.second));

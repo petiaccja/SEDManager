@@ -7,7 +7,7 @@ target_sources(Test
         Archive/TestValueToJSON.cpp
         Archive/TestValueToNative.cpp
         Messaging/TestComPacket.cpp
-        Messaging/TestNativeTypes.cpp
+        Messaging/TestUID.cpp
         Messaging/TestType.cpp
         Messaging/TestSetupPackets.cpp
         Messaging/TestValue.cpp

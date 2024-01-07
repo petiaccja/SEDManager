@@ -1,6 +1,6 @@
 #pragma once
 
-#include "NativeTypes.hpp"
+#include "UID.hpp"
 
 #include <Error/Exception.hpp>
 
@@ -14,9 +14,6 @@
 
 
 namespace sedmgr {
-
-constexpr uint64_t baseTypeUid = 0x0000'0005'0000'0000;
-
 
 class Type {
 public:
@@ -56,12 +53,12 @@ struct TypeIdentifier {
     virtual ~TypeIdentifier() = default;
 
     struct Storage {
-        virtual uint64_t Id() const { return 0; }
+        virtual UID Id() const { return 0_uid; }
     };
 };
 
 
-template <class BaseType, uint64_t Identifier>
+template <class BaseType, UID Identifier>
 class IdentifiedType : public BaseType {
 public:
     struct Storage : BaseType::Storage, TypeIdentifier::Storage {
@@ -70,7 +67,7 @@ public:
                      && !std::same_as<std::tuple<Storage>, std::tuple<std::remove_cvref_t<Args>...>>)
         explicit Storage(Args&&... args) : BaseType::Storage(std::forward<Args>(args)...) {}
 
-        constexpr uint64_t Id() const override { return Identifier; }
+        constexpr UID Id() const override { return Identifier; }
     };
 
     template <class... Args>
@@ -358,15 +355,15 @@ public:
 class RestrictedReferenceType : public ReferenceType {
 public:
     struct Storage : ReferenceType::Storage {
-        explicit Storage(std::vector<uint64_t> tables) : tables(std::move(tables)) {}
-        explicit Storage(uint64_t table) : Storage(std::vector{ table }) {}
-        std::vector<uint64_t> tables;
+        explicit Storage(std::vector<UID> tables) : tables(std::move(tables)) {}
+        explicit Storage(UID table) : Storage(std::vector{ table }) {}
+        std::vector<UID> tables;
     };
 
-    explicit RestrictedReferenceType(std::vector<uint64_t> tables) : ReferenceType(std::make_shared<Storage>(std::move(tables))) {}
-    explicit RestrictedReferenceType(uint64_t table) : RestrictedReferenceType(std::vector{ table }) {}
+    explicit RestrictedReferenceType(std::vector<UID> tables) : ReferenceType(std::make_shared<Storage>(std::move(tables))) {}
+    explicit RestrictedReferenceType(UID table) : RestrictedReferenceType(std::vector{ table }) {}
 
-    std::span<const uint64_t> Tables() const { return GetStorage<RestrictedReferenceType>().tables; }
+    std::span<const UID> Tables() const { return GetStorage<RestrictedReferenceType>().tables; }
 
     explicit RestrictedReferenceType(std::shared_ptr<Storage> s) : ReferenceType(std::move(s)) {}
 };
@@ -378,8 +375,8 @@ public:
         using RestrictedReferenceType::Storage::Storage;
     };
 
-    explicit RestrictedByteReferenceType(std::vector<uint64_t> tables) : RestrictedReferenceType(std::make_shared<Storage>(std::move(tables))) {}
-    explicit RestrictedByteReferenceType(uint64_t table) : RestrictedByteReferenceType(std::vector{ table }) {}
+    explicit RestrictedByteReferenceType(std::vector<UID> tables) : RestrictedReferenceType(std::make_shared<Storage>(std::move(tables))) {}
+    explicit RestrictedByteReferenceType(UID table) : RestrictedByteReferenceType(std::vector{ table }) {}
 
     explicit RestrictedByteReferenceType(std::shared_ptr<Storage> s) : RestrictedReferenceType(std::move(s)) {}
 };
@@ -391,8 +388,8 @@ public:
         using RestrictedReferenceType::Storage::Storage;
     };
 
-    explicit RestrictedObjectReferenceType(std::vector<uint64_t> tables) : RestrictedReferenceType(std::make_shared<Storage>(std::move(tables))) {}
-    explicit RestrictedObjectReferenceType(uint64_t table) : RestrictedObjectReferenceType(std::vector{ table }) {}
+    explicit RestrictedObjectReferenceType(std::vector<UID> tables) : RestrictedReferenceType(std::make_shared<Storage>(std::move(tables))) {}
+    explicit RestrictedObjectReferenceType(UID table) : RestrictedObjectReferenceType(std::vector{ table }) {}
 
     explicit RestrictedObjectReferenceType(std::shared_ptr<Storage> s) : RestrictedReferenceType(std::move(s)) {}
 };

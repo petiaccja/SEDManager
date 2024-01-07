@@ -63,52 +63,52 @@ namespace core {
 
 
     constexpr std::initializer_list<std::pair<UID, std::string_view>> tablesDescriptors = {
-        {TableToDescriptor(eTable::Table),          "Table::Table"        }, // Base
-        { TableToDescriptor(eTable::SPInfo),        "Table::SPInfo"       }, // Base
-        { TableToDescriptor(eTable::SPTemplates),   "Table::SPTemplates"  }, // Base
-        { TableToDescriptor(eTable::Column),        "Table::Column"       }, // Base
-        { TableToDescriptor(eTable::Type),          "Table::Type"         }, // Base
-        { TableToDescriptor(eTable::MethodID),      "Table::MethodID"     }, // Base
-        { TableToDescriptor(eTable::AccessControl), "Table::AccessControl"}, // Base
-        { TableToDescriptor(eTable::ACE),           "Table::ACE"          }, // Base
-        { TableToDescriptor(eTable::Authority),     "Table::Authority"    }, // Base
-        { TableToDescriptor(eTable::Certificates),  "Table::Certificates" }, // Base
-        { TableToDescriptor(eTable::C_PIN),         "Table::C_PIN"        }, // Base
-        { TableToDescriptor(eTable::C_RSA_1024),    "Table::C_RSA_1024"   }, // Base
-        { TableToDescriptor(eTable::C_RSA_2048),    "Table::C_RSA_2048"   }, // Base
-        { TableToDescriptor(eTable::C_AES_128),     "Table::C_AES_128"    }, // Base
-        { TableToDescriptor(eTable::C_AES_256),     "Table::C_AES_256"    }, // Base
-        { TableToDescriptor(eTable::C_EC_160),      "Table::C_EC_160"     }, // Base
-        { TableToDescriptor(eTable::C_EC_192),      "Table::C_EC_192"     }, // Base
-        { TableToDescriptor(eTable::C_EC_224),      "Table::C_EC_224"     }, // Base
-        { TableToDescriptor(eTable::C_EC_256),      "Table::C_EC_256"     }, // Base
-        { TableToDescriptor(eTable::C_EC_384),      "Table::C_EC_384"     }, // Base
-        { TableToDescriptor(eTable::C_EC_521),      "Table::C_EC_521"     }, // Base
-        { TableToDescriptor(eTable::C_EC_163),      "Table::C_EC_163"     }, // Base
-        { TableToDescriptor(eTable::C_EC_233),      "Table::C_EC_233"     }, // Base
-        { TableToDescriptor(eTable::C_EC_283),      "Table::C_EC_283"     }, // Base
-        { TableToDescriptor(eTable::C_HMAC_160),    "Table::C_HMAC_160"   }, // Base
-        { TableToDescriptor(eTable::C_HMAC_256),    "Table::C_HMAC_256"   }, // Base
-        { TableToDescriptor(eTable::C_HMAC_384),    "Table::C_HMAC_384"   }, // Base
-        { TableToDescriptor(eTable::C_HMAC_512),    "Table::C_HMAC_512"   }, // Base
-        { TableToDescriptor(eTable::SecretProtect), "Table::SecretProtect"}, // Base
-        { TableToDescriptor(eTable::TPerInfo),      "Table::TPerInfo"     }, // Admin
-        { TableToDescriptor(eTable::CryptoSuite),   "Table::CryptoSuite"  }, // Admin
-        { TableToDescriptor(eTable::Template),      "Table::Template"     }, // Admin
-        { TableToDescriptor(eTable::SP),            "Table::SP"           }, // Admin
-        { TableToDescriptor(eTable::ClockTime),     "Table::ClockTime"    }, // Clock
-        { TableToDescriptor(eTable::H_SHA_1),       "Table::H_SHA_1"      }, // Crypto
-        { TableToDescriptor(eTable::H_SHA_256),     "Table::H_SHA_256"    }, // Crypto
-        { TableToDescriptor(eTable::H_SHA_384),     "Table::H_SHA_384"    }, // Crypto
-        { TableToDescriptor(eTable::H_SHA_512),     "Table::H_SHA_512"    }, // Crypto
-        { TableToDescriptor(eTable::Log),           "Table::Log"          }, // Log
-        { TableToDescriptor(eTable::LogList),       "Table::LogList"      }, // Log
-        { TableToDescriptor(eTable::LockingInfo),   "Table::LockingInfo"  }, // Locking
-        { TableToDescriptor(eTable::Locking),       "Table::Locking"      }, // Locking
-        { TableToDescriptor(eTable::MBRControl),    "Table::MBRControl"   }, // Locking
-        { TableToDescriptor(eTable::MBR),           "Table::MBR"          }, // Locking
-        { TableToDescriptor(eTable::K_AES_128),     "Table::K_AES_128"    }, // Locking
-        { TableToDescriptor(eTable::K_AES_256),     "Table::K_AES_256"    }, // Locking
+        {UID(eTable::Table).ToDescriptor(),          "Table::Table"        }, // Base
+        {UID(eTable::SPInfo).ToDescriptor(),        "Table::SPInfo"       }, // Base
+        {UID(eTable::SPTemplates).ToDescriptor(),   "Table::SPTemplates"  }, // Base
+        {UID(eTable::Column).ToDescriptor(),        "Table::Column"       }, // Base
+        {UID(eTable::Type).ToDescriptor(),          "Table::Type"         }, // Base
+        {UID(eTable::MethodID).ToDescriptor(),      "Table::MethodID"     }, // Base
+        {UID(eTable::AccessControl).ToDescriptor(), "Table::AccessControl"}, // Base
+        {UID(eTable::ACE).ToDescriptor(),           "Table::ACE"          }, // Base
+        {UID(eTable::Authority).ToDescriptor(),     "Table::Authority"    }, // Base
+        {UID(eTable::Certificates).ToDescriptor(),  "Table::Certificates" }, // Base
+        {UID(eTable::C_PIN).ToDescriptor(),         "Table::C_PIN"        }, // Base
+        {UID(eTable::C_RSA_1024).ToDescriptor(),    "Table::C_RSA_1024"   }, // Base
+        {UID(eTable::C_RSA_2048).ToDescriptor(),    "Table::C_RSA_2048"   }, // Base
+        {UID(eTable::C_AES_128).ToDescriptor(),     "Table::C_AES_128"    }, // Base
+        {UID(eTable::C_AES_256).ToDescriptor(),     "Table::C_AES_256"    }, // Base
+        {UID(eTable::C_EC_160).ToDescriptor(),      "Table::C_EC_160"     }, // Base
+        {UID(eTable::C_EC_192).ToDescriptor(),      "Table::C_EC_192"     }, // Base
+        {UID(eTable::C_EC_224).ToDescriptor(),      "Table::C_EC_224"     }, // Base
+        {UID(eTable::C_EC_256).ToDescriptor(),      "Table::C_EC_256"     }, // Base
+        {UID(eTable::C_EC_384).ToDescriptor(),      "Table::C_EC_384"     }, // Base
+        {UID(eTable::C_EC_521).ToDescriptor(),      "Table::C_EC_521"     }, // Base
+        {UID(eTable::C_EC_163).ToDescriptor(),      "Table::C_EC_163"     }, // Base
+        {UID(eTable::C_EC_233).ToDescriptor(),      "Table::C_EC_233"     }, // Base
+        {UID(eTable::C_EC_283).ToDescriptor(),      "Table::C_EC_283"     }, // Base
+        {UID(eTable::C_HMAC_160).ToDescriptor(),    "Table::C_HMAC_160"   }, // Base
+        {UID(eTable::C_HMAC_256).ToDescriptor(),    "Table::C_HMAC_256"   }, // Base
+        {UID(eTable::C_HMAC_384).ToDescriptor(),    "Table::C_HMAC_384"   }, // Base
+        {UID(eTable::C_HMAC_512).ToDescriptor(),    "Table::C_HMAC_512"   }, // Base
+        {UID(eTable::SecretProtect).ToDescriptor(), "Table::SecretProtect"}, // Base
+        {UID(eTable::TPerInfo).ToDescriptor(),      "Table::TPerInfo"     }, // Admin
+        {UID(eTable::CryptoSuite).ToDescriptor(),   "Table::CryptoSuite"  }, // Admin
+        {UID(eTable::Template).ToDescriptor(),      "Table::Template"     }, // Admin
+        {UID(eTable::SP).ToDescriptor(),            "Table::SP"           }, // Admin
+        {UID(eTable::ClockTime).ToDescriptor(),     "Table::ClockTime"    }, // Clock
+        {UID(eTable::H_SHA_1).ToDescriptor(),       "Table::H_SHA_1"      }, // Crypto
+        {UID(eTable::H_SHA_256).ToDescriptor(),     "Table::H_SHA_256"    }, // Crypto
+        {UID(eTable::H_SHA_384).ToDescriptor(),     "Table::H_SHA_384"    }, // Crypto
+        {UID(eTable::H_SHA_512).ToDescriptor(),     "Table::H_SHA_512"    }, // Crypto
+        {UID(eTable::Log).ToDescriptor(),           "Table::Log"          }, // Log
+        {UID(eTable::LogList).ToDescriptor(),       "Table::LogList"      }, // Log
+        {UID(eTable::LockingInfo).ToDescriptor(),   "Table::LockingInfo"  }, // Locking
+        {UID(eTable::Locking).ToDescriptor(),       "Table::Locking"      }, // Locking
+        {UID(eTable::MBRControl).ToDescriptor(),    "Table::MBRControl"   }, // Locking
+        {UID(eTable::MBR).ToDescriptor(),           "Table::MBR"          }, // Locking
+        {UID(eTable::K_AES_128).ToDescriptor(),     "Table::K_AES_128"    }, // Locking
+        {UID(eTable::K_AES_256).ToDescriptor(),     "Table::K_AES_256"    }, // Locking
     };
 
 

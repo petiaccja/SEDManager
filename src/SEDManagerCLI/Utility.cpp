@@ -71,7 +71,7 @@ std::optional<UID> ParseObjectRef(EncryptedDevice& app, std::string_view nameOrU
         return *maybeUid;
     }
     try {
-        return stouid(nameOrUid);
+        return UID::Parse(nameOrUid);
     }
     catch (...) {
         // Fallthrough
@@ -85,7 +85,7 @@ std::string FormatObjectRef(EncryptedDevice& app, UID uid, std::optional<UID> sp
     if (maybeName) {
         return *maybeName;
     }
-    return to_string(uid);
+    return uid.ToString();
 }
 
 

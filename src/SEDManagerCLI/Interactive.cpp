@@ -286,7 +286,7 @@ void Interactive::RegisterCallbackFind() {
     cmd->callback([this] {
         const auto objectUid = Unwrap(ParseObjectRef(m_manager, objectName, m_currentSecurityProvider), "cannot find object");
         const auto maybeName = m_manager.GetModules().FindName(objectUid, m_currentSecurityProvider);
-        std::cout << "UID:  " << to_string(objectUid) << std::endl;
+        std::cout << "UID:  " << objectUid.ToString() << std::endl;
         std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
     });
 }
@@ -304,7 +304,7 @@ void Interactive::RegisterCallbackRows() {
         const std::vector<std::string> columnNames = { "UID", "Name" };
         std::vector<std::vector<std::string>> rows;
         while (const auto row = join(rowStream)) {
-            rows.push_back({ to_string(*row), m_manager.GetModules().FindName(*row, m_currentSecurityProvider).value_or("") });
+            rows.push_back({ row->ToString(), m_manager.GetModules().FindName(*row, m_currentSecurityProvider).value_or("") });
         }
         std::cout << FormatTable(columnNames, rows);
     });

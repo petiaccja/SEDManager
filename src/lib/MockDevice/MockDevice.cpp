@@ -373,7 +373,7 @@ namespace mock {
             default: reply = std::nullopt; break;
         }
         if (!reply) {
-            throw DeviceError(std::format("invalid/unsupported session layer method: {}", to_string(call.methodId)));
+            throw DeviceError(std::format("invalid/unsupported session layer method: {}", call.methodId.ToString()));
         }
         const auto tokenStream = UnSurroundWithList(TokenStream(Tokenize(MethodCallToValue(*reply))));
         auto response = Serialize(tokenStream);
@@ -395,7 +395,7 @@ namespace mock {
             }
         }();
         if (!reply) {
-            throw DeviceError(std::format("invalid/unsupported session layer method: {}", to_string(call.methodId)));
+            throw DeviceError(std::format("invalid/unsupported session layer method: {}", call.methodId.ToString()));
         }
         const auto tokenStream = UnSurroundWithList(TokenStream(Tokenize(MethodResultToValue(*reply))));
         auto response = Serialize(tokenStream);
@@ -531,9 +531,9 @@ namespace mock {
 
     auto SessionLayerHandler::Get(Session& session, UID invokingId, CellBlock cellBlock) const
         -> std::pair<std::tuple<List>, eMethodStatus> {
-        if (IsObject(invokingId)) {
+        if (invokingId.IsObject()) {
             const auto securityProvider = *session.securityProvider;
-            const auto containingTableUid = GetTableOfObject(invokingId);
+            const auto containingTableUid = invokingId.ContainingTable();
             if (!securityProvider.contains(containingTableUid)) {
                 return { {}, eMethodStatus::INVALID_PARAMETER };
             }
@@ -564,9 +564,9 @@ namespace mock {
 
     auto SessionLayerHandler::Set(Session& session, UID invokingId, std::optional<Value> where, std::optional<Value> values) const
         -> std::pair<std::tuple<>, eMethodStatus> {
-        if (IsObject(invokingId)) {
+        if (invokingId.IsObject()) {
             auto& securityProvider = *session.securityProvider;
-            const auto containingTableUid = GetTableOfObject(invokingId);
+            const auto containingTableUid = invokingId.ContainingTable();
             if (!securityProvider.contains(containingTableUid)) {
                 return { {}, eMethodStatus::INVALID_PARAMETER };
             }

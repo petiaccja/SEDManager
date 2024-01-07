@@ -8,16 +8,6 @@
 using namespace sedmgr;
 
 
-TEST_CASE("Specification: table to descriptor", "[Specification]") {
-    REQUIRE(TableToDescriptor(0x0000'BEEF'0000'0000) == UID(0x0000'0001'0000'BEEF));
-}
-
-
-TEST_CASE("Specification: descriptor to table", "[Specification]") {
-    REQUIRE(DescriptorToTable(0x0000'0001'0000'BEEF) == UID(0x0000'BEEF'0000'0000));
-}
-
-
 TEST_CASE("Specification: name sequence find UID", "[Specification]") {
     const NameSequence seq(106, 6, 10, "name{}");
 

@@ -76,7 +76,7 @@ CallContext SessionManager::GetCallContext() const {
     };
     auto getMethodName = [tper = m_tper](UID methodId) {
         const auto maybeMethodName = tper->GetModules().FindName(methodId);
-        return maybeMethodName.value_or(to_string(methodId));
+        return maybeMethodName.value_or(methodId.ToString());
     };
     return CallContext{ .invokingId = INVOKING_ID, .callRemoteMethod = callRemoteMethod, .getMethodName = getMethodName };
 }

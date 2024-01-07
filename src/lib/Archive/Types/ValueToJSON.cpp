@@ -165,7 +165,7 @@ namespace impl {
             ss << "{ ";
             const auto& tables = type.Tables();
             for (const auto& table : tables) {
-                ss << CoreModule::Get()->FindName(table).value_or(to_string(table));
+                ss << CoreModule::Get()->FindName(table).value_or(UID(table).ToString());
                 if (&table != &tables.back()) {
                     ss << " | ";
                 }
@@ -241,7 +241,7 @@ namespace impl {
                 }
                 uint32_t altUidLower = 0;
                 FromBytes(currentType.Get<Bytes>(), altUidLower);
-                const UID altUid = uint64_t(altUidLower) | baseTypeUid;
+                const UID altUid = UID(uint64_t(altUidLower) | 0x0000'0005'0000'0000);
                 const auto altIter = std::ranges::find_if(alts, [this, &altUid](const Type& alt) {
                     try {
                         return type_uid(alt) == altUid;
@@ -251,7 +251,7 @@ namespace impl {
                     }
                 });
                 if (altIter == alts.end()) {
-                    throw UnexpectedTypeError(m_formatter(type), "uid:" + to_string(altUid));
+                    throw UnexpectedTypeError(m_formatter(type), "uid:" + altUid.ToString());
                 }
 
                 return nlohmann::json({
@@ -321,7 +321,7 @@ namespace impl {
                         return "ref:" + *maybeName;
                     }
                 }
-                return "ref:" + to_string(UID(uid));
+                return "ref:" + UID(uid).ToString();
             }
             throw UnexpectedTypeError(m_formatter(type), value.GetTypeStr());
         }
@@ -410,7 +410,7 @@ namespace impl {
                 }
             });
             if (altIter == alts.end()) {
-                throw UnexpectedTypeError(m_formatter(type), "uid:" + to_string(altUid));
+                throw UnexpectedTypeError(m_formatter(type), "uid:" + altUid.ToString());
             }
 
             return Named{
@@ -481,7 +481,7 @@ namespace impl {
                         return ToBytes(uint64_t(*maybeValue));
                     }
                 }
-                const UID value = stouid(str.substr(4));
+                const UID value = UID::Parse(str.substr(4));
                 return ToBytes(uint64_t(value));
             }
             throw UnexpectedTypeError("string");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <stdexcept>
 #include <string_view>
 
 
@@ -25,14 +26,52 @@ struct UID {
         requires std::is_enum_v<Enum> && (sizeof(Enum) <= sizeof(uint64_t))
     constexpr operator Enum() const noexcept { return static_cast<Enum>(value); }
 
+    constexpr UID ToDescriptor() const {
+        if (!IsTable()) {
+            throw std::logic_error("expected a table");
+        }
+        return UID((value >> 32) | (1ull << 32));
+    }
+
+    constexpr UID ToTable() const {
+        if (!IsDescriptor()) {
+            throw std::logic_error("expected a table descriptor");
+        }
+        return UID(value << 32);
+    }
+
+    constexpr UID ContainingTable() const {
+        if (!IsObject()) {
+            throw std::logic_error("expected an object");
+        }
+        return UID(value & 0xFFFF'FFFF'0000'0000ull);
+    }
+
+    constexpr bool IsTable() const {
+        return (value & 0x0000'0000'FFFF'FFFFull) == 0;
+    }
+
+    constexpr bool IsDescriptor() const {
+        return (value & 0xFFFF'FFFF'0000'0000ull) == 0x0000'0001'0000'0000ull
+               && (value & 0x0000'0000'FFFF'FFFFull) != 0;
+    }
+
+    constexpr bool IsObject() const {
+        return !IsTable() && !IsDescriptor();
+    }
+
+    std::string ToString() const;
+    static UID Parse(std::string_view str);
+
     std::strong_ordering operator<=>(const UID&) const noexcept = default;
 
     uint64_t value = 0;
 };
 
 
-std::string to_string(UID uid);
-UID stouid(std::string_view str);
+constexpr UID operator""_uid(unsigned long long value) {
+    return UID(value);
+}
 
 
 template <class Archive>

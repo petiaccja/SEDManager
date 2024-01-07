@@ -20,8 +20,8 @@ namespace mock {
             Table(
                 core::eTable::Table,
                 {
-                    Object(TableToDescriptor(core::eTable::Table), { value_cast("Table"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(TableToDescriptor(core::eTable::SP), { value_cast("SP"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
                 }),
             Table(
                 core::eTable::SP,
