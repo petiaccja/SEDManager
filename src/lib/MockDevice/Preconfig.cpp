@@ -1,6 +1,6 @@
 #include "Preconfig.hpp"
 
-#include <Archive/Types/ValueToNative.hpp>
+#include <Messaging/Native.hpp>
 #include <Specification/Common/Utility.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>

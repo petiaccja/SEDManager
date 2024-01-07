@@ -13,7 +13,6 @@ target_sources(Archive
     PRIVATE
         Types/ValueToJSON.cpp
         Types/ValueToJSON.hpp
-        Types/ValueToNative.hpp
 )
 
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")

@@ -2,7 +2,7 @@
 
 #include "Common/TableDesc.hpp"
 
-#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Native.hpp>
 #include <Messaging/Type.hpp>
 
 #include <memory>

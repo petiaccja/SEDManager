@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Native.hpp>
 
 #include <EncryptedDevice/EncryptedDevice.hpp>
 

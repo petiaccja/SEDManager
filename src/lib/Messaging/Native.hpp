@@ -1,18 +1,30 @@
 #pragma once
 
-#include "../Serialization.hpp"
+#include "UID.hpp"
+#include "Value.hpp"
 
-#include <Messaging/NativeTypes.hpp>
-#include <Messaging/Value.hpp>
-#include <Error/Exception.hpp>
+#include <Archive/Serialization.hpp>
 
+#include <compare>
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 
 namespace sedmgr {
+
+struct CellBlock {
+    std::optional<std::variant<UID, uint32_t>> startRow;
+    std::optional<uint32_t> endRow;
+    std::optional<uint32_t> startColumn;
+    std::optional<uint32_t> endColumn;
+
+    std::strong_ordering operator<=>(const CellBlock&) const noexcept = default;
+};
+
 
 template <class T>
     requires(!std::same_as<T, Value>)
@@ -65,7 +77,7 @@ namespace impl {
     struct ValueCast<UID> {
         static Value To(const UID& v) { return Value(Serialize(v)); }
         static UID From(const Value& v) {
-            return DeSerialize(Serialized<UID>{v.Get<Bytes>()});
+            return DeSerialize(Serialized<UID>{ v.Get<Bytes>() });
         }
     };
 
@@ -117,7 +129,7 @@ namespace impl {
             return Value(b);
         }
         static Range From(const Value& v) {
-            if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
+            if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
                 Range r;
                 for (const auto byte : v.Get<Bytes>()) {
                     r.push_back(std::bit_cast<std::ranges::range_value_t<Range>>(byte));
@@ -142,7 +154,7 @@ namespace impl {
             return Value(std::move(values));
         }
         static Range From(const Value& v) {
-            if constexpr (requires(Range& r, std::ranges::range_value_t<Range>&& v) { r.push_back(v); }) {
+            if constexpr (requires(Range & r, std::ranges::range_value_t<Range> && v) { r.push_back(v); }) {
                 Range r;
                 for (auto& item : v.Get<List>()) {
                     r.push_back(value_cast<std::ranges::range_value_t<Range>>(item));

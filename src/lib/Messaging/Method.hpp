@@ -1,6 +1,6 @@
 #pragma once
 
-#include "NativeTypes.hpp"
+#include "Native.hpp"
 #include "Value.hpp"
 #include <async++/task.hpp>
 

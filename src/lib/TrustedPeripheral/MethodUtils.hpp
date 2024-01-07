@@ -3,7 +3,7 @@
 #include "TrustedPeripheral.hpp"
 #include <async++/task.hpp>
 
-#include <Archive/Types/ValueToNative.hpp>
+#include <Messaging/Native.hpp>
 #include <Messaging/Method.hpp>
 
 

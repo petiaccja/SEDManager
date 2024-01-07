@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Messaging/NativeTypes.hpp>
+#include <Messaging/Native.hpp>
 #include <Messaging/Type.hpp>
 
 
