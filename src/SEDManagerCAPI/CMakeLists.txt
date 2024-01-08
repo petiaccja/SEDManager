@@ -8,4 +8,4 @@ target_sources(SEDManagerCAPI
         SEDManagerCAPI_2.cpp
 )
 
-target_link_libraries(SEDManagerCAPI SEDManager MockDevice)
+target_link_libraries(SEDManagerCAPI EncryptedDevice MockDevice)

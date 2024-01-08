@@ -1,4 +1,4 @@
-#include <Data/Value.hpp>
+#include <Messaging/Value.hpp>
 #include <MockDevice/MockDevice.hpp>
 
 #include <EncryptedDevice/EncryptedDevice.hpp>
@@ -37,7 +37,7 @@ std::exception_ptr GetLastException() {
 //------------------------------------------------------------------------------
 
 
-using CUid = uint64_t;
+using CUID = uint64_t;
 
 
 struct CString {
@@ -77,10 +77,10 @@ using CFutureVoid = CFuture<void>;
 using CFutureEncryptedDevice = CFuture<EncryptedDevice>;
 using CFutureValue = CFuture<Value>;
 using CFutureString = CFuture<std::string>;
-using CFutureUid = CFuture<Uid>;
+using CFutureUID = CFuture<UID>;
 
 
-using CStreamUid = CStream<Uid>;
+using CStreamUID = CStream<UID>;
 using CStreamString = CStream<std::string>;
 
 
@@ -145,12 +145,12 @@ extern "C"
 
 
     SEDMANAGER_EXPORT bool CValue_IsBytes(CValue* self) {
-        return self->object.IsBytes();
+        return self->object.Is<Bytes>();
     }
 
 
     SEDMANAGER_EXPORT bool CValue_IsCommand(CValue* self) {
-        return self->object.IsCommand();
+        return self->object.Is<eCommand>();
     }
 
 
@@ -160,28 +160,28 @@ extern "C"
 
 
     SEDMANAGER_EXPORT bool CValue_IsList(CValue* self) {
-        return self->object.IsList();
+        return self->object.Is<List>();
     }
 
 
     SEDMANAGER_EXPORT bool CValue_IsNamed(CValue* self) {
-        return self->object.IsNamed();
+        return self->object.Is<Named>();
     }
 
 
     SEDMANAGER_EXPORT const std::byte* CValue_GetBytes(CValue* self) {
-        if (!self->object.IsBytes()) {
+        if (!self->object.Is<Bytes>()) {
             return nullptr;
         }
-        return self->object.GetBytes().data();
+        return self->object.Get<Bytes>().data();
     }
 
 
     SEDMANAGER_EXPORT uint8_t CValue_GetCommand(CValue* self) {
-        if (!self->object.IsCommand()) {
+        if (!self->object.Is<eCommand>()) {
             return 0;
         }
-        return static_cast<uint8_t>(self->object.GetCommand());
+        return static_cast<uint8_t>(self->object.Get<eCommand>());
     }
 
 
@@ -189,40 +189,40 @@ extern "C"
         if (!self->object.IsInteger()) {
             return 0;
         }
-        return self->object.GetInt<int64_t>();
+        return self->object.Get<int64_t>();
     }
 
 
     SEDMANAGER_EXPORT CValue* CValue_GetList_Element(CValue* self, size_t element) {
-        if (!self->object.IsList()) {
+        if (!self->object.Is<List>()) {
             return nullptr;
         }
-        return new CValue{ self->object.GetList()[element] };
+        return new CValue{ self->object.Get<List>()[element] };
     }
 
 
     SEDMANAGER_EXPORT CValue* CValue_GetNamed_Name(CValue* self) {
-        if (!self->object.IsNamed()) {
+        if (!self->object.Is<Named>()) {
             return nullptr;
         }
-        return new CValue{ self->object.GetNamed().name };
+        return new CValue{ self->object.Get<Named>().name };
     }
 
 
     SEDMANAGER_EXPORT CValue* CValue_GetNamed_Value(CValue* self) {
-        if (!self->object.IsNamed()) {
+        if (!self->object.Is<Named>()) {
             return nullptr;
         }
-        return new CValue{ self->object.GetNamed().value };
+        return new CValue{ self->object.Get<Named>().value };
     }
 
 
     SEDMANAGER_EXPORT size_t CValue_GetLength(CValue* self) {
-        if (self->object.IsBytes()) {
-            return self->object.GetBytes().size();
+        if (self->object.Is<Bytes>()) {
+            return self->object.Get<Bytes>().size();
         }
-        if (self->object.IsList()) {
-            return self->object.GetList().size();
+        if (self->object.Is<List>()) {
+            return self->object.Get<List>().size();
         }
         return 1;
     }
@@ -346,14 +346,14 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Login(CEncryptedDevice* self, CUid securityProvider) {
-        return new CFutureVoid{ self->object->Login(securityProvider) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Login(CEncryptedDevice* self, CUID securityProvider) {
+        return new CFutureVoid{ self->object->Login(UID(securityProvider)) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Authenticate(CEncryptedDevice* self, CUid authority, CString* password) {
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Authenticate(CEncryptedDevice* self, CUID authority, CString* password) {
         const auto _password = password ? std::optional(as_bytes(std::span(password->object))) : std::nullopt;
-        return new CFutureVoid{ self->object->Authenticate(authority, _password) };
+        return new CFutureVoid{ self->object->Authenticate(UID(authority), _password) };
     }
 
 
@@ -373,11 +373,11 @@ extern "C"
 
 
     SEDMANAGER_EXPORT CFutureString* CEncryptedDevice_FindName(CEncryptedDevice* self,
-                                                               CUid uid,
-                                                               CUid securityProvider) {
+                                                               CUID uid,
+                                                               CUID securityProvider) {
         const auto& modules = self->object->GetModules();
-        const auto maybeSp = securityProvider != 0 ? std::optional(Uid(securityProvider)) : std::nullopt;
-        const auto maybeName = modules.FindName(uid, maybeSp);
+        const auto maybeSp = securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt;
+        const auto maybeName = modules.FindName(UID(uid), maybeSp);
         return new CFutureString{ [maybeName]() -> asyncpp::task<std::string> {
             if (!maybeName) {
                 throw std::invalid_argument("could not find table description");
@@ -387,29 +387,29 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureUid* CEncryptedDevice_FindUid(CEncryptedDevice* self,
+    SEDMANAGER_EXPORT CFutureUID* CEncryptedDevice_FindUID(CEncryptedDevice* self,
                                                            CString* name,
-                                                           CUid securityProvider) {
+                                                           CUID securityProvider) {
         const auto& modules = self->object->GetModules();
-        const auto maybeSp = securityProvider != 0 ? std::optional(Uid(securityProvider)) : std::nullopt;
-        const auto maybeUid = modules.FindUid(name->object, maybeSp);
-        return new CFutureUid{ [maybeUid]() -> asyncpp::task<Uid> {
-            if (!maybeUid) {
+        const auto maybeSp = securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt;
+        const auto maybeUID = modules.FindUid(name->object, maybeSp);
+        return new CFutureUID{ [maybeUID]() -> asyncpp::task<UID> {
+            if (!maybeUID) {
                 throw std::invalid_argument("could not find table description");
             }
-            co_return *maybeUid;
+            co_return *maybeUID;
         }() };
     }
 
 
-    SEDMANAGER_EXPORT CStreamUid* CEncryptedDevice_GetTableRows(CEncryptedDevice* self, CUid table) {
-        return new CStreamUid{ self->object->GetTableRows(table) };
+    SEDMANAGER_EXPORT CStreamUID* CEncryptedDevice_GetTableRows(CEncryptedDevice* self, CUID table) {
+        return new CStreamUID{ self->object->GetTableRows(UID(table)) };
     }
 
 
-    SEDMANAGER_EXPORT CStreamString* CEncryptedDevice_GetTableColumns(CEncryptedDevice* self, CUid table) {
+    SEDMANAGER_EXPORT CStreamString* CEncryptedDevice_GetTableColumns(CEncryptedDevice* self, CUID table) {
         const auto& modules = self->object->GetModules();
-        const auto maybeDesc = modules.FindTable(table);
+        const auto maybeDesc = modules.FindTable(UID(table));
         return new CStreamString{ [maybeDesc]() -> asyncpp::stream<std::string> {
             if (!maybeDesc) {
                 throw std::invalid_argument("could not find table description");
@@ -421,33 +421,33 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureValue* CEncryptedDevice_GetObjectColumn(CEncryptedDevice* self, CUid object, uint32_t column) {
-        return new CFutureValue{ self->object->GetObjectColumn(object, column) };
+    SEDMANAGER_EXPORT CFutureValue* CEncryptedDevice_GetObjectColumn(CEncryptedDevice* self, CUID object, uint32_t column) {
+        return new CFutureValue{ self->object->GetObjectColumn(UID(object), column) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_SetObjectColumn(CEncryptedDevice* self, CUid object, uint32_t column, CValue* value) {
-        return new CFutureVoid{ self->object->SetObjectColumn(object, column, value->object) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_SetObjectColumn(CEncryptedDevice* self, CUID object, uint32_t column, CValue* value) {
+        return new CFutureVoid{ self->object->SetObjectColumn(UID(object), column, value->object) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenMEK(CEncryptedDevice* self, CUid lockingRange) {
-        return new CFutureVoid{ self->object->GenMEK(lockingRange) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenMEK(CEncryptedDevice* self, CUID lockingRange) {
+        return new CFutureVoid{ self->object->GenMEK(UID(lockingRange)) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenPIN(CEncryptedDevice* self, CUid credentialObject, uint32_t length) {
-        return new CFutureVoid{ self->object->GenPIN(credentialObject, length) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenPIN(CEncryptedDevice* self, CUID credentialObject, uint32_t length) {
+        return new CFutureVoid{ self->object->GenPIN(UID(credentialObject), length) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Revert(CEncryptedDevice* self, CUid securityProvider) {
-        return new CFutureVoid{ self->object->Revert(securityProvider) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Revert(CEncryptedDevice* self, CUID securityProvider) {
+        return new CFutureVoid{ self->object->Revert(UID(securityProvider)) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Activate(CEncryptedDevice* self, CUid securityProvider) {
-        return new CFutureVoid{ self->object->Activate(securityProvider) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Activate(CEncryptedDevice* self, CUID securityProvider) {
+        return new CFutureVoid{ self->object->Activate(UID(securityProvider)) };
     }
 }
 
@@ -471,11 +471,12 @@ void CFuture_Start(CFuture<Ty>* self, void (*callback)(bool, Wrapper)) {
             }
             else {
                 auto result = co_await task;
+                using WrapperBase = std::remove_pointer_t<Wrapper>;
                 if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
-                    callback(true, new std::remove_pointer_t<Wrapper>{ std::move(result) });
+                    callback(true, new WrapperBase(std::move(result)));
                 }
                 else {
-                    callback(true, std::move(result));
+                    callback(true, WrapperBase(std::move(result)));
                 }
             }
         }
@@ -501,11 +502,12 @@ void CStream_Start(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
             result = co_await stream;
             if (result) {
                 try {
+                    using WrapperBase = std::remove_pointer_t<Wrapper>;
                     if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
-                        callback(true, true, new std::remove_pointer_t<Wrapper>{ std::move(*result) });
+                        callback(true, true, new WrapperBase(std::move(*result)));
                     }
                     else {
-                        callback(true, true, std::move(*result));
+                        callback(true, true, WrapperBase(std::move(*result)));
                     }
                 }
                 catch (...) {
@@ -551,12 +553,12 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CFutureUid_Destroy(CFutureUid* self) {
+    SEDMANAGER_EXPORT void CFutureUID_Destroy(CFutureUID* self) {
         CFuture_Destroy(self);
     }
 
 
-    SEDMANAGER_EXPORT void CFutureUid_Start(CFutureUid* self, void (*callback)(bool, CUid)) {
+    SEDMANAGER_EXPORT void CFutureUID_Start(CFutureUID* self, void (*callback)(bool, CUID)) {
         CFuture_Start(self, callback);
     }
 
@@ -571,12 +573,12 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CStreamUid_Destroy(CStreamUid* self) {
+    SEDMANAGER_EXPORT void CStreamUID_Destroy(CStreamUID* self) {
         CStream_Destroy(self);
     }
 
 
-    SEDMANAGER_EXPORT void CStreamUid_Start(CStreamUid* self, void (*callback)(bool, bool, CUid)) {
+    SEDMANAGER_EXPORT void CStreamUID_Start(CStreamUID* self, void (*callback)(bool, bool, CUID)) {
         CStream_Start(self, callback);
     }
 
@@ -586,7 +588,7 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CStreamString_Start(CStreamString* self, void (*callback)(bool, bool, CEncryptedDevice*)) {
+    SEDMANAGER_EXPORT void CStreamString_Start(CStreamString* self, void (*callback)(bool, bool, CString*)) {
         CStream_Start(self, callback);
     }
 }

@@ -1,4 +1,4 @@
-#include <Archive/Types/ValueToJSON.hpp>
+#include <EncryptedDevice/ValueToJSON.hpp>
 #include <MockDevice/MockDevice.hpp>
 
 #include <EncryptedDevice/EncryptedDevice.hpp>
@@ -145,7 +145,7 @@ extern "C"
     SEDMANAGER_EXPORT void EncryptedDevice_Login(EncryptedDevice_CAPI* device,
                                                  void (*callback)(eStatusCode),
                                                  uint64_t securityProvider) {
-        auto wrapper = [=] { return device->handle->Login(securityProvider); };
+        auto wrapper = [=] { return device->handle->Login(UID(securityProvider)); };
         launch([](auto wrapper, auto callback) -> asyncpp::task<void> {
             try {
                 co_await wrapper();
@@ -180,7 +180,7 @@ extern "C"
                                                     uint64_t uid,
                                                     uint64_t securityProvider) {
         const auto& modules = device->handle->GetModules();
-        const auto maybeName = modules.FindName(uid, securityProvider != 0 ? std::optional(securityProvider) : std::nullopt);
+        const auto maybeName = modules.FindName(UID(uid), securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt);
         if (maybeName) {
             callback(eStatusCode::SUCCESS, AllocateString(*maybeName));
         }
@@ -195,9 +195,9 @@ extern "C"
                                                    const char* name,
                                                    uint64_t securityProvider) {
         const auto& modules = device->handle->GetModules();
-        const auto maybeUid = modules.FindUid(name, securityProvider != 0 ? std::optional(securityProvider) : std::nullopt);
+        const auto maybeUid = modules.FindUid(name, securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt);
         if (maybeUid) {
-            callback(eStatusCode::SUCCESS, *maybeUid);
+            callback(eStatusCode::SUCCESS, uint64_t(*maybeUid));
         }
         else {
             callback(eStatusCode::FAIL, 0);
@@ -208,12 +208,12 @@ extern "C"
     SEDMANAGER_EXPORT void EncryptedDevice_GetTableRows(EncryptedDevice_CAPI* device,
                                                         void (*callback)(eStatusCode, uint64_t),
                                                         uint64_t tableUid) {
-        auto wrapper = [=] { return device->handle->GetTableRows(tableUid); };
+        auto wrapper = [=] { return device->handle->GetTableRows(UID(tableUid)); };
         launch([](auto wrapper, auto callback) -> asyncpp::task<void> {
             try {
                 auto stream = wrapper();
                 while (const auto maybeRowUid = co_await stream) {
-                    callback(eStatusCode::SUCCESS, *maybeRowUid);
+                    callback(eStatusCode::SUCCESS, uint64_t(*maybeRowUid));
                 }
                 callback(eStatusCode::SUCCESS, 0);
             }
@@ -229,7 +229,7 @@ extern "C"
                                                            void (*callback)(eStatusCode, const char*),
                                                            uint64_t tableUid) {
         const auto& modules = device->handle->GetModules();
-        const auto maybeDesc = modules.FindTable(tableUid);
+        const auto maybeDesc = modules.FindTable(UID(tableUid));
         if (maybeDesc) {
             for (const auto& column : maybeDesc->columns) {
                 callback(eStatusCode::SUCCESS, AllocateString(column.name));
@@ -251,8 +251,8 @@ extern "C"
                                                            uint32_t column) {
         auto wrapper = [=]() -> asyncpp::task<std::string> {
             const auto& modules = device->handle->GetModules();
-            const auto maybeSpUid = securityProviderUid != 0 ? std::optional(securityProviderUid) : std::nullopt;
-            const auto maybeDesc = modules.FindTable(tableUid);
+            const auto maybeSpUid = securityProviderUid != 0 ? std::optional(UID(securityProviderUid)) : std::nullopt;
+            const auto maybeDesc = modules.FindTable(UID(tableUid));
             if (!maybeDesc) {
                 throw std::invalid_argument("could not find table description");
             }
@@ -260,8 +260,8 @@ extern "C"
                 throw std::invalid_argument("column out of range");
             }
             const auto& columnDesc = maybeDesc->columns[column];
-            const auto nameConverter = [&](Uid uid) { return modules.FindName(uid, maybeSpUid); };
-            const auto value = co_await device->handle->GetObjectColumn(objectUid, column);
+            const auto nameConverter = [&](UID uid) { return modules.FindName(uid, maybeSpUid); };
+            const auto value = co_await device->handle->GetObjectColumn(UID(objectUid), column);
             if (value.HasValue()) {
                 co_return ValueToJSON(value, columnDesc.type, nameConverter).dump();
             }
@@ -289,8 +289,8 @@ extern "C"
                                                            const char* jsonValue) {
         auto wrapper = [=]() -> asyncpp::task<void> {
             const auto& modules = device->handle->GetModules();
-            const auto maybeSpUid = securityProviderUid != 0 ? std::optional(securityProviderUid) : std::nullopt;
-            const auto maybeDesc = modules.FindTable(tableUid);
+            const auto maybeSpUid = securityProviderUid != 0 ? std::optional(UID(securityProviderUid)) : std::nullopt;
+            const auto maybeDesc = modules.FindTable(UID(tableUid));
             if (!maybeDesc) {
                 throw std::invalid_argument("could not find table description");
             }
@@ -300,7 +300,7 @@ extern "C"
             const auto& columnDesc = maybeDesc->columns[column];
             const auto nameConverter = [&](std::string_view name) { return modules.FindUid(name, maybeSpUid); };
             const auto value = JSONToValue(nlohmann::json::parse(jsonValue), columnDesc.type, nameConverter);
-            co_await device->handle->SetObjectColumn(objectUid, column, value);
+            co_await device->handle->SetObjectColumn(UID(objectUid), column, value);
         };
         launch([](auto wrapper, auto callback) -> asyncpp::task<void> {
             try {
