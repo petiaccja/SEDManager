@@ -348,7 +348,7 @@ void Interactive::RegisterCallbackGet() {
         const auto nameConverter = [this](UID uid) { return m_manager.GetModules().FindName(uid, m_currentSecurityProvider); };
         const auto tableDesc = Unwrap(m_manager.GetModules().FindTable(tableUid), "could not find table description");
         if (column < 0) {
-            const auto columnValues = m_manager.GetObjectColumns(tableUid, rowUid);
+            const auto columnValues = m_manager.GetObjectColumns(rowUid);
             const std::vector<std::string> outColumns = { "Column", "Value" };
             std::vector<std::vector<std::string>> outData;
             size_t idx = 0;

@@ -23,7 +23,7 @@ struct UID {
     explicit constexpr operator Integral() const noexcept { return static_cast<Integral>(value); }
 
     template <class Enum>
-        requires std::is_enum_v<Enum> && (sizeof(Enum) <= sizeof(uint64_t))
+        requires std::is_enum_v<Enum> && (sizeof(Enum) >= sizeof(uint64_t))
     explicit constexpr operator Enum() const noexcept { return static_cast<Enum>(value); }
 
     constexpr UID ToDescriptor() const {

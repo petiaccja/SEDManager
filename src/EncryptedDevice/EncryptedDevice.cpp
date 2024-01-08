@@ -103,8 +103,8 @@ asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
 }
 
 
-asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID table, UID object) {
-    const auto maybeTableDesc = GetModules().FindTable(table);
+asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID object) {
+    const auto maybeTableDesc = GetModules().FindTable(object.ContainingTable());
     if (!maybeTableDesc) {
         throw std::invalid_argument("could not find table description");
     }
