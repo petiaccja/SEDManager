@@ -1,4 +1,4 @@
-#include <Archive/Types/ValueToNative.hpp>
+#include <Messaging/Native.hpp>
 
 #include <algorithm>
 
@@ -18,34 +18,6 @@ TEST_CASE("value_cast: Value", "[ValueToNative]") {
     SECTION("native to Value") {
         const auto conv = value_cast(native);
         REQUIRE(conv == value);
-    }
-}
-
-
-TEST_CASE("value_cast: optional", "[ValueToNative]") {
-    SECTION("assigned") {
-        const Value value = uint32_t(37);
-        const std::optional native = uint32_t(37);
-        SECTION("Value to native") {
-            const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
-            REQUIRE(conv == native);
-        }
-        SECTION("native to Value") {
-            const auto conv = value_cast(native);
-            REQUIRE(conv == value);
-        }
-    }
-    SECTION("empty") {
-        const Value value;
-        const std::optional<int> native;
-        SECTION("Value to native") {
-            const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
-            REQUIRE(conv == native);
-        }
-        SECTION("native to Value") {
-            const auto conv = value_cast(native);
-            REQUIRE(conv == value);
-        }
     }
 }
 
@@ -94,7 +66,7 @@ TEST_CASE("value_cast: string_view", "[ValueToNative]") {
 
 TEST_CASE("value_cast: Uid", "[ValueToNative]") {
     const Value value = std::array{ 0_b, 0_b, 0_b, 0_b, 0xDE_b, 0xAD_b, 0xBE_b, 0xEF_b };
-    const auto native = Uid(0xDEADBEEF);
+    const auto native = UID(0xDEADBEEF);
     SECTION("Value to native") {
         const auto conv = value_cast<std::decay_t<decltype(native)>>(value);
         REQUIRE(conv == native);
@@ -114,7 +86,7 @@ TEST_CASE("value_cast: CellBlock", "[ValueToNative]") {
         Named{ uint16_t(4), uint32_t(40)                                                    },
     };
     const auto native = CellBlock{
-        .startRow = Uid(0xDEADBEEF),
+        .startRow = UID(0xDEADBEEF),
         .endRow = 20,
         .startColumn = 30,
         .endColumn = 40,
@@ -173,8 +145,8 @@ TEST_CASE("value_cast: unordered_map", "[ValueToNative]") {
     }
     SECTION("native to Value") {
         auto conv = value_cast(native);
-        std::ranges::sort(conv.GetList(), [](const Value& lhs, const Value& rhs) {
-            return lhs.GetNamed().name.Get<uint16_t>() < rhs.GetNamed().name.Get<uint16_t>();
+        std::ranges::sort(conv.Get<List>(), [](const Value& lhs, const Value& rhs) {
+            return lhs.Get<Named>().name.Get<uint16_t>() < rhs.Get<Named>().name.Get<uint16_t>();
         });
         REQUIRE(conv == value);
     }

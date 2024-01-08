@@ -6,15 +6,11 @@ target_sources(MockDevice
     PRIVATE
         MockDevice.cpp
         MockDevice.hpp
-        MockPreconfig.cpp
-        MockPreconfig.hpp
-        MockSession.cpp
-        MockSession.hpp
-        MockSecurityProvider.cpp
-        MockSecurityProvider.hpp
-        MockSetupLayer.cpp
-        MockSetupLayer.hpp
+        Preconfig.cpp
+        Preconfig.hpp
+        State.cpp
+        State.hpp
 )
 
 target_include_directories(MockDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(MockDevice TrustedPeripheral StorageDevice Specification Archive Data)
+target_link_libraries(MockDevice TrustedPeripheral StorageDevice Specification Archive Messaging)

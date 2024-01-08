@@ -1,5 +1,5 @@
 add_subdirectory(Archive)
-add_subdirectory(Data)
+add_subdirectory(Messaging)
 add_subdirectory(Error)
 add_subdirectory(Specification)
 add_subdirectory(StorageDevice)

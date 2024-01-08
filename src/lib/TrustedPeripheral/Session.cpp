@@ -3,11 +3,10 @@
 #include "Logging.hpp"
 #include <async++/join.hpp>
 
-#include <Archive/Conversion.hpp>
-#include <Archive/TokenDebugArchive.hpp>
-#include <Archive/Types/ValueToToken.hpp>
-#include <Data/ComPacket.hpp>
+#include <Archive/Serialization.hpp>
 #include <Error/Exception.hpp>
+#include <Messaging/ComPacket.hpp>
+#include <Messaging/TokenStream.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
 
@@ -17,9 +16,9 @@
 namespace sedmgr {
 
 Session::Session(std::shared_ptr<SessionManager> sessionManager,
-                 Uid securityProvider,
+                 UID securityProvider,
                  std::optional<std::span<const std::byte>> password,
-                 std::optional<Uid> authority)
+                 std::optional<UID> authority)
 
     : Session(join(Start(sessionManager, securityProvider, password, authority))) {
 }
@@ -36,8 +35,13 @@ Session::Session(std::shared_ptr<SessionManager> sessionManager,
 }
 
 
-Session& Session::operator=(Session&& rhs) {
-    join(End());
+Session& Session::operator=(Session&& rhs) noexcept {
+    try {
+        join(End());
+    }
+    catch (std::exception& ex) {
+        std::cerr << "error while closing session: " << ex.what() << std::endl;
+    }
     m_sessionManager = std::move(rhs.m_sessionManager);
     m_tperSessionNumber = rhs.m_tperSessionNumber;
     m_hostSessionNumber = rhs.m_hostSessionNumber;
@@ -46,14 +50,19 @@ Session& Session::operator=(Session&& rhs) {
 
 
 Session::~Session() {
-    join(End());
+    try {
+        join(End());
+    }
+    catch (std::exception& ex) {
+        std::cerr << "error while closing session: " << ex.what() << std::endl;
+    }
 }
 
 
 asyncpp::task<Session> Session::Start(std::shared_ptr<SessionManager> sessionManager,
-                                      Uid securityProvider,
+                                      UID securityProvider,
                                       std::optional<std::span<const std::byte>> password,
-                                      std::optional<Uid> authority) {
+                                      std::optional<UID> authority) {
     const auto hostSessionNumber = NewHostSessionNumber();
     const auto result = co_await sessionManager->StartSession(hostSessionNumber,
                                                               securityProvider,
@@ -111,73 +120,44 @@ namespace impl {
     }
 
 
-    asyncpp::task<MethodResult> Template::InvokeMethod(Uid invokingId, const Method& method) {
-        const std::string methodIdStr = GetModules().FindName(method.methodId).value_or(to_string(method.methodId));
-        try {
-            assert(m_sessionManager);
-
-            const auto request = MethodToValue(invokingId, method);
-            Log(std::format("Call '{}' [Session]", methodIdStr), request);
-            std::stringstream requestSs(std::ios::binary | std::ios::out);
-            TokenBinaryOutputArchive requestAr(requestSs);
-            save_strip_list(requestAr, request);
-            const auto requestBytes = std::as_bytes(std::span(requestSs.view()));
-            const auto requestPacket = CreatePacket({ requestBytes.begin(), requestBytes.end() });
-            const auto responsePacket = co_await m_sessionManager->GetTrustedPeripheral()->SendPacket(PROTOCOL, requestPacket);
-            const auto responseBytes = UnwrapPacket(responsePacket);
-            Value response;
-            FromTokens(responseBytes, response);
-            Log(std::format("Result '{}' [Session]", methodIdStr), response);
-
-            MethodResult result = MethodResultFromValue(response);
-            MethodStatusToException(methodIdStr, result.status);
-            co_return result;
-        }
-        catch (InvocationError&) {
-            throw;
-        }
-        catch (std::exception& ex) {
-            throw InvocationError(methodIdStr, ex.what());
-        }
-    };
-
-
-    ComPacket Template::CreatePacket(std::vector<std::byte> payload) {
-        return m_sessionManager->CreatePacket(std::move(payload), m_tperSessionNumber, m_hostSessionNumber);
+    CallContext Template::GetCallContext(UID invokingId) const {
+        auto callRemoteMethod = [tper = m_sessionManager->GetTrustedPeripheral(),
+                                 tsn = m_tperSessionNumber,
+                                 hsn = m_hostSessionNumber](MethodCall call) -> asyncpp::task<MethodResult> {
+            co_return co_await CallRemoteMethod(tper, PROTOCOL, tsn, hsn, std::move(call));
+        };
+        auto getMethodName = [tper = m_sessionManager->GetTrustedPeripheral()](UID methodId) {
+            const auto maybeMethodName = tper->GetModules().FindName(methodId);
+            return maybeMethodName.value_or(methodId.ToString());
+        };
+        return CallContext{ .invokingId = invokingId, .callRemoteMethod = callRemoteMethod, .getMethodName = getMethodName };
     }
 
-
-    std::span<const std::byte> Template::UnwrapPacket(const ComPacket& packet) {
-        return m_sessionManager->UnwrapPacket(packet);
-    }
 
     //------------------------------------------------------------------------------
     // Base template
     //------------------------------------------------------------------------------
 
 
-    asyncpp::task<std::vector<Value>> BaseTemplate::Get(Uid object, uint32_t startColumn, uint32_t endColumn) {
+    asyncpp::task<std::vector<Value>> BaseTemplate::Get(UID object, uint32_t startColumn, uint32_t endColumn) {
         CellBlock cellBlock{
             .startColumn = startColumn,
             .endColumn = endColumn - 1,
         };
-        auto [nameValuePairs] = co_await InvokeMethod<std::tuple<std::vector<Value>>>(object, core::eMethod::Get, cellBlock);
+        auto [labeledValues] = co_await getMethod(GetCallContext(object), ConvertArg(cellBlock));
         std::vector<Value> values(endColumn - startColumn);
-        for (auto& nvp : nameValuePairs) {
-            const auto idx = nvp.GetNamed().name.Get<size_t>();
+        for (auto& nvp : labeledValues.Get<List>()) {
+            const auto idx = nvp.Get<Named>().name.Get<size_t>();
             if (size_t(idx - startColumn) > values.size()) {
                 throw InvalidResponseError("Get", "too many columns");
             }
-            values[idx - startColumn] = nvp.GetNamed().value;
+            values[idx - startColumn] = nvp.Get<Named>().value;
         }
-        std::ranges::transform(nameValuePairs, std::back_inserter(values), [](Value& value) {
-            return std::move(value.GetNamed().value);
-        });
         co_return values;
     }
 
 
-    asyncpp::task<Value> BaseTemplate::Get(Uid object, uint32_t column) {
+    asyncpp::task<Value> BaseTemplate::Get(UID object, uint32_t column) {
         auto values = co_await Get(object, column, column + 1);
         if (values.empty()) {
             throw InvalidResponseError("Get", "zero columns");
@@ -186,30 +166,33 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Set(Uid object, std::span<const uint32_t> columns, std::span<const Value> values) {
-        const std::optional<Uid> rowAddress = std::nullopt; // Must be omitted for objects.
-        std::optional<std::vector<Value>> namedValuePairs = std::vector<Value>();
+    asyncpp::task<void> BaseTemplate::Set(UID object, std::span<const uint32_t> columns, std::span<const Value> values) {
+        std::vector<Value> labeledValues;
         for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
              colIt != columns.end() && valIt != values.end();
              ++colIt, ++valIt) {
-            namedValuePairs.value().emplace_back(Named{ *colIt, *valIt });
+            labeledValues.emplace_back(Named{ *colIt, *valIt });
         }
-        co_await InvokeMethod(object, core::eMethod::Set, rowAddress, namedValuePairs);
+        co_await setMethod(GetCallContext(object), std::nullopt, ConvertArg(labeledValues));
     }
 
 
-    asyncpp::task<void> BaseTemplate::Set(Uid object, uint32_t column, const Value& value) {
+    asyncpp::task<void> BaseTemplate::Set(UID object, uint32_t column, const Value& value) {
         co_await Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
     }
 
 
-    asyncpp::task<std::vector<Uid>> BaseTemplate::Next(Uid table, std::optional<Uid> row, uint32_t count) {
-        auto [nexts] = co_await InvokeMethod<std::tuple<std::vector<Uid>>>(table, core::eMethod::Next, row, std::optional(count));
-        co_return nexts;
+    asyncpp::task<std::vector<UID>> BaseTemplate::Next(UID table, std::optional<UID> row, uint32_t count) {
+        auto [results] = co_await nextMethod(GetCallContext(table), ConvertArg(row), ConvertArg(count));
+        std::vector<UID> nextUids;
+        std::ranges::transform(results.Get<List>(), std::back_inserter(nextUids), [](const auto& value) -> UID {
+            return ConvertResult(value);
+        });
+        co_return nextUids;
     }
 
 
-    asyncpp::task<std::optional<Uid>> BaseTemplate::Next(Uid table, std::optional<Uid> row) {
+    asyncpp::task<std::optional<UID>> BaseTemplate::Next(UID table, std::optional<UID> row) {
         const auto nexts = co_await Next(table, row, 1);
         if (!nexts.empty()) {
             co_return nexts[0];
@@ -218,8 +201,8 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Authenticate(Uid authority, std::optional<std::span<const std::byte>> proof) {
-        auto [result] = co_await InvokeMethod<std::tuple<Value>>(THIS_SP, core::eMethod::Authenticate, authority, proof);
+    asyncpp::task<void> BaseTemplate::Authenticate(UID authority, std::optional<std::span<const std::byte>> proof) {
+        auto [result] = co_await authenticateMethod(GetCallContext(THIS_SP), ConvertArg(authority), ConvertArg(proof));
         if (result.IsInteger()) {
             const auto success = result.Get<uint8_t>();
             if (!success) {
@@ -232,8 +215,8 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::GenKey(Uid object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
-        co_await InvokeMethod(object, core::eMethod::GenKey, publicExponent, pinLength);
+    asyncpp::task<void> BaseTemplate::GenKey(UID object, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) {
+        co_await genKeyMethod(GetCallContext(object), ConvertArg(publicExponent), ConvertArg(pinLength));
     }
 
 
@@ -241,13 +224,13 @@ namespace impl {
     // Base template
     //------------------------------------------------------------------------------
 
-    asyncpp::task<void> OpalTemplate::Revert(Uid securityProvider) {
-        co_await InvokeMethod(securityProvider, opal::eMethod::Revert);
+    asyncpp::task<void> OpalTemplate::Revert(UID securityProvider) {
+        co_await revertMethod(GetCallContext(securityProvider));
     }
 
 
-    asyncpp::task<void> OpalTemplate::Activate(Uid securityProvider) {
-        co_await InvokeMethod(securityProvider, opal::eMethod::Activate);
+    asyncpp::task<void> OpalTemplate::Activate(UID securityProvider) {
+        co_await activateMethod(GetCallContext(securityProvider));
     }
 
 

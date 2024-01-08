@@ -1,12 +1,22 @@
-add_library(SEDManager)
+add_library(EncryptedDevice)
 
-target_compile_features(SEDManager PRIVATE cxx_std_20)
+target_compile_features(EncryptedDevice PRIVATE cxx_std_20)
 
-target_sources(SEDManager
+target_sources(EncryptedDevice
     PRIVATE
         EncryptedDevice.cpp
         EncryptedDevice.hpp
 )
 
-target_include_directories(SEDManager INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
-target_link_libraries(SEDManager TrustedPeripheral)
+# TODO: ValueToJSON is only used by CLI and C API, it does not belong here.
+target_sources(EncryptedDevice
+    PRIVATE
+        ValueToJSON.cpp
+        ValueToJSON.hpp
+)
+
+target_include_directories(EncryptedDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
+target_link_libraries(EncryptedDevice TrustedPeripheral)
+
+find_package(nlohmann_json)
+target_link_libraries(EncryptedDevice nlohmann_json::nlohmann_json)

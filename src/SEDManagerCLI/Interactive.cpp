@@ -3,9 +3,8 @@
 #include "Utility.hpp"
 #include <async++/join.hpp>
 
-#include <Archive/Types/ValueToJSON.hpp>
-
 #include <CLI/App.hpp>
+#include <EncryptedDevice/ValueToJSON.hpp>
 
 #include <iostream>
 #include <ostream>
@@ -53,12 +52,12 @@ Interactive::Interactive(EncryptedDevice& manager) : m_manager(manager) {
 }
 
 
-std::optional<Uid> Interactive::GetCurrentSecurityProvider() const {
+std::optional<UID> Interactive::GetCurrentSecurityProvider() const {
     return m_currentSecurityProvider;
 }
 
 
-std::unordered_set<Uid> Interactive::GetCurrentAuthorities() const {
+std::unordered_set<UID> Interactive::GetCurrentAuthorities() const {
     return m_currentAuthorities;
 }
 
@@ -88,7 +87,7 @@ void Interactive::ClearCurrents() {
 }
 
 
-auto Interactive::ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<Uid, Uid, int32_t>> {
+auto Interactive::ParseGetSet(std::string rowName, int32_t column) const -> std::optional<std::tuple<UID, UID, int32_t>> {
     const auto& rowNameSections = SplitName(rowName);
     if (rowNameSections.size() != 2) {
         throw std::invalid_argument("specify object as 'Table::Object'");
@@ -97,8 +96,8 @@ auto Interactive::ParseGetSet(std::string rowName, int32_t column) const -> std:
     const auto tableUid = Unwrap(ParseObjectRef(m_manager, rowNameSections[0], m_currentSecurityProvider), "cannot find table");
     const auto maybeRowUid = ParseObjectRef(m_manager, rowName, m_currentSecurityProvider)
                                  .value_or(ParseObjectRef(m_manager, rowNameSections[1], m_currentSecurityProvider)
-                                               .value_or(0));
-    if (maybeRowUid == Uid(0)) {
+                                               .value_or(0_uid));
+    if (maybeRowUid == UID(0)) {
         throw std::invalid_argument("cannot find object");
     }
     auto copy = column;
@@ -286,7 +285,7 @@ void Interactive::RegisterCallbackFind() {
     cmd->callback([this] {
         const auto objectUid = Unwrap(ParseObjectRef(m_manager, objectName, m_currentSecurityProvider), "cannot find object");
         const auto maybeName = m_manager.GetModules().FindName(objectUid, m_currentSecurityProvider);
-        std::cout << "UID:  " << to_string(objectUid) << std::endl;
+        std::cout << "UID:  " << objectUid.ToString() << std::endl;
         std::cout << "Name: " << maybeName.value_or("<not found>") << std::endl;
     });
 }
@@ -304,7 +303,7 @@ void Interactive::RegisterCallbackRows() {
         const std::vector<std::string> columnNames = { "UID", "Name" };
         std::vector<std::vector<std::string>> rows;
         while (const auto row = join(rowStream)) {
-            rows.push_back({ to_string(*row), m_manager.GetModules().FindName(*row, m_currentSecurityProvider).value_or("") });
+            rows.push_back({ row->ToString(), m_manager.GetModules().FindName(*row, m_currentSecurityProvider).value_or("") });
         }
         std::cout << FormatTable(columnNames, rows);
     });
@@ -346,7 +345,7 @@ void Interactive::RegisterCallbackGet() {
             return;
         }
         const auto& [tableUid, rowUid, column] = *parsed;
-        const auto nameConverter = [this](Uid uid) { return m_manager.GetModules().FindName(uid, m_currentSecurityProvider); };
+        const auto nameConverter = [this](UID uid) { return m_manager.GetModules().FindName(uid, m_currentSecurityProvider); };
         const auto tableDesc = Unwrap(m_manager.GetModules().FindTable(tableUid), "could not find table description");
         if (column < 0) {
             const auto columnValues = m_manager.GetObjectColumns(tableUid, rowUid);
@@ -424,7 +423,7 @@ void Interactive::RegisterCallbackPasswd() {
         const auto authTable = Unwrap(ParseObjectRef(m_manager, "Authority", m_currentSecurityProvider), "cannot find Authority table");
         const auto cPinTable = Unwrap(ParseObjectRef(m_manager, "C_PIN", m_currentSecurityProvider), "cannot find C_PIN table");
         const auto authUid = Unwrap(ParseObjectRef(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
-        const auto credentialUid = value_cast<Uid>(join(m_manager.GetObjectColumn(authUid, 10)));
+        const auto credentialUid = value_cast<UID>(join(m_manager.GetObjectColumn(authUid, 10)));
         const std::vector<std::byte> password = GetPassword("New password: ");
         const std::vector<std::byte> passwordAgain = GetPassword("Retype password: ");
         if (password != passwordAgain) {

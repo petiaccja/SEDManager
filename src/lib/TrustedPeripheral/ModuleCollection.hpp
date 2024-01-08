@@ -9,10 +9,10 @@ class ModuleCollection {
 public:
     void Load(std::shared_ptr<Module> mod);
 
-    std::optional<std::string> FindName(Uid uid, std::optional<Uid> sp = {}) const;
-    std::optional<Uid> FindUid(std::string_view name, std::optional<Uid> sp = {}) const;
-    std::optional<TableDesc> FindTable(Uid table) const;
-    std::optional<Type> FindType(Uid uid) const;
+    std::optional<std::string> FindName(UID uid, std::optional<UID> sp = {}) const;
+    std::optional<UID> FindUid(std::string_view name, std::optional<UID> sp = {}) const;
+    std::optional<TableDesc> FindTable(UID table) const;
+    std::optional<Type> FindType(UID uid) const;
 
     auto begin() { return m_modules.begin(); }
     auto begin() const { return m_modules.begin(); }

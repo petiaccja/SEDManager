@@ -2,7 +2,7 @@
 
 #include "TableDesc.hpp"
 
-#include <Data/NativeTypes.hpp>
+#include <Messaging/Native.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -17,7 +17,7 @@ namespace sedmgr {
 struct ColumnDescStatic {
     std::string_view name;
     bool isUnique;
-    const Uid type;
+    const UID type;
 };
 
 
@@ -25,32 +25,22 @@ struct TableDescStatic {
     std::string_view name;
     eTableKind kind;
     std::span<const ColumnDescStatic> columns = {};
-    std::optional<Uid> singleRow = std::nullopt;
+    std::optional<UID> singleRow = std::nullopt;
 };
-
-
-constexpr Uid TableToDescriptor(Uid table) {
-    return (uint64_t(table) >> 32) | (1ull << 32);
-}
-
-
-constexpr Uid DescriptorToTable(Uid descriptor) {
-    return uint64_t(descriptor) << 32;
-}
 
 
 class NameSequence {
 public:
-    constexpr NameSequence(Uid base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
+    constexpr NameSequence(UID base, uint64_t start, uint64_t count, std::format_string<uint64_t> format)
         : base(base), start(start), count(count), format(format) {
         assert(format.get().find("{}") != format.get().npos);
     }
 
-    std::optional<std::string> Find(Uid uid) const;
-    std::optional<Uid> Find(std::string_view name) const;
+    std::optional<std::string> Find(UID uid) const;
+    std::optional<UID> Find(std::string_view name) const;
 
 private:
-    Uid base;
+    UID base;
     uint64_t start;
     uint64_t count;
     std::format_string<uint64_t> format;
@@ -59,16 +49,16 @@ private:
 
 class NameAndUidFinder {
 public:
-    template <class PairRanges = std::initializer_list<std::initializer_list<std::pair<Uid, std::string_view>>>,
+    template <class PairRanges = std::initializer_list<std::initializer_list<std::pair<UID, std::string_view>>>,
               class SequenceRanges = std::initializer_list<NameSequence>>
     NameAndUidFinder(PairRanges&& pairs, SequenceRanges&& sequences);
 
-    std::optional<std::string> Find(Uid uid) const;
-    std::optional<Uid> Find(std::string_view name) const;
+    std::optional<std::string> Find(UID uid) const;
+    std::optional<UID> Find(std::string_view name) const;
 
 private:
-    std::unordered_map<Uid, std::string_view> m_uidToName;
-    std::unordered_map<std::string_view, Uid> m_nameToUid;
+    std::unordered_map<UID, std::string_view> m_uidToName;
+    std::unordered_map<std::string_view, UID> m_nameToUid;
     std::vector<NameSequence> m_sequences;
 };
 
@@ -81,7 +71,7 @@ NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequ
             const auto [it1, ins1] = m_uidToName.insert({ pair.first, pair.second });
             const auto [it2, ins2] = m_nameToUid.insert({ pair.second, pair.first });
             if (!ins1) {
-                throw std::invalid_argument(std::format("all UIDs must be unique, duplicate: {}", to_string(pair.first)));
+                throw std::invalid_argument(std::format("all UIDs must be unique, duplicate: {}", pair.first.ToString()));
             }
             if (!ins2) {
                 throw std::invalid_argument(std::format("all names must be unique, duplicate: {}", pair.second));
@@ -96,13 +86,13 @@ NameAndUidFinder::NameAndUidFinder(PairRanges&& pairRanges, SequenceRange&& sequ
 
 class SPNameAndUidFinder {
 public:
-    SPNameAndUidFinder(std::unordered_map<Uid, NameAndUidFinder> finders) : m_finders(std::move(finders)) {}
+    SPNameAndUidFinder(std::unordered_map<UID, NameAndUidFinder> finders) : m_finders(std::move(finders)) {}
 
-    std::optional<std::string> Find(Uid uid, Uid sp) const;
-    std::optional<Uid> Find(std::string_view name, Uid sp) const;
+    std::optional<std::string> Find(UID uid, UID sp) const;
+    std::optional<UID> Find(std::string_view name, UID sp) const;
 
 private:
-    std::unordered_map<Uid, NameAndUidFinder> m_finders;
+    std::unordered_map<UID, NameAndUidFinder> m_finders;
 };
 
 } // namespace sedmgr

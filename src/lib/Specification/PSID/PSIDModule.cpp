@@ -9,11 +9,11 @@ namespace sedmgr {
 
 namespace {
 
-    constexpr std::initializer_list<std::pair<Uid, std::string_view>> names = {
-        {0x0000'0009'0001'FF01,  "Authority::PSID"          },
-        { 0x0000'000B'0001'FF01, "C_PIN::PSID"              },
-        { 0x0000'0008'0001'00E1, "ACE::C_PIN_Get_PSID_NoPIN"},
-        { 0x0000'0008'0001'00E0, "ACE::SP_PSID"             },
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> names = {
+        {0x0000'0009'0001'FF01_uid,  "Authority::PSID"          },
+        { 0x0000'000B'0001'FF01_uid, "C_PIN::PSID"              },
+        { 0x0000'0008'0001'00E1_uid, "ACE::C_PIN_Get_PSID_NoPIN"},
+        { 0x0000'0008'0001'00E0_uid, "ACE::SP_PSID"             },
     };
 
     const NameAndUidFinder& GetFinder() {
@@ -40,12 +40,12 @@ eModuleKind PSIDModule::ModuleKind() const {
 }
 
 
-std::optional<std::string> PSIDModule::FindName(Uid uid, std::optional<Uid>) const {
+std::optional<std::string> PSIDModule::FindName(UID uid, std::optional<UID>) const {
     return GetFinder().Find(uid);
 }
 
 
-std::optional<Uid> PSIDModule::FindUid(std::string_view name, std::optional<Uid>) const {
+std::optional<UID> PSIDModule::FindUid(std::string_view name, std::optional<UID>) const {
     return GetFinder().Find(name);
 }
 

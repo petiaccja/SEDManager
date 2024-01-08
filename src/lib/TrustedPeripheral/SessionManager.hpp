@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Method.hpp"
+#include "MethodUtils.hpp"
 #include "TrustedPeripheral.hpp"
 #include <async++/task.hpp>
 
-#include <Error/Exception.hpp>
+#include <Specification/Core/Defs/UIDs.hpp>
 
 #include <vector>
 
@@ -42,12 +42,12 @@ public:
 
     asyncpp::task<StartSessionResult> StartSession(
         uint32_t hostSessionID,
-        Uid spId,
+        UID spId,
         bool write,
         std::optional<std::span<const std::byte>> hostChallenge = {},
-        std::optional<Uid> hostExchangeAuthority = {},
+        std::optional<UID> hostExchangeAuthority = {},
         std::optional<std::span<const std::byte>> hostExchangeCert = {},
-        std::optional<Uid> hostSigningAuthority = {},
+        std::optional<UID> hostSigningAuthority = {},
         std::optional<std::span<const std::byte>> hostSigningCert = {},
         std::optional<uint32_t> sessionTimeout = {},
         std::optional<uint32_t> transTimeout = {},
@@ -59,37 +59,18 @@ public:
     std::shared_ptr<TrustedPeripheral> GetTrustedPeripheral();
     std::shared_ptr<const TrustedPeripheral> GetTrustedPeripheral() const;
 
-    ComPacket CreatePacket(std::vector<std::byte> payload, uint32_t tperSessionNumber = 0, uint32_t hostSessionNumber = 0);
-    static std::span<const std::byte> UnwrapPacket(const ComPacket& packet);
-
 private:
-    asyncpp::task<Method> InvokeMethod(const Method& method);
-
-    template <class OutArgs, class... InArgs>
-    asyncpp::task<OutArgs> InvokeMethod(Uid methodId, const InArgs&... inArgs);
-
     const ModuleCollection& GetModules() const;
+    CallContext GetCallContext() const;
 
 private:
-    static constexpr Uid INVOKING_ID = 0xFF;
+    static constexpr UID INVOKING_ID = 0xFF_uid;
     static constexpr uint8_t PROTOCOL = 0x01;
+    static constexpr auto propertiesMethod = Method<UID(core::eMethod::Properties), 0, 1, 1, 1>{};
+    static constexpr auto startSessionMethod = Method<UID(core::eMethod::StartSession), 3, 9, 2, 6>{};
+
     std::shared_ptr<TrustedPeripheral> m_tper;
 };
 
-
-template <class OutArgs, class... InArgs>
-asyncpp::task<OutArgs> SessionManager::InvokeMethod(Uid methodId, const InArgs&... inArgs) {
-    std::vector<Value> args = ArgsToValues(inArgs...);
-    const Method result = co_await InvokeMethod(Method{ .methodId = methodId, .args = std::move(args) });
-
-    OutArgs outArgs;
-    try {
-        std::apply([&result](auto&... outArgs) { ArgsFromValues(result.args, outArgs...); }, outArgs);
-    }
-    catch (std::exception& ex) {
-        throw InvalidResponseError(GetModules().FindName(methodId).value_or(to_string(methodId)), ex.what());
-    }
-    co_return outArgs;
-}
 
 } // namespace sedmgr
