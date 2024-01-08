@@ -109,7 +109,11 @@ namespace impl {
                 const auto id = named.name.Get<uint16_t>();
                 switch (id) {
                     case 0: break; // Table name
-                    case 1: parsed.startRow = named.value.IsInteger() ? value_cast<uint32_t>(named.value) : value_cast<UID>(named.value); break;
+                    case 1:
+                        parsed.startRow = named.value.IsInteger()
+                                              ? decltype(parsed.startRow)(value_cast<uint32_t>(named.value))
+                                              : decltype(parsed.startRow)(value_cast<UID>(named.value));
+                        break;
                     case 2: parsed.endRow = named.value.HasValue() ? std::optional(named.value.Get<uint32_t>()) : std::optional<uint32_t>{}; break;
                     case 3: parsed.startColumn = named.value.Get<uint32_t>(); break;
                     case 4: parsed.endColumn = named.value.Get<uint32_t>(); break;

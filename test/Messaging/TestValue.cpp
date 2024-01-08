@@ -146,17 +146,29 @@ TEST_CASE("Value: tokenize command", "[Value]") {
 
 
 TEST_CASE("Value: tokenize integer", "[Value]") {
-    const auto value = uint16_t(0xFECE);
-    const std::vector<Token> tokens = {
-        {.tag = eTag::SHORT_ATOM, .isByte = false, .isSigned = false, .data = { 0xFE_b, 0xCE_b }},
-    };
-    SECTION("Value to native") {
-        const auto conv = Tokenize(value);
-        REQUIRE(conv == tokens);
+    SECTION("all bytes present") {
+        const auto value = uint16_t(0xFECE);
+        const std::vector<Token> tokens = {
+            {.tag = eTag::SHORT_ATOM, .isByte = false, .isSigned = false, .data = { 0xFE_b, 0xCE_b }},
+        };
+        SECTION("Value to native") {
+            const auto conv = Tokenize(value);
+            REQUIRE(conv == tokens);
+        }
+        SECTION("native to Value") {
+            const auto [conv, rest] = DeTokenize(Tokenized<uint16_t>{ tokens });
+            REQUIRE(conv == value);
+        }
     }
-    SECTION("native to Value") {
-        const auto [conv, rest] = DeTokenize(Tokenized<uint16_t>{ tokens });
-        REQUIRE(conv == value);
+    SECTION("only LSB's present") {
+        const auto value = uint32_t(0x00DEFECE);
+        const std::vector<Token> tokens = {
+            {.tag = eTag::SHORT_ATOM, .isByte = false, .isSigned = false, .data = { 0xDE_b, 0xFE_b, 0xCE_b }},
+        };
+        SECTION("native to Value") {
+            const auto [conv, rest] = DeTokenize(Tokenized<uint32_t>{ tokens });
+            REQUIRE(conv == value);
+        }
     }
 }
 

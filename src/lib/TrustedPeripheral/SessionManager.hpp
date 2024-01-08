@@ -64,7 +64,7 @@ private:
     CallContext GetCallContext() const;
 
 private:
-    static constexpr UID INVOKING_ID = 0xFF;
+    static constexpr UID INVOKING_ID = 0xFF_uid;
     static constexpr uint8_t PROTOCOL = 0x01;
     static constexpr auto propertiesMethod = Method<UID(core::eMethod::Properties), 0, 1, 1, 1>{};
     static constexpr auto startSessionMethod = Method<UID(core::eMethod::StartSession), 3, 9, 2, 6>{};

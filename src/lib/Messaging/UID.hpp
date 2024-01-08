@@ -8,23 +8,23 @@
 namespace sedmgr {
 
 struct UID {
-    UID() = default;
+    UID() : value(0) {}
 
     template <std::integral Integral>
         requires(sizeof(Integral) <= sizeof(uint64_t))
-    constexpr UID(Integral value) noexcept : value(value) {}
+    explicit constexpr UID(Integral value) noexcept : value(value) {}
 
     template <class Enum>
         requires std::is_enum_v<Enum> && (sizeof(Enum) <= sizeof(uint64_t))
-    constexpr UID(Enum value) noexcept : value(static_cast<uint64_t>(value)) {}
+    explicit constexpr UID(Enum value) noexcept : value(static_cast<uint64_t>(value)) {}
 
     template <std::integral Integral>
         requires(sizeof(Integral) >= sizeof(uint64_t))
-    constexpr operator Integral() const noexcept { return static_cast<Integral>(value); }
+    explicit constexpr operator Integral() const noexcept { return static_cast<Integral>(value); }
 
     template <class Enum>
         requires std::is_enum_v<Enum> && (sizeof(Enum) <= sizeof(uint64_t))
-    constexpr operator Enum() const noexcept { return static_cast<Enum>(value); }
+    explicit constexpr operator Enum() const noexcept { return static_cast<Enum>(value); }
 
     constexpr UID ToDescriptor() const {
         if (!IsTable()) {
@@ -95,7 +95,7 @@ namespace std {
 template <>
 struct hash<sedmgr::UID> {
     auto operator()(const sedmgr::UID& uid) const {
-        return std::hash<uint64_t>()(uid);
+        return std::hash<uint64_t>()(uid.value);
     }
 };
 

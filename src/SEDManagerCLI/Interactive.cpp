@@ -96,7 +96,7 @@ auto Interactive::ParseGetSet(std::string rowName, int32_t column) const -> std:
     const auto tableUid = Unwrap(ParseObjectRef(m_manager, rowNameSections[0], m_currentSecurityProvider), "cannot find table");
     const auto maybeRowUid = ParseObjectRef(m_manager, rowName, m_currentSecurityProvider)
                                  .value_or(ParseObjectRef(m_manager, rowNameSections[1], m_currentSecurityProvider)
-                                               .value_or(0));
+                                               .value_or(0_uid));
     if (maybeRowUid == UID(0)) {
         throw std::invalid_argument("cannot find object");
     }

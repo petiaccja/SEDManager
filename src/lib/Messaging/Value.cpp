@@ -223,7 +223,11 @@ std::pair<Value, std::span<const Token>> DeTokenize(Tokenized<Value> tokens) {
                 switch (leading.data.size()) {
                     case 1: return DeTokenize(Tokenized<int8_t>{ tokens.tokens });
                     case 2: return DeTokenize(Tokenized<int16_t>{ tokens.tokens });
+                    case 3: [[fallthrough]];
                     case 4: return DeTokenize(Tokenized<int32_t>{ tokens.tokens });
+                    case 5: [[fallthrough]];
+                    case 6: [[fallthrough]];
+                    case 7: [[fallthrough]];
                     case 8: return DeTokenize(Tokenized<int64_t>{ tokens.tokens });
                     default: throw std::invalid_argument("invalid integer type");
                 }
@@ -232,7 +236,11 @@ std::pair<Value, std::span<const Token>> DeTokenize(Tokenized<Value> tokens) {
                 switch (leading.data.size()) {
                     case 1: return DeTokenize(Tokenized<uint8_t>{ tokens.tokens });
                     case 2: return DeTokenize(Tokenized<uint16_t>{ tokens.tokens });
+                    case 3: [[fallthrough]];
                     case 4: return DeTokenize(Tokenized<uint32_t>{ tokens.tokens });
+                    case 5: [[fallthrough]];
+                    case 6: [[fallthrough]];
+                    case 7: [[fallthrough]];
                     case 8: return DeTokenize(Tokenized<uint64_t>{ tokens.tokens });
                     default: throw std::invalid_argument("invalid integer type");
                 }

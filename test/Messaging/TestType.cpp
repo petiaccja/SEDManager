@@ -7,14 +7,14 @@ using namespace sedmgr;
 
 
 TEST_CASE("Type: identified types", "[Type]") {
-    const Type type = IdentifiedType<IntegerType, 754>(4, false);
+    const Type type = IdentifiedType<IntegerType, 754_uid>(4, false);
     REQUIRE(type_isa<IntegerType>(type));
     REQUIRE(type_uid(type) == UID(754));
 }
 
 
 TEST_CASE("Type: type_cast", "[Type]") {
-    const Type type = IdentifiedType<IntegerType, 754>(4, false);
+    const Type type = IdentifiedType<IntegerType, 754_uid>(4, false);
     REQUIRE(type_cast<IntegerType>(type).Width() == 4);
     REQUIRE(type_cast<IntegerType>(type).Signedness() == false);
 }
@@ -66,15 +66,15 @@ TEST_CASE("Type: type_isa", "[Type]") {
         REQUIRE(type_isa<SetType>(type));
     }
     SECTION("RestrictedReferenceType") {
-        const Type type = RestrictedReferenceType(0x01);
+        const Type type = RestrictedReferenceType(0x01_uid);
         REQUIRE(type_isa<RestrictedReferenceType>(type));
     }
     SECTION("RestrictedByteReferenceType") {
-        const Type type = RestrictedByteReferenceType(0x01);
+        const Type type = RestrictedByteReferenceType(0x01_uid);
         REQUIRE(type_isa<RestrictedByteReferenceType>(type));
     }
     SECTION("RestrictedObjectReferenceType") {
-        const Type type = RestrictedObjectReferenceType(0x01);
+        const Type type = RestrictedObjectReferenceType(0x01_uid);
         REQUIRE(type_isa<RestrictedObjectReferenceType>(type));
     }
     SECTION("GeneralReferenceType") {

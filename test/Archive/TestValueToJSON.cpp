@@ -191,7 +191,7 @@ TEST_CASE("ValueToJSON: ReferenceType names", "[ValueToJSON]") {
 
 
 TEST_CASE("ValueToJSON: RestrictedReferenceType", "[ValueToJSON]") {
-    const Type type = RestrictedReferenceType(0x201);
+    const Type type = RestrictedReferenceType(0x201_uid);
     const Value value = Serialize(0x1234'5678'9876'5432_uid);
     const nlohmann::json json = "ref:1234'5678'9876'5432";
 

@@ -6,7 +6,6 @@
 #include <Error/Exception.hpp>
 #include <Messaging/TokenStream.hpp>
 #include <Messaging/Value.hpp>
-#include <Specification/Common/Utility.hpp>
 #include <Specification/Core/CoreModule.hpp>
 
 
@@ -361,12 +360,12 @@ namespace mock {
         switch (core::eMethod(call.methodId)) {
             case core::eMethod::Properties: {
                 const auto result = CallMethod(call, &SessionLayerHandler::Properties, propertiesMethod);
-                reply = MethodCall(0xFF, core::eMethod::Properties, result.values, result.status);
+                reply = MethodCall(0xFF_uid, UID(core::eMethod::Properties), result.values, result.status);
                 break;
             }
             case core::eMethod::StartSession: {
                 const auto result = CallMethod(call, &SessionLayerHandler::StartSession, startSessionMethod);
-                reply = MethodCall(0xFF, core::eMethod::SyncSession, result.values, result.status);
+                reply = MethodCall(0xFF_uid, UID(core::eMethod::SyncSession), result.values, result.status);
                 break;
             }
             default: reply = std::nullopt; break;

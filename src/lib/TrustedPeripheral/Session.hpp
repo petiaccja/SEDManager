@@ -24,7 +24,7 @@ namespace impl {
         CallContext GetCallContext(UID invokingId) const;
 
     protected:
-        static constexpr UID THIS_SP = 0x0000'0000'0000'0001;
+        static constexpr auto THIS_SP = 0x0000'0000'0000'0001_uid;
 
     private:
         std::shared_ptr<SessionManager> m_sessionManager = nullptr;

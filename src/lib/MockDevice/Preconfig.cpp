@@ -18,13 +18,13 @@ namespace mock {
 
         const auto tables = {
             Table(
-                core::eTable::Table,
+                UID(core::eTable::Table),
                 {
                     Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
                     Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }),
                 }),
             Table(
-                core::eTable::SP,
+                UID(core::eTable::SP),
                 {
                     Object(adminSpUid, { value_cast("Admin"sv), {}, {}, {}, {}, 0, false }),
                     Object(lockingSpUid, { value_cast("Locking"sv), {}, {}, {}, {}, 0, false }),

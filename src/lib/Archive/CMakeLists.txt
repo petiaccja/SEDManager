@@ -11,5 +11,4 @@ target_sources(Archive
 
 target_include_directories(Archive INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 find_package(cereal REQUIRED)
-find_package(nlohmann_json REQUIRED)
-target_link_libraries(Archive Error cereal::cereal nlohmann_json::nlohmann_json)
+target_link_libraries(Archive Error cereal::cereal)

@@ -12,8 +12,8 @@ using namespace sedmgr;
 
 TEST_CASE("Method: parse method - roundtrip", "[Method]") {
     const MethodCall input = {
-        .invokingId = 0xFF,
-        .methodId = 0xDEADBEEF,
+        .invokingId = 0xFF_uid,
+        .methodId = 0xDEADBEEF_uid,
         .args = {1, 2, 3},
         .status = eMethodStatus::FAIL,
     };
@@ -101,8 +101,8 @@ TEST_CASE("Method: parse results - invalid input", "[Method]") {
 }
 
 
-constexpr UID methodId = 0xFF;
-constexpr UID invokingId = 564;
+constexpr auto methodId = 0xFF_uid;
+constexpr auto invokingId = 564_uid;
 
 using ReqInMethod = Method<methodId, 2, 0, 0, 0>;
 using OptInMethod = Method<methodId, 0, 2, 0, 0>;
@@ -285,7 +285,7 @@ TEST_CASE("Method: call method - optional results only", "[Method]") {
 
 
 TEST_CASE("Method: execute method", "[Method]") {
-    const auto method = Method<0xFF, 2, 0, 3, 0>{};
+    const auto method = Method<0xFF_uid, 2, 0, 3, 0>{};
 
     const auto executor = [](Value in1, Value in2) {
         const auto v1 = in1.Get<int>();

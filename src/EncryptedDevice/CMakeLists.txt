@@ -17,3 +17,6 @@ target_sources(EncryptedDevice
 
 target_include_directories(EncryptedDevice INTERFACE "${CMAKE_CURRENT_LIST_DIR}/..")
 target_link_libraries(EncryptedDevice TrustedPeripheral)
+
+find_package(nlohmann_json)
+target_link_libraries(EncryptedDevice nlohmann_json::nlohmann_json)

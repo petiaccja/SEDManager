@@ -11,7 +11,7 @@
 namespace sedmgr {
 
 struct NamedObject {
-    UID uid = 0;
+    UID uid = 0_uid;
     std::optional<std::string> name = std::nullopt;
 };
 

@@ -299,7 +299,7 @@ std::pair<Integral, std::span<const Token>> DeTokenize(Tokenized<Integral> token
     if (myToken.isSigned != std::is_signed_v<Integral>) {
         throw std::invalid_argument("mismatched integer sign");
     }
-    if (myToken.data.size() != sizeof(Integral)) {
+    if (myToken.data.size() > sizeof(Integral)) {
         throw std::invalid_argument("mismatched integer size");
     }
     std::make_unsigned_t<Integral> value = 0;

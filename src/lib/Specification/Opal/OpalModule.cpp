@@ -13,8 +13,8 @@ namespace opal {
 
 
     constexpr std::initializer_list<std::pair<UID, std::string_view>> methods = {
-        {opal::eMethod::Activate, "MethodID::Activate"},
-        { opal::eMethod::Revert,  "MethodID::Revert"  },
+        {UID(opal::eMethod::Activate), "MethodID::Activate"},
+        { UID(opal::eMethod::Revert),  "MethodID::Revert"  },
     };
 
 
@@ -29,134 +29,134 @@ namespace opal {
         namespace admin {
 
             constexpr std::initializer_list<std::pair<UID, std::string_view>> spInfo = {
-                {0x0000'0002'0000'0001, "SPInfo::Admin"},
+                {0x0000'0002'0000'0001_uid, "SPInfo::Admin"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> spTemplates = {
-                {0x0000'0003'0000'0001,  "SPTemplates::Base" },
-                { 0x0000'0003'0000'0002, "SPTemplates::Admin"},
+                {0x0000'0003'0000'0001_uid,  "SPTemplates::Base" },
+                { 0x0000'0003'0000'0002_uid, "SPTemplates::Admin"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> ace = {
-                {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
-                { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
-                { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
-                { 0x0000'0008'0000'8C02, "ACE::C_PIN_SID_Get_NOPIN"                                },
-                { 0x0000'0008'0000'8C03, "ACE::C_PIN_SID_Set_PIN"                                  },
-                { 0x0000'0008'0000'8C04, "ACE::C_PIN_MSID_Get_PIN"                                 },
-                { 0x0000'0008'0003'A001, "ACE::C_PIN_Admins_Set_PIN"                               },
-                { 0x0000'0008'0003'0003, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
-                { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
-                { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
+                {0x0000'0008'0000'0001_uid,  "ACE::Anybody"                                            },
+                { 0x0000'0008'0000'0002_uid, "ACE::Admin"                                              },
+                { 0x0000'0008'0003'0001_uid, "ACE::Set_Enabled"                                        },
+                { 0x0000'0008'0000'8C02_uid, "ACE::C_PIN_SID_Get_NOPIN"                                },
+                { 0x0000'0008'0000'8C03_uid, "ACE::C_PIN_SID_Set_PIN"                                  },
+                { 0x0000'0008'0000'8C04_uid, "ACE::C_PIN_MSID_Get_PIN"                                 },
+                { 0x0000'0008'0003'A001_uid, "ACE::C_PIN_Admins_Set_PIN"                               },
+                { 0x0000'0008'0003'0003_uid, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
+                { 0x0000'0008'0003'0002_uid, "ACE::SP_SID"                                             },
+                { 0x0000'0008'0005'0001_uid, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> authority = {
-                {0x0000'0009'0000'0001,  "Authority::Anybody"},
-                { 0x0000'0009'0000'0002, "Authority::Admins" },
-                { 0x0000'0009'0000'0003, "Authority::Makers" },
-                { 0x0000'0009'0000'0006, "Authority::SID"    },
+                {0x0000'0009'0000'0001_uid,  "Authority::Anybody"},
+                { 0x0000'0009'0000'0002_uid, "Authority::Admins" },
+                { 0x0000'0009'0000'0003_uid, "Authority::Makers" },
+                { 0x0000'0009'0000'0006_uid, "Authority::SID"    },
             };
             constexpr std::initializer_list<NameSequence> authoritySeq = {
-                {0x0000'0009'0000'0201, 1, 32, "Authority::Admin{}"},
+                {0x0000'0009'0000'0201_uid, 1, 32, "Authority::Admin{}"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> cPin = {
-                {0x0000'000B'0000'0001,  "C_PIN::SID" },
-                { 0x0000'000B'0000'8402, "C_PIN::MSID"},
+                {0x0000'000B'0000'0001_uid,  "C_PIN::SID" },
+                { 0x0000'000B'0000'8402_uid, "C_PIN::MSID"},
             };
             constexpr std::initializer_list<NameSequence> cPinSeq = {
-                {0x0000'000B'0000'0201, 1, 32, "C_PIN::Admin{}"},
+                {0x0000'000B'0000'0201_uid, 1, 32, "C_PIN::Admin{}"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> template_ = {
-                {0x0000'0204'0000'0001,  "Template::Base"   },
-                { 0x0000'0204'0000'0002, "Template::Admin"  },
-                { 0x0000'0204'0000'0006, "Template::Locking"},
+                {0x0000'0204'0000'0001_uid,  "Template::Base"   },
+                { 0x0000'0204'0000'0002_uid, "Template::Admin"  },
+                { 0x0000'0204'0000'0006_uid, "Template::Locking"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> sp = {
-                {eSP::Admin,    "SP::Admin"  },
-                { eSP::Locking, "SP::Locking"},
+                {UID(eSP::Admin),    "SP::Admin"  },
+                { UID(eSP::Locking), "SP::Locking"},
             };
 
         } // namespace admin
 
         namespace locking {
             constexpr std::initializer_list<std::pair<UID, std::string_view>> spInfo = {
-                {0x0000'0002'0000'0001, "SPInfo::Locking"},
+                {0x0000'0002'0000'0001_uid, "SPInfo::Locking"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> spTemplates = {
-                {0x0000'0003'0000'0001,  "SPTemplates::Base"   },
-                { 0x0000'0003'0000'0002, "SPTemplates::Locking"},
+                {0x0000'0003'0000'0001_uid,  "SPTemplates::Base"   },
+                { 0x0000'0003'0000'0002_uid, "SPTemplates::Locking"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> ace = {
-                {0x0000'0008'0000'0001,  "ACE::Anybody"                                            },
-                { 0x0000'0008'0000'0002, "ACE::Admin"                                              },
-                { 0x0000'0008'0000'0003, "ACE::Anybody_Get_CommonName"                             },
-                { 0x0000'0008'0000'0004, "ACE::Admins_Set_CommonName"                              },
-                { 0x0000'0008'0003'8000, "ACE::ACE_Get_All"                                        },
-                { 0x0000'0008'0003'8001, "ACE::ACE_Set_BooleanExpression"                          },
-                { 0x0000'0008'0003'9000, "ACE::Authority_Get_All"                                  },
-                { 0x0000'0008'0003'9001, "ACE::Authority_Set_Enabled"                              },
-                { 0x0000'0008'0003'A000, "ACE::C_PIN_Admins_Get_All_NOPIN"                         },
-                { 0x0000'0008'0003'A001, "ACE::C_PIN_Admins_Set_PIN"                               },
-                { 0x0000'0008'0003'BFFF, "ACE::K_AES_Mode"                                         },
-                { 0x0000'0008'0003'B000, "ACE::K_AES_128_GlobalRange_GenKey"                       },
-                { 0x0000'0008'0003'B800, "ACE::K_AES_256_GlobalRange_GenKey"                       },
-                { 0x0000'0008'0003'D000, "ACE::Locking_GlobalRange_Get_RangeStartToActiveKey"      },
-                { 0x0000'0008'0003'E000, "ACE::Locking_GlobalRange_Set_RdLocked"                   },
-                { 0x0000'0008'0003'E800, "ACE::Locking_GlobalRange_Set_WrLocked"                   },
-                { 0x0000'0008'0003'F000, "ACE::Locking_GlblRng_Admins_Set"                         },
-                { 0x0000'0008'0003'F001, "ACE::Locking_Admins_RangeStartToLOR"                     },
-                { 0x0000'0008'0003'F800, "ACE::MBRControl_Admins_Set"                              },
-                { 0x0000'0008'0003'F801, "ACE::MBRControl_Set_DoneToDOR"                           },
-                { 0x0000'0008'0003'FC00, "ACE::DataStore_Get_All"                                  },
-                { 0x0000'0008'0003'FC01, "ACE::DataStore_Set_All"                                  },
-                { 0x0000'0008'0003'0001, "ACE::Set_Enabled"                                        },
-                { 0x0000'0008'0000'8C02, "ACE::C_PIN_SID_Get_NOPIN"                                },
-                { 0x0000'0008'0000'8C03, "ACE::C_PIN_SID_Set_PIN"                                  },
-                { 0x0000'0008'0000'8C04, "ACE::C_PIN_MSID_Get_PIN"                                 },
-                { 0x0000'0008'0003'0003, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
-                { 0x0000'0008'0003'0002, "ACE::SP_SID"                                             },
-                { 0x0000'0008'0005'0001, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
+                {0x0000'0008'0000'0001_uid,  "ACE::Anybody"                                            },
+                { 0x0000'0008'0000'0002_uid, "ACE::Admin"                                              },
+                { 0x0000'0008'0000'0003_uid, "ACE::Anybody_Get_CommonName"                             },
+                { 0x0000'0008'0000'0004_uid, "ACE::Admins_Set_CommonName"                              },
+                { 0x0000'0008'0003'8000_uid, "ACE::ACE_Get_All"                                        },
+                { 0x0000'0008'0003'8001_uid, "ACE::ACE_Set_BooleanExpression"                          },
+                { 0x0000'0008'0003'9000_uid, "ACE::Authority_Get_All"                                  },
+                { 0x0000'0008'0003'9001_uid, "ACE::Authority_Set_Enabled"                              },
+                { 0x0000'0008'0003'A000_uid, "ACE::C_PIN_Admins_Get_All_NOPIN"                         },
+                { 0x0000'0008'0003'A001_uid, "ACE::C_PIN_Admins_Set_PIN"                               },
+                { 0x0000'0008'0003'BFFF_uid, "ACE::K_AES_Mode"                                         },
+                { 0x0000'0008'0003'B000_uid, "ACE::K_AES_128_GlobalRange_GenKey"                       },
+                { 0x0000'0008'0003'B800_uid, "ACE::K_AES_256_GlobalRange_GenKey"                       },
+                { 0x0000'0008'0003'D000_uid, "ACE::Locking_GlobalRange_Get_RangeStartToActiveKey"      },
+                { 0x0000'0008'0003'E000_uid, "ACE::Locking_GlobalRange_Set_RdLocked"                   },
+                { 0x0000'0008'0003'E800_uid, "ACE::Locking_GlobalRange_Set_WrLocked"                   },
+                { 0x0000'0008'0003'F000_uid, "ACE::Locking_GlblRng_Admins_Set"                         },
+                { 0x0000'0008'0003'F001_uid, "ACE::Locking_Admins_RangeStartToLOR"                     },
+                { 0x0000'0008'0003'F800_uid, "ACE::MBRControl_Admins_Set"                              },
+                { 0x0000'0008'0003'F801_uid, "ACE::MBRControl_Set_DoneToDOR"                           },
+                { 0x0000'0008'0003'FC00_uid, "ACE::DataStore_Get_All"                                  },
+                { 0x0000'0008'0003'FC01_uid, "ACE::DataStore_Set_All"                                  },
+                { 0x0000'0008'0003'0001_uid, "ACE::Set_Enabled"                                        },
+                { 0x0000'0008'0000'8C02_uid, "ACE::C_PIN_SID_Get_NOPIN"                                },
+                { 0x0000'0008'0000'8C03_uid, "ACE::C_PIN_SID_Set_PIN"                                  },
+                { 0x0000'0008'0000'8C04_uid, "ACE::C_PIN_MSID_Get_PIN"                                 },
+                { 0x0000'0008'0003'0003_uid, "ACE::TPerInfo_Set_ProgrammaticResetEnable"               },
+                { 0x0000'0008'0003'0002_uid, "ACE::SP_SID"                                             },
+                { 0x0000'0008'0005'0001_uid, "ACE::DataRemovalMechanism_Set_ActiveDataRemovalMechanism"},
             };
             constexpr std::initializer_list<NameSequence> aceSeq = {
-                {0x0000'0008'0004'4001,  1, 32, "ACE::User{}_Set_CommonName"                    },
-                { 0x0000'0008'0003'A801, 1, 32, "ACE::C_PIN_User{}_Set_PIN"                     },
-                { 0x0000'0008'0003'B001, 1, 32, "ACE::K_AES_128_Range{}_GenKey"                 },
-                { 0x0000'0008'0003'B801, 1, 32, "ACE::K_AES_256_Range{}_GenKey"                 },
-                { 0x0000'0008'0003'D001, 1, 32, "ACE::Locking_Range{}_Get_RangeStartToActiveKey"},
-                { 0x0000'0008'0003'E001, 1, 32, "ACE::Locking_Range{}_Set_RdLocked"             },
-                { 0x0000'0008'0003'E801, 1, 32, "ACE::Locking_Range{}_Set_WrLocked"             },
+                {0x0000'0008'0004'4001_uid,  1, 32, "ACE::User{}_Set_CommonName"                    },
+                { 0x0000'0008'0003'A801_uid, 1, 32, "ACE::C_PIN_User{}_Set_PIN"                     },
+                { 0x0000'0008'0003'B001_uid, 1, 32, "ACE::K_AES_128_Range{}_GenKey"                 },
+                { 0x0000'0008'0003'B801_uid, 1, 32, "ACE::K_AES_256_Range{}_GenKey"                 },
+                { 0x0000'0008'0003'D001_uid, 1, 32, "ACE::Locking_Range{}_Get_RangeStartToActiveKey"},
+                { 0x0000'0008'0003'E001_uid, 1, 32, "ACE::Locking_Range{}_Set_RdLocked"             },
+                { 0x0000'0008'0003'E801_uid, 1, 32, "ACE::Locking_Range{}_Set_WrLocked"             },
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> authority = {
-                {0x0000'0009'0000'0001,  "Authority::Anybody"},
-                { 0x0000'0009'0000'0002, "Authority::Admins" },
-                { 0x0000'0009'0003'0000, "Authority::Users"  },
+                {0x0000'0009'0000'0001_uid,  "Authority::Anybody"},
+                { 0x0000'0009'0000'0002_uid, "Authority::Admins" },
+                { 0x0000'0009'0003'0000_uid, "Authority::Users"  },
             };
             constexpr std::initializer_list<NameSequence> authoritySeq = {
-                {0x0000'0009'0001'0001,  1, 32, "Authority::Admin{}"},
-                { 0x0000'0009'0003'0001, 1, 32, "Authority::User{}" },
+                {0x0000'0009'0001'0001_uid,  1, 32, "Authority::Admin{}"},
+                { 0x0000'0009'0003'0001_uid, 1, 32, "Authority::User{}" },
             };
             constexpr std::initializer_list<NameSequence> cPinSeq = {
-                {0x0000'000B'0001'0001,  1, 32, "C_PIN::Admin{}"},
-                { 0x0000'000B'0003'0001, 1, 32, "C_PIN::User{}" },
+                {0x0000'000B'0001'0001_uid,  1, 32, "C_PIN::Admin{}"},
+                { 0x0000'000B'0003'0001_uid, 1, 32, "C_PIN::User{}" },
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> secretProtect = {
-                {0x0000'001D'0000'001D,  "SecretProtect::K_AES_128"},
-                { 0x0000'001D'0000'001E, "SecretProtect::K_AES_256"},
+                {0x0000'001D'0000'001D_uid,  "SecretProtect::K_AES_128"},
+                { 0x0000'001D'0000'001E_uid, "SecretProtect::K_AES_256"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> locking = {
-                {0x0000'0802'0000'0001, "Locking::GlobalRange"},
+                {0x0000'0802'0000'0001_uid, "Locking::GlobalRange"},
             };
             constexpr std::initializer_list<NameSequence> lockingSeq = {
-                {0x0000'0802'0003'0001, 1, 32, "Locking::Range{}"},
+                {0x0000'0802'0003'0001_uid, 1, 32, "Locking::Range{}"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> kAes128 = {
-                {0x0000'0805'0000'0001, "K_AES_128::GlobalRange"},
+                {0x0000'0805'0000'0001_uid, "K_AES_128::GlobalRange"},
             };
             constexpr std::initializer_list<NameSequence> kAes128Seq = {
-                {0x0000'0805'0003'0001, 1, 32, "K_AES_128::Range{}"},
+                {0x0000'0805'0003'0001_uid, 1, 32, "K_AES_128::Range{}"},
             };
             constexpr std::initializer_list<std::pair<UID, std::string_view>> kAes256 = {
-                {0x0000'0806'0000'0001, "K_AES_256::GlobalRange"},
+                {0x0000'0806'0000'0001_uid, "K_AES_256::GlobalRange"},
             };
             constexpr std::initializer_list<NameSequence> kAes256Seq = {
-                {0x0000'0806'0003'0001, 1, 32, "K_AES_256::Range{}"},
+                {0x0000'0806'0003'0001_uid, 1, 32, "K_AES_256::Range{}"},
             };
 
         } // namespace locking
@@ -245,7 +245,7 @@ eModuleKind OpalModule::ModuleKind() const {
 
 
 std::optional<std::string> OpalModule::FindName(UID uid, std::optional<UID> sp) const {
-    auto result = opal::GetFinder().Find(uid, sp.value_or(0));
+    auto result = opal::GetFinder().Find(uid, sp.value_or(0_uid));
     if (result) {
         return result;
     }
@@ -254,7 +254,7 @@ std::optional<std::string> OpalModule::FindName(UID uid, std::optional<UID> sp) 
 
 
 std::optional<UID> OpalModule::FindUid(std::string_view name, std::optional<UID> sp) const {
-    auto result = opal::GetFinder().Find(name, sp.value_or(0));
+    auto result = opal::GetFinder().Find(name, sp.value_or(0_uid));
     if (result) {
         return result;
     }
@@ -265,7 +265,7 @@ std::optional<UID> OpalModule::FindUid(std::string_view name, std::optional<UID>
 std::optional<TableDesc> OpalModule::FindTable(UID table) const {
     if (table == UID(core::eTable::TPerInfo)) {
         auto desc = CoreModule::Get()->FindTable(table);
-        desc->columns.push_back({ "ProgrammaticResetEnable", false, CoreModule::Get()->FindType(core::eType::boolean).value() });
+        desc->columns.push_back({ "ProgrammaticResetEnable", false, CoreModule::Get()->FindType(UID(core::eType::boolean)).value() });
         return desc;
     }
     return std::nullopt;

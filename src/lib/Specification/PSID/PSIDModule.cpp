@@ -10,10 +10,10 @@ namespace sedmgr {
 namespace {
 
     constexpr std::initializer_list<std::pair<UID, std::string_view>> names = {
-        {0x0000'0009'0001'FF01,  "Authority::PSID"          },
-        { 0x0000'000B'0001'FF01, "C_PIN::PSID"              },
-        { 0x0000'0008'0001'00E1, "ACE::C_PIN_Get_PSID_NoPIN"},
-        { 0x0000'0008'0001'00E0, "ACE::SP_PSID"             },
+        {0x0000'0009'0001'FF01_uid,  "Authority::PSID"          },
+        { 0x0000'000B'0001'FF01_uid, "C_PIN::PSID"              },
+        { 0x0000'0008'0001'00E1_uid, "ACE::C_PIN_Get_PSID_NoPIN"},
+        { 0x0000'0008'0001'00E0_uid, "ACE::SP_PSID"             },
     };
 
     const NameAndUidFinder& GetFinder() {

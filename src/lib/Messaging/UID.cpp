@@ -33,7 +33,7 @@ UID UID::Parse(std::string_view str) {
     if (idx != withoutSeparators.size()) {
         throw std::invalid_argument("invalid character in UID string");
     }
-    return value;
+    return UID(value);
 }
 
 } // namespace sedmgr
