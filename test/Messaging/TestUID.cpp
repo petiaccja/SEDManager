@@ -50,4 +50,5 @@ TEST_CASE("UID: table <=> descriptor", "[UID]") {
 
 TEST_CASE("UID: containing table", "[UID]") {
     REQUIRE(object.ContainingTable() == containing);
+    REQUIRE(descriptor.ContainingTable() == table);
 }

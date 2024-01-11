@@ -41,7 +41,7 @@ struct UID {
     }
 
     constexpr UID ContainingTable() const {
-        if (!IsObject()) {
+        if (!IsObject() && !IsDescriptor()) {
             throw std::logic_error("expected an object");
         }
         return UID(value & 0xFFFF'FFFF'0000'0000ull);
