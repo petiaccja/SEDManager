@@ -27,6 +27,7 @@ StorageDeviceDesc MockDevice::GetDesc() {
     return StorageDeviceDesc{
         .name = "Mock Device",
         .serial = "MOCK0001",
+        .firmware = "MOCKFW01",
         .interface = eStorageDeviceInterface::OTHER,
     };
 }

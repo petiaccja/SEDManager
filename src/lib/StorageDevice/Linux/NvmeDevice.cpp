@@ -66,6 +66,7 @@ StorageDeviceDesc NvmeDevice::GetDesc() {
     return StorageDeviceDesc{
         .name = id.modelNumber,
         .serial = id.serialNumber,
+        .firmware = id.firmwareRevision,
         .interface = eStorageDeviceInterface::NVME,
     };
 }

@@ -29,7 +29,8 @@ struct StorageDeviceLabel {
 struct StorageDeviceDesc {
     std::string name;
     std::string serial;
-    eStorageDeviceInterface interface;
+    std::string firmware;
+    eStorageDeviceInterface interface = eStorageDeviceInterface::OTHER;
 };
 
 
