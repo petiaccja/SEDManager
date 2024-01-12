@@ -378,12 +378,12 @@ extern "C"
         const auto& modules = self->object->GetModules();
         const auto maybeSp = securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt;
         const auto maybeName = modules.FindName(UID(uid), maybeSp);
-        return new CFutureString{ [maybeName]() -> asyncpp::task<std::string> {
+        return new CFutureString{ [](auto maybeName) -> asyncpp::task<std::string> {
             if (!maybeName) {
                 throw std::invalid_argument("could not find table description");
             }
             co_return *maybeName;
-        }() };
+        }(maybeName) };
     }
 
 
@@ -392,13 +392,13 @@ extern "C"
                                                            CUID securityProvider) {
         const auto& modules = self->object->GetModules();
         const auto maybeSp = securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt;
-        const auto maybeUID = modules.FindUid(name->object, maybeSp);
-        return new CFutureUID{ [maybeUID]() -> asyncpp::task<UID> {
-            if (!maybeUID) {
+        const auto maybeUid = modules.FindUid(name->object, maybeSp);
+        return new CFutureUID{ [](auto maybeUid) -> asyncpp::task<UID> {
+            if (!maybeUid) {
                 throw std::invalid_argument("could not find table description");
             }
-            co_return *maybeUID;
-        }() };
+            co_return *maybeUid;
+        }(maybeUid) };
     }
 
 
@@ -410,14 +410,14 @@ extern "C"
     SEDMANAGER_EXPORT CStreamString* CEncryptedDevice_GetTableColumns(CEncryptedDevice* self, CUID table) {
         const auto& modules = self->object->GetModules();
         const auto maybeDesc = modules.FindTable(UID(table));
-        return new CStreamString{ [maybeDesc]() -> asyncpp::stream<std::string> {
+        return new CStreamString{ [](auto maybeDesc) -> asyncpp::stream<std::string> {
             if (!maybeDesc) {
                 throw std::invalid_argument("could not find table description");
             }
             for (const auto& column : maybeDesc->columns) {
                 co_yield column.name;
             }
-        }() };
+        }(maybeDesc) };
     }
 
 
@@ -499,9 +499,9 @@ void CStream_Start(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
     launch([](auto stream, auto callback) -> asyncpp::task<void> {
         asyncpp::await_result_t<std::decay_t<decltype(stream)>> result;
         do {
-            result = co_await stream;
-            if (result) {
-                try {
+            try {
+                result = co_await stream;
+                if (result) {
                     using WrapperBase = std::remove_pointer_t<Wrapper>;
                     if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
                         callback(true, true, new WrapperBase(std::move(*result)));
@@ -510,10 +510,11 @@ void CStream_Start(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
                         callback(true, true, WrapperBase(std::move(*result)));
                     }
                 }
-                catch (...) {
-                    SetLastException();
-                    callback(true, false, Wrapper{});
-                }
+            }
+            catch (...) {
+                SetLastException();
+                callback(true, false, Wrapper{});
+                continue;
             }
         } while (result);
         callback(false, false, Wrapper{});
