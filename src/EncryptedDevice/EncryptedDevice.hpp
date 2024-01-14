@@ -36,7 +36,7 @@ public:
     asyncpp::task<void> End();
 
     asyncpp::stream<UID> GetTableRows(UID table);
-    asyncpp::stream<Value> GetObjectColumns(UID table, UID object);
+    asyncpp::stream<Value> GetObjectColumns(UID object);
     asyncpp::task<Value> GetObjectColumn(UID object, uint32_t column);
     asyncpp::task<void> SetObjectColumn(UID object, uint32_t column, Value value);
 

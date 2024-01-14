@@ -27,6 +27,7 @@ StorageDeviceDesc MockDevice::GetDesc() {
     return StorageDeviceDesc{
         .name = "Mock Device",
         .serial = "MOCK0001",
+        .firmware = "MOCKFW01",
         .interface = eStorageDeviceInterface::OTHER,
     };
 }
@@ -529,7 +530,7 @@ namespace mock {
 
     auto SessionLayerHandler::Get(Session& session, UID invokingId, CellBlock cellBlock) const
         -> std::pair<std::tuple<List>, eMethodStatus> {
-        if (invokingId.IsObject()) {
+        if (invokingId.IsObject() || invokingId.IsDescriptor()) {
             const auto securityProvider = *session.securityProvider;
             const auto containingTableUid = invokingId.ContainingTable();
             if (!securityProvider.contains(containingTableUid)) {
@@ -562,7 +563,7 @@ namespace mock {
 
     auto SessionLayerHandler::Set(Session& session, UID invokingId, std::optional<Value> where, std::optional<Value> values) const
         -> std::pair<std::tuple<>, eMethodStatus> {
-        if (invokingId.IsObject()) {
+        if (invokingId.IsObject() || invokingId.IsDescriptor()) {
             auto& securityProvider = *session.securityProvider;
             const auto containingTableUid = invokingId.ContainingTable();
             if (!securityProvider.contains(containingTableUid)) {
@@ -619,7 +620,7 @@ namespace mock {
 
         size_t numFound = 0;
         List next;
-        while (it != table.end() && (!count || numFound > count.value())) {
+        while (it != table.end() && (!count || numFound < count.value())) {
             next.push_back(value_cast(it->second.GetUID()));
             ++it;
             ++numFound;

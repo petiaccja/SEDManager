@@ -86,7 +86,7 @@ asyncpp::task<void> EncryptedDevice::End() {
 asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
     const auto desc = GetModules().FindTable(table);
     if (!desc) {
-        throw std::invalid_argument("could not find table description");
+        throw std::invalid_argument(std::format("could not find table description: {}", table.ToString()));
     }
     if (desc->singleRow) {
         co_yield *desc->singleRow;
@@ -103,10 +103,10 @@ asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
 }
 
 
-asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID table, UID object) {
-    const auto maybeTableDesc = GetModules().FindTable(table);
+asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID object) {
+    const auto maybeTableDesc = GetModules().FindTable(object.ContainingTable());
     if (!maybeTableDesc) {
-        throw std::invalid_argument("could not find table description");
+        throw std::invalid_argument(std::format("could not find table description: {}", object.ToString()));
     }
     uint32_t index = 0;
     for (const auto& column : maybeTableDesc->columns) {
