@@ -426,9 +426,9 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Authenticate(CEncryptedDevice* self, CUID authority, CString* password) {
-        const auto _password = password ? std::optional(as_bytes(std::span(password->object))) : std::nullopt;
-        return new CFutureVoid{ self->object->Authenticate(UID(authority), _password) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Authenticate(CEncryptedDevice* self, CUID authority, std::byte* password, size_t passwordLength) {
+        const auto _password = password ? std::optional(std::vector(password, password + passwordLength)) : std::nullopt;
+        return new CFutureVoid{ self->object->Authenticate(UID(authority), std::move(_password)) };
     }
 
 
