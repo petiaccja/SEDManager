@@ -17,10 +17,10 @@ namespace sedmgr {
 
 Session::Session(std::shared_ptr<SessionManager> sessionManager,
                  UID securityProvider,
-                 std::optional<std::span<const std::byte>> password,
+                 std::optional<std::vector<std::byte>> password,
                  std::optional<UID> authority)
 
-    : Session(join(Start(sessionManager, securityProvider, password, authority))) {
+    : Session(join(Start(sessionManager, securityProvider, std::move(password), authority))) {
 }
 
 
@@ -61,7 +61,7 @@ Session::~Session() {
 
 asyncpp::task<Session> Session::Start(std::shared_ptr<SessionManager> sessionManager,
                                       UID securityProvider,
-                                      std::optional<std::span<const std::byte>> password,
+                                      std::optional<std::vector<std::byte>> password,
                                       std::optional<UID> authority) {
     const auto hostSessionNumber = NewHostSessionNumber();
     const auto result = co_await sessionManager->StartSession(hostSessionNumber,
@@ -166,7 +166,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Set(UID object, std::span<const uint32_t> columns, std::span<const Value> values) {
+    asyncpp::task<void> BaseTemplate::Set(UID object, std::vector<uint32_t> columns, std::vector<Value> values) {
         std::vector<Value> labeledValues;
         for (auto [colIt, valIt] = std::tuple{ columns.begin(), values.begin() };
              colIt != columns.end() && valIt != values.end();
@@ -178,7 +178,7 @@ namespace impl {
 
 
     asyncpp::task<void> BaseTemplate::Set(UID object, uint32_t column, const Value& value) {
-        co_await Set(object, std::span{ &column, 1 }, std::span{ &value, 1 });
+        co_await Set(object, std::vector(&column, &column + 1), std::vector(&value, &value + 1));
     }
 
 
@@ -201,7 +201,7 @@ namespace impl {
     }
 
 
-    asyncpp::task<void> BaseTemplate::Authenticate(UID authority, std::optional<std::span<const std::byte>> proof) {
+    asyncpp::task<void> BaseTemplate::Authenticate(UID authority, std::optional<std::vector<std::byte>> proof) {
         auto [result] = co_await authenticateMethod(GetCallContext(THIS_SP), ConvertArg(authority), ConvertArg(proof));
         if (result.IsInteger()) {
             const auto success = result.Get<uint8_t>();

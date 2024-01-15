@@ -138,9 +138,9 @@ namespace impl_method {
         using ResultType = typename OutputList::Unpacked;
 
     public:
-        asyncpp::task<ResultType> operator()(const CallContext& context,
-                                             const typename RequiredParams::Native&... requiredIns,
-                                             const typename OptionalParams::Native&... optionalIns) const {
+        asyncpp::task<ResultType> operator()(CallContext context,
+                                             const typename RequiredParams::Native... requiredIns,
+                                             const typename OptionalParams::Native... optionalIns) const {
             std::vector<Value> args = InputList::Pack(requiredIns..., optionalIns...);
 
             MethodCall call{

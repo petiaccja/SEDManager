@@ -9,7 +9,7 @@ SessionManager::SessionManager(std::shared_ptr<TrustedPeripheral> tper)
     : m_tper(tper) {}
 
 
-auto SessionManager::Properties(const std::optional<PropertyMap>& hostProperties)
+auto SessionManager::Properties(std::optional<PropertyMap> hostProperties)
     -> asyncpp::task<PropertiesResult> {
     const auto result = co_await propertiesMethod(GetCallContext(), ConvertArg(hostProperties));
     co_return ResultAs<PropertiesResult>(result);
@@ -20,15 +20,15 @@ auto SessionManager::StartSession(
     uint32_t hostSessionID,
     UID spId,
     bool write,
-    std::optional<std::span<const std::byte>> hostChallenge,
+    std::optional<std::vector<std::byte>> hostChallenge,
     std::optional<UID> hostExchangeAuthority,
-    std::optional<std::span<const std::byte>> hostExchangeCert,
+    std::optional<std::vector<std::byte>> hostExchangeCert,
     std::optional<UID> hostSigningAuthority,
-    std::optional<std::span<const std::byte>> hostSigningCert,
+    std::optional<std::vector<std::byte>> hostSigningCert,
     std::optional<uint32_t> sessionTimeout,
     std::optional<uint32_t> transTimeout,
     std::optional<uint32_t> initialCredit,
-    std::optional<std::span<const std::byte>> signedHash)
+    std::optional<std::vector<std::byte>> signedHash)
     -> asyncpp::task<StartSessionResult> {
     const auto result = co_await startSessionMethod(GetCallContext(),
                                                     ConvertArg(hostSessionID),
