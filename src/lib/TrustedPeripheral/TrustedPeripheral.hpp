@@ -30,7 +30,7 @@ public:
     asyncpp::task<void> StackReset();
     void Reset();
 
-    asyncpp::task<ComPacket> SendPacket(uint8_t protocol, const ComPacket& packet);
+    asyncpp::task<ComPacket> SendPacket(uint8_t protocol, ComPacket packet);
 
 private:
     void SecuritySend(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload);

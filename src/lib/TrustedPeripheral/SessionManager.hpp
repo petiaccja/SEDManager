@@ -38,21 +38,21 @@ public:
     SessionManager& operator=(const SessionManager&) = delete;
     SessionManager& operator=(SessionManager&&) = delete;
 
-    asyncpp::task<PropertiesResult> Properties(const std::optional<PropertyMap>& hostProperties = {});
+    asyncpp::task<PropertiesResult> Properties(std::optional<PropertyMap> hostProperties = {});
 
     asyncpp::task<StartSessionResult> StartSession(
         uint32_t hostSessionID,
         UID spId,
         bool write,
-        std::optional<std::span<const std::byte>> hostChallenge = {},
+        std::optional<std::vector<std::byte>> hostChallenge = {},
         std::optional<UID> hostExchangeAuthority = {},
-        std::optional<std::span<const std::byte>> hostExchangeCert = {},
+        std::optional<std::vector<std::byte>> hostExchangeCert = {},
         std::optional<UID> hostSigningAuthority = {},
-        std::optional<std::span<const std::byte>> hostSigningCert = {},
+        std::optional<std::vector<std::byte>> hostSigningCert = {},
         std::optional<uint32_t> sessionTimeout = {},
         std::optional<uint32_t> transTimeout = {},
         std::optional<uint32_t> initialCredit = {},
-        std::optional<std::span<const std::byte>> signedHash = {});
+        std::optional<std::vector<std::byte>> signedHash = {});
 
     asyncpp::task<void> EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber);
 

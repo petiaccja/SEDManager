@@ -142,7 +142,7 @@ static asyncpp::task<void> Sleep(std::chrono::duration<Rep, Period> time) {
 }
 
 
-asyncpp::task<ComPacket> TrustedPeripheral::SendPacket(uint8_t protocol, const ComPacket& packet) {
+asyncpp::task<ComPacket> TrustedPeripheral::SendPacket(uint8_t protocol, ComPacket packet) {
     const auto request = Serialize(packet);
 
     SecuritySend(protocol, GetComId(), request);

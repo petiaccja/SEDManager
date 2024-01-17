@@ -41,11 +41,11 @@ namespace impl {
 
         asyncpp::task<std::vector<Value>> Get(UID object, uint32_t startColumn, uint32_t endColumn);
         asyncpp::task<Value> Get(UID object, uint32_t column);
-        asyncpp::task<void> Set(UID object, std::span<const uint32_t> column, std::span<const Value> values);
+        asyncpp::task<void> Set(UID object, std::vector<uint32_t> columns, std::vector<Value> values);
         asyncpp::task<void> Set(UID object, uint32_t columns, const Value& value);
         asyncpp::task<std::vector<UID>> Next(UID table, std::optional<UID> row, uint32_t count);
         asyncpp::task<std::optional<UID>> Next(UID table, std::optional<UID> row);
-        asyncpp::task<void> Authenticate(UID authority, std::optional<std::span<const std::byte>> proof);
+        asyncpp::task<void> Authenticate(UID authority, std::optional<std::vector<std::byte>> proof);
         asyncpp::task<void> GenKey(UID object, std::optional<uint32_t> publicExponent = {}, std::optional<uint32_t> pinLength = {});
 
     private:
@@ -77,7 +77,7 @@ class Session {
 public:
     Session(std::shared_ptr<SessionManager> sessionManager,
             UID securityProvider,
-            std::optional<std::span<const std::byte>> password = {},
+            std::optional<std::vector<std::byte>> password = {},
             std::optional<UID> authority = {});
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
@@ -87,7 +87,7 @@ public:
 
     static asyncpp::task<Session> Start(std::shared_ptr<SessionManager> sessionManager,
                                         UID securityProvider,
-                                        std::optional<std::span<const std::byte>> password = {},
+                                        std::optional<std::vector<std::byte>> password = {},
                                         std::optional<UID> authority = {});
     asyncpp::task<void> End();
     uint32_t GetHostSessionNumber() const;

@@ -30,7 +30,7 @@ public:
     const ModuleCollection& GetModules() const;
 
     asyncpp::task<void> Login(UID securityProvider);
-    asyncpp::task<void> Authenticate(UID authority, std::optional<std::span<const std::byte>> password = {});
+    asyncpp::task<void> Authenticate(UID authority, std::optional<std::vector<std::byte>> password = {});
     asyncpp::task<void> StackReset();
     asyncpp::task<void> Reset();
     asyncpp::task<void> End();

@@ -390,6 +390,7 @@ namespace mock {
                 case core::eMethod::Get: return CallMethod(call, session, &SessionLayerHandler::Get, getMethod);
                 case core::eMethod::Set: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
                 case core::eMethod::Next: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
+                case core::eMethod::Authenticate: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
                 default: return std::nullopt;
             }
         }();
@@ -627,6 +628,25 @@ namespace mock {
         }
 
         return { { next }, eMethodStatus::SUCCESS };
+    }
+
+    auto SessionLayerHandler::Authenticate(Session& session, UID invokingId, UID authority, std::optional<Bytes> proof) const
+        -> std::pair<std::tuple<bool>, eMethodStatus> {
+        const auto& securityProvider = *session.securityProvider;
+        const auto& authorityTable = securityProvider[UID(core::eTable::Authority)];
+        const auto& cPinTable = securityProvider[UID(core::eTable::C_PIN)];
+        if (!authorityTable.contains(authority)) {
+            return { { false }, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto& authorityObject = authorityTable[authority];
+        const auto& credential = value_cast<UID>(authorityObject[10]);
+        if (credential == UID(0)) {
+            return { { true }, eMethodStatus::SUCCESS };
+        }
+        const auto& credentialObject = cPinTable[credential];
+        const auto& pin = credentialObject[3];
+        const auto success = pin.Get<Bytes>() == proof;
+        return { { success }, eMethodStatus::SUCCESS };
     }
 
 } // namespace mock

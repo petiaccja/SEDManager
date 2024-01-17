@@ -67,7 +67,7 @@ asyncpp::task<void> EncryptedDevice::Login(UID securityProvider) {
 }
 
 
-asyncpp::task<void> EncryptedDevice::Authenticate(UID authority, std::optional<std::span<const std::byte>> password) {
+asyncpp::task<void> EncryptedDevice::Authenticate(UID authority, std::optional<std::vector<std::byte>> password) {
     if (m_session) {
         return m_session->base.Authenticate(authority, password);
     }
