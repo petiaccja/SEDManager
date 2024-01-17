@@ -11,8 +11,8 @@ using namespace sedmgr;
 using namespace std::string_view_literals;
 
 
-const auto adminSpUid = *Opal1Module::Get()->FindUid("SP::Admin");
-const auto tableTableUid = *CoreModule::Get()->FindUid("Table");
+const auto adminSpUid = Opal1Module::Get() -> FindUid("SP::Admin").value();
+const auto tableTableUid = CoreModule::Get() -> FindUid("Table").value();
 
 
 struct SessionFixture {
@@ -49,4 +49,18 @@ TEST_CASE_METHOD(SessionFixture, "Session: Get", "Session") {
 TEST_CASE_METHOD(SessionFixture, "Session: Set", "Session") {
     REQUIRE_NOTHROW(join(session->base.Set(adminSpUid, 2, value_cast("Stan"sv))));
     REQUIRE(value_cast<std::string_view>(join(session->base.Get(adminSpUid, 2))) == "Stan"sv);
+}
+
+
+TEST_CASE_METHOD(SessionFixture, "Session: Authenticate", "Session") {
+    const auto cPinMsid = Opal1Module::Get()->FindUid("C_PIN::MSID", adminSpUid).value();
+    const auto sidAuthority = CoreModule::Get()->FindUid("Authority::SID", adminSpUid).value();
+    SECTION("success") {
+        const auto password = join(session->base.Get(cPinMsid, 3));
+        REQUIRE_NOTHROW(join(session->base.Authenticate(sidAuthority, password.Get<Bytes>())));
+    }
+    SECTION("failure") {
+        const auto password = Value(Bytes{ 0_b });
+        REQUIRE_THROWS_AS(join(session->base.Authenticate(sidAuthority, password.Get<Bytes>())), PasswordError);
+    }
 }
