@@ -11,8 +11,8 @@ using namespace sedmgr;
 using namespace std::string_view_literals;
 
 
-const auto adminSpUid = Opal1Module::Get() -> FindUid("SP::Admin").value();
-const auto tableTableUid = CoreModule::Get() -> FindUid("Table").value();
+const auto adminSpUid = Opal1Module::Get()->FindUid("SP::Admin").value();
+const auto tableTableUid = CoreModule::Get()->FindUid("Table").value();
 
 
 struct SessionFixture {
