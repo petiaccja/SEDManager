@@ -116,12 +116,12 @@ asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID object) {
 }
 
 
-asyncpp::task<Value> EncryptedDevice::GetObjectColumn(UID object, uint32_t column) {
+asyncpp::task<Value> EncryptedDevice::GetValue(UID object, uint32_t column) {
     co_return co_await m_session->base.Get(object, column);
 }
 
 
-asyncpp::task<void> EncryptedDevice::SetObjectColumn(UID object, uint32_t column, Value value) {
+asyncpp::task<void> EncryptedDevice::SetValue(UID object, uint32_t column, Value value) {
     co_await m_session->base.Set(object, column, value);
 }
 

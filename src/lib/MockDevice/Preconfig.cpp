@@ -36,9 +36,10 @@ namespace mock {
             Table(
                 UID(core::eTable::Table),
                 {
-                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::C_PIN).ToDescriptor(), { value_cast("C_PIN"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
                 }),
             Table(
                 UID(core::eTable::SP),
@@ -78,14 +79,21 @@ namespace mock {
         const auto cPinAdmin1Uid = modules.FindUid("C_PIN::Admin1", lockingSpUid).value();
         const auto cPinUser1Uid = modules.FindUid("C_PIN::User1", lockingSpUid).value();
 
+        const auto globalRangeUid = modules.FindUid("Locking::GlobalRange", lockingSpUid).value();
+        const auto globalKeyUid = modules.FindUid("K_AES_256::GlobalRange", lockingSpUid).value();
+        const auto globalKeyValue = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x06_b }, value_cast("NSBD7IFTW5NW3BT583N5TBV35TV34C5N4V56B7534BV872NV325N6B34B6H4UIVB"sv));
+
         const auto lockingPin = value_cast(std::as_bytes(std::span(std::string_view("4567"))));
 
         const auto tables = {
             Table(
                 UID(core::eTable::Table),
                 {
-                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::C_PIN).ToDescriptor(), { value_cast("C_PIN"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Locking).ToDescriptor(), { value_cast("Locking"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::K_AES_256).ToDescriptor(), { value_cast("K_AES_256"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
                 }),
             Table(
                 UID(core::eTable::Authority),
@@ -99,6 +107,14 @@ namespace mock {
                     Object(cPinAdmin1Uid, { {}, {}, lockingPin, {}, {}, {}, {} }),
                     Object(cPinUser1Uid, { {}, {}, lockingPin, {}, {}, {}, {} }),
                 }),
+            Table(UID(core::eTable::Locking),
+                  {
+                      Object(globalRangeUid, { value_cast("GlobalRange"sv), {}, 0, 16384, 0, 0, 0, 0, {}, value_cast(globalKeyUid), value_cast(UID(0)), {}, {}, {}, {}, {}, {}, {}, {} }),
+                  }),
+            Table(UID(core::eTable::K_AES_256),
+                  {
+                      Object(globalKeyUid, { value_cast("GlobalRange"sv), {}, globalKeyValue, {} }),
+                  }),
         };
 
         return std::make_shared<SecurityProvider>(lockingSpUid, tables);

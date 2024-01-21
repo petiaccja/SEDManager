@@ -11,9 +11,15 @@ namespace opal {
     enum class eMethod : uint64_t {
         Revert = 0x0000'0006'0000'0202,
         Activate = 0x0000'0006'0000'0203,
+        RevertSP = 0x0000'0006'0000'0011,
     };
 
-}
+    enum class eTable : uint64_t {
+        DataStore = 0x0000'1001'0000'0000,
+        DataRemovalMechanism = 0x0000'1101'0000'0000,
+    };
+
+} // namespace opal
 
 
 class OpalModule : public Module {

@@ -8,6 +8,8 @@
 #include <Messaging/Value.hpp>
 #include <Specification/Core/CoreModule.hpp>
 
+#include <random>
+
 
 namespace sedmgr {
 
@@ -391,6 +393,7 @@ namespace mock {
                 case core::eMethod::Set: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
                 case core::eMethod::Next: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
                 case core::eMethod::Authenticate: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
+                case core::eMethod::GenKey: return CallMethod(call, session, &SessionLayerHandler::GenKey, genKeyMethod);
                 default: return std::nullopt;
             }
         }();
@@ -630,6 +633,7 @@ namespace mock {
         return { { next }, eMethodStatus::SUCCESS };
     }
 
+
     auto SessionLayerHandler::Authenticate(Session& session, UID invokingId, UID authority, std::optional<Bytes> proof) const
         -> std::pair<std::tuple<bool>, eMethodStatus> {
         const auto& securityProvider = *session.securityProvider;
@@ -647,6 +651,50 @@ namespace mock {
         const auto& pin = credentialObject[3];
         const auto success = pin.Get<Bytes>() == proof;
         return { { success }, eMethodStatus::SUCCESS };
+    }
+
+
+    auto SessionLayerHandler::GenKey(Session& session, UID invokingId, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        static constexpr auto characterSet = std::string_view("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+        thread_local std::mt19937_64 rne(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+        const auto randomKey = [](size_t length) {
+            Bytes bytes;
+            auto rng = std::uniform_int_distribution<size_t>(0, characterSet.size() - 1);
+            for (int i = 0; i < length; ++i) {
+                bytes.push_back(std::byte(characterSet[rng(rne)]));
+            }
+            return bytes;
+        };
+
+        auto& sp = *session.securityProvider;
+        if (!invokingId.IsObject()) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto containingTableUid = invokingId.ContainingTable();
+        if (!sp.contains(containingTableUid)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& containingTable = sp[containingTableUid];
+        if (!containingTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& object = containingTable[invokingId];
+
+        if (containingTableUid == UID(core::eTable::K_AES_256)) {
+            object[3] = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x06_b }, randomKey(64));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        if (containingTableUid == UID(core::eTable::K_AES_128)) {
+            object[3] = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x05_b }, randomKey(32));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        if (containingTableUid == UID(core::eTable::C_PIN)) {
+            object[3] = Value(randomKey(pinLength.value_or(32)));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        return { {}, eMethodStatus::INVALID_PARAMETER };
     }
 
 } // namespace mock

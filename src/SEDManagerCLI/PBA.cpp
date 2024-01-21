@@ -109,7 +109,7 @@ std::optional<UID> FindAuthority(EncryptedDevice& manager, std::string_view name
     const auto authorityUids = manager.GetTableRows(authorityTableUid);
     while (const auto authority = join(authorityUids)) {
         try {
-            const auto commonName = UnwrapCommonName(join(manager.GetObjectColumn(*authority, 2)));
+            const auto commonName = UnwrapCommonName(join(manager.GetValue(*authority, 2)));
             if (commonName && *commonName == name) {
                 return authority;
             }
@@ -173,19 +173,19 @@ void TryUnlockRanges(EncryptedDevice& manager) {
 
     while (const auto lockingRange = join(lockingRangeUids)) {
         const auto name = FormatObjectRef(manager, *lockingRange, lockingSp);
-        const auto commonName = UnwrapCommonName(join(manager.GetObjectColumn(*lockingRange, 2)));
+        const auto commonName = UnwrapCommonName(join(manager.GetValue(*lockingRange, 2)));
 
         bool rdUnlocked = false;
         bool wrUnlocked = false;
         try {
-            join(manager.SetObjectColumn(*lockingRange, 7, false));
+            join(manager.SetValue(*lockingRange, 7, false));
             rdUnlocked = true;
         }
         catch (NotAuthorizedError& ex) {
             // Expected.
         }
         try {
-            join(manager.SetObjectColumn(*lockingRange, 8, false));
+            join(manager.SetValue(*lockingRange, 8, false));
             wrUnlocked = true;
         }
         catch (NotAuthorizedError& ex) {
@@ -202,7 +202,7 @@ void TryUnlockRanges(EncryptedDevice& manager) {
 void TryDoMBR(EncryptedDevice& manager) {
     const auto mbrControlTableUid = Unwrap(manager.GetModules().FindUid("MBRControl"), "could not find MBRControl table");
     try {
-        join(manager.SetObjectColumn(mbrControlTableUid, 2, 1));
+        join(manager.SetValue(mbrControlTableUid, 2, 1));
         std::cout << "MBR Done!" << std::endl;
     }
     catch (std::exception&) {

@@ -374,7 +374,7 @@ void Interactive::RegisterCallbackGet() {
             if (!(column < std::ssize(tableDesc.columns))) {
                 throw std::invalid_argument("column index is out of bounds.");
             }
-            const auto value = join(m_manager.GetObjectColumn(rowUid, column));
+            const auto value = join(m_manager.GetValue(rowUid, column));
             const auto columnType = tableDesc.columns[column].type;
             std::cout << (value.HasValue() ? ValueToJSON(value, columnType, nameConverter).dump(4) : "<empty>") << std::endl;
         }
@@ -409,7 +409,7 @@ void Interactive::RegisterCallbackSet() {
         const auto nameConverter = [this](std::string_view name) { return m_manager.GetModules().FindUid(name, m_currentSecurityProvider); };
         const auto value = JSONToValue(jsonObject, columnType, nameConverter);
 
-        join(m_manager.SetObjectColumn(rowUid, column, value));
+        join(m_manager.SetValue(rowUid, column, value));
     });
 }
 
@@ -423,13 +423,13 @@ void Interactive::RegisterCallbackPasswd() {
         const auto authTable = Unwrap(ParseObjectRef(m_manager, "Authority", m_currentSecurityProvider), "cannot find Authority table");
         const auto cPinTable = Unwrap(ParseObjectRef(m_manager, "C_PIN", m_currentSecurityProvider), "cannot find C_PIN table");
         const auto authUid = Unwrap(ParseObjectRef(m_manager, "Authority::" + authName, m_currentSecurityProvider), "cannot find authority");
-        const auto credentialUid = value_cast<UID>(join(m_manager.GetObjectColumn(authUid, 10)));
+        const auto credentialUid = value_cast<UID>(join(m_manager.GetValue(authUid, 10)));
         const std::vector<std::byte> password = GetPassword("New password: ");
         const std::vector<std::byte> passwordAgain = GetPassword("Retype password: ");
         if (password != passwordAgain) {
             throw std::invalid_argument("the two passwords do not match");
         }
-        join(m_manager.SetObjectColumn(credentialUid, 3, value_cast(password)));
+        join(m_manager.SetValue(credentialUid, 3, value_cast(password)));
     });
 }
 

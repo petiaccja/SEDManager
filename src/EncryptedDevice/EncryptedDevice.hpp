@@ -37,8 +37,8 @@ public:
 
     asyncpp::stream<UID> GetTableRows(UID table);
     asyncpp::stream<Value> GetObjectColumns(UID object);
-    asyncpp::task<Value> GetObjectColumn(UID object, uint32_t column);
-    asyncpp::task<void> SetObjectColumn(UID object, uint32_t column, Value value);
+    asyncpp::task<Value> GetValue(UID object, uint32_t column);
+    asyncpp::task<void> SetValue(UID object, uint32_t column, Value value);
 
     asyncpp::task<void> GenMEK(UID lockingRange);
     asyncpp::task<void> GenPIN(UID credentialObject, uint32_t length);

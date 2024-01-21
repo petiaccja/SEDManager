@@ -6,7 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <ranges>
+#include <concepts>
 #include <regex>
 #include <span>
 #include <unordered_map>
@@ -93,6 +93,36 @@ public:
 
 private:
     std::unordered_map<UID, NameAndUidFinder> m_finders;
+};
+
+
+class TableFinder {
+public:
+    template <std::ranges::range PairRange>
+    explicit TableFinder(PairRange&& descs) {
+        m_lut = [&descs] {
+            std::unordered_map<UID, TableDescStatic> lut;
+            for (auto& [uid, desc] : descs) {
+                lut.insert({ uid, desc });
+            }
+            return lut;
+        }();
+    }
+
+    std::optional<TableDesc> Find(UID table, std::function<std::optional<Type>(UID)> findType) const {
+        const auto it = m_lut.find(table);
+        if (it != m_lut.end()) {
+            std::vector<ColumnDesc> columns;
+            for (const auto& column : it->second.columns) {
+                columns.emplace_back(std::string(column.name), column.isUnique, findType(column.type).value());
+            }
+            return TableDesc{ std::string(it->second.name), it->second.kind, std::move(columns), it->second.singleRow };
+        }
+        return std::nullopt;
+    }
+
+private:
+    std::unordered_map<UID, TableDescStatic> m_lut;
 };
 
 } // namespace sedmgr
