@@ -68,10 +68,8 @@ asyncpp::task<void> EncryptedDevice::Login(UID securityProvider) {
 
 
 asyncpp::task<void> EncryptedDevice::Authenticate(UID authority, std::optional<std::vector<std::byte>> password) {
-    if (m_session) {
-        return m_session->base.Authenticate(authority, password);
-    }
-    throw std::logic_error("start a session on an SP to authenticate");
+    EnsureSession();
+    return m_session->base.Authenticate(authority, password);
 }
 
 
@@ -84,6 +82,7 @@ asyncpp::task<void> EncryptedDevice::End() {
 
 
 asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
+    EnsureSession();
     const auto desc = GetModules().FindTable(table);
     if (!desc) {
         throw std::invalid_argument(std::format("could not find table description: {}", table.ToString()));
@@ -104,6 +103,7 @@ asyncpp::stream<UID> EncryptedDevice::GetTableRows(UID table) {
 
 
 asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID object) {
+    EnsureSession();
     const auto maybeTableDesc = GetModules().FindTable(object.ContainingTable());
     if (!maybeTableDesc) {
         throw std::invalid_argument(std::format("could not find table description: {}", object.ToString()));
@@ -117,32 +117,38 @@ asyncpp::stream<Value> EncryptedDevice::GetObjectColumns(UID object) {
 
 
 asyncpp::task<Value> EncryptedDevice::GetValue(UID object, uint32_t column) {
+    EnsureSession();
     co_return co_await m_session->base.Get(object, column);
 }
 
 
 asyncpp::task<void> EncryptedDevice::SetValue(UID object, uint32_t column, Value value) {
+    EnsureSession();
     co_await m_session->base.Set(object, column, value);
 }
 
 
 asyncpp::task<void> EncryptedDevice::GenMEK(UID lockingRange) {
+    EnsureSession();
     co_await m_session->base.GenKey(lockingRange);
 }
 
 
 asyncpp::task<void> EncryptedDevice::GenPIN(UID credentialObject, uint32_t length) {
+    EnsureSession();
     co_await m_session->base.GenKey(credentialObject, std::nullopt, length);
 }
 
 
 asyncpp::task<void> EncryptedDevice::Revert(UID securityProvider) {
+    EnsureSession();
     co_await m_session->opal.Revert(securityProvider);
     co_await End();
 }
 
 
 asyncpp::task<void> EncryptedDevice::Activate(UID securityProvider) {
+    EnsureSession();
     co_await m_session->opal.Activate(securityProvider);
 }
 
@@ -158,6 +164,13 @@ asyncpp::task<void> EncryptedDevice::Reset() {
     co_await End();
     m_tper->Reset();
     *this = co_await Start(m_device);
+}
+
+
+void EncryptedDevice::EnsureSession() {
+    if (!m_session) {
+        throw std::logic_error("no open sessions");
+    }
 }
 
 } // namespace sedmgr

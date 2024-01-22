@@ -80,3 +80,13 @@ TEST_CASE_METHOD(LockingSessionFixture, "Session: GenKey", "Session") {
     const auto globalKey = Opal1Module::Get()->FindUid("K_AES_256::GlobalRange", lockingSpUid).value();
     REQUIRE_NOTHROW(join(session->base.GenKey(globalKey)));
 }
+
+
+TEST_CASE_METHOD(AdminSessionFixture, "Session: Revert", "Session") {
+    SECTION("Admin SP") {
+        REQUIRE_NOTHROW(join(session->opal.Revert(adminSpUid)));
+    }
+    SECTION("Locking SP") {
+        REQUIRE_NOTHROW(join(session->opal.Revert(lockingSpUid)));
+    }
+}

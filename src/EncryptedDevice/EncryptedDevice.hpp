@@ -50,6 +50,8 @@ private:
                     std::shared_ptr<TrustedPeripheral> tper,
                     std::shared_ptr<SessionManager> sessionManager);
 
+    void EnsureSession();
+
 private:
     std::shared_ptr<StorageDevice> m_device;
     std::shared_ptr<TrustedPeripheral> m_tper;

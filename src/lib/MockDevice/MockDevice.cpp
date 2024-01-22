@@ -388,12 +388,13 @@ namespace mock {
         }
         auto& session = sessionIt->second;
         const auto reply = [&]() -> std::optional<MethodResult> {
-            switch (core::eMethod(call.methodId)) {
-                case core::eMethod::Get: return CallMethod(call, session, &SessionLayerHandler::Get, getMethod);
-                case core::eMethod::Set: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
-                case core::eMethod::Next: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
-                case core::eMethod::Authenticate: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
-                case core::eMethod::GenKey: return CallMethod(call, session, &SessionLayerHandler::GenKey, genKeyMethod);
+            switch (call.methodId.value) {
+                case UID(core::eMethod::Get).value: return CallMethod(call, session, &SessionLayerHandler::Get, getMethod);
+                case UID(core::eMethod::Set).value: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
+                case UID(core::eMethod::Next).value: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
+                case UID(core::eMethod::Authenticate).value: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
+                case UID(core::eMethod::GenKey).value: return CallMethod(call, session, &SessionLayerHandler::GenKey, genKeyMethod);
+                case UID(opal::eMethod::Revert).value: return CallMethod(call, session, &SessionLayerHandler::Revert, revertMethod);
                 default: return std::nullopt;
             }
         }();
@@ -695,6 +696,20 @@ namespace mock {
             return { {}, eMethodStatus::SUCCESS };
         }
         return { {}, eMethodStatus::INVALID_PARAMETER };
+    }
+
+
+    auto SessionLayerHandler::Revert(Session& session, UID invokingId) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        auto& sp = *session.securityProvider;
+        if (!sp.contains(UID(core::eTable::SP))) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto& spTable = sp[UID(core::eTable::SP)];
+        if (!spTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        return { {}, eMethodStatus::SUCCESS };
     }
 
 } // namespace mock
