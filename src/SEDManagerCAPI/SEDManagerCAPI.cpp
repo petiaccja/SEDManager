@@ -248,7 +248,7 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CValue_SetInteger(CValue* self, int64_t value, bool signedness, uint8_t width) {
+    SEDMANAGER_EXPORT void CValue_SetInteger(CValue* self, int64_t value, uint8_t width, bool signedness) {
         switch (width) {
             case 8: signedness ? self->object = int8_t(value) : self->object = uint8_t(value);
             case 16: signedness ? self->object = int16_t(value) : self->object = uint16_t(value);
@@ -509,13 +509,13 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureValue* CEncryptedDevice_GetObjectColumn(CEncryptedDevice* self, CUID object, uint32_t column) {
-        return new CFutureValue{ self->object->GetObjectColumn(UID(object), column) };
+    SEDMANAGER_EXPORT CFutureValue* CEncryptedDevice_GetValue(CEncryptedDevice* self, CUID object, uint32_t column) {
+        return new CFutureValue{ self->object->GetValue(UID(object), column) };
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_SetObjectColumn(CEncryptedDevice* self, CUID object, uint32_t column, CValue* value) {
-        return new CFutureVoid{ self->object->SetObjectColumn(UID(object), column, value->object) };
+    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_SetValue(CEncryptedDevice* self, CUID object, uint32_t column, CValue* value) {
+        return new CFutureVoid{ self->object->SetValue(UID(object), column, value->object) };
     }
 
 
@@ -611,30 +611,28 @@ void CStream_Destroy(CStream<Ty>* self) {
 
 
 template <class Ty, class Wrapper>
-void CStream_Start(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
-    launch([](auto stream, auto callback) -> asyncpp::task<void> {
-        asyncpp::await_result_t<std::decay_t<decltype(stream)>> result;
-        do {
-            try {
-                result = co_await stream;
-                if (result) {
-                    using WrapperBase = std::remove_pointer_t<Wrapper>;
-                    if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
-                        callback(true, true, new WrapperBase(std::move(*result)));
-                    }
-                    else {
-                        callback(true, true, WrapperBase(std::move(*result)));
-                    }
+void CStream_Advance(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
+    launch([](auto& stream, auto callback) -> asyncpp::task<void> {
+        try {
+            auto result = co_await stream;
+            if (result) {
+                using WrapperBase = std::remove_pointer_t<Wrapper>;
+                if constexpr (std::is_pointer_v<Wrapper> && !std::is_pointer_v<Ty>) {
+                    callback(true, true, new WrapperBase(std::move(*result)));
+                }
+                else {
+                    callback(true, true, WrapperBase(std::move(*result)));
                 }
             }
-            catch (...) {
-                SetLastException();
-                callback(true, false, Wrapper{});
-                continue;
+            else {
+                callback(false, false, Wrapper{});
             }
-        } while (result);
-        callback(false, false, Wrapper{});
-    }(std::move(self->object), callback));
+        }
+        catch (...) {
+            SetLastException();
+            callback(true, false, Wrapper{});
+        }
+    }(self->object, callback));
 }
 
 
@@ -695,8 +693,8 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CStreamUID_Start(CStreamUID* self, void (*callback)(bool, bool, CUID)) {
-        CStream_Start(self, callback);
+    SEDMANAGER_EXPORT void CStreamUID_Advance(CStreamUID* self, void (*callback)(bool, bool, CUID)) {
+        CStream_Advance(self, callback);
     }
 
 
@@ -705,7 +703,7 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT void CStreamString_Start(CStreamString* self, void (*callback)(bool, bool, CString*)) {
-        CStream_Start(self, callback);
+    SEDMANAGER_EXPORT void CStreamString_Advance(CStreamString* self, void (*callback)(bool, bool, CString*)) {
+        CStream_Advance(self, callback);
     }
 }
