@@ -525,6 +525,14 @@ namespace mock {
             };
         }
 
+        const auto hasSession = m_sessions.end() != std::ranges::find_if(m_sessions, [&](const auto& session) { return session.second.securityProvider == *spIt; });
+        if (hasSession) {
+            return {
+                std::tuple(hostSessionID, 0, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt),
+                eMethodStatus::SP_BUSY,
+            };
+        }
+
         const uint32_t tsn = m_nextTsn++;
         m_sessions.insert_or_assign(SessionId{ tsn, hostSessionID }, Session{ *spIt });
         return {

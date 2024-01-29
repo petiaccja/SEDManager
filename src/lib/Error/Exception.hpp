@@ -83,8 +83,8 @@ struct InvalidResponseError : std::logic_error {
 struct NoResponseError : std::logic_error {
     NoResponseError()
         : std::logic_error("no response") {}
-    NoResponseError(std::string_view methodName)
-        : std::logic_error(std::format("no response to '{}'", methodName)) {}
+    NoResponseError(std::string_view message)
+        : std::logic_error(std::format("no response: {}", message)) {}
 };
 
 

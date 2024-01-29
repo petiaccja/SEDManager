@@ -162,7 +162,7 @@ asyncpp::task<void> EncryptedDevice::StackReset() {
 
 asyncpp::task<void> EncryptedDevice::Reset() {
     co_await End();
-    m_tper->Reset();
+    co_await m_tper->Reset();
     *this = co_await Start(m_device);
 }
 

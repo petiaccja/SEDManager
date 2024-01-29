@@ -49,9 +49,15 @@ auto SessionManager::StartSession(
 
 asyncpp::task<void> SessionManager::EndSession(uint32_t tperSessionNumber, uint32_t hostSessionNumber) {
     Value request = eCommand::END_OF_SESSION;
-    Log("End session: request", request);
-    const Value response = co_await SendPacketizedValue(m_tper, PROTOCOL, tperSessionNumber, hostSessionNumber, request, false);
-    Log("End session: response", response);
+    Log(std::format("Host -> TPer >> End session TSN={}, HSN={}", tperSessionNumber, hostSessionNumber), request);
+    try {
+        const Value response = co_await SendPacketizedValue(m_tper, PROTOCOL, tperSessionNumber, hostSessionNumber, request, false);
+        Log("TPer -> Host << End session", response);
+    }
+    catch (std::exception& ex) {
+        Log(std::format("TPer -> Host << End session --- {}", ex.what()));
+        throw;
+    }
 }
 
 

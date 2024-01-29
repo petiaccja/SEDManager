@@ -75,13 +75,19 @@ asyncpp::task<MethodResult> CallRemoteMethod(std::shared_ptr<TrustedPeripheral> 
     const auto methodName = maybeMethodName.value_or(call.methodId.ToString());
 
     const auto request = MethodCallToValue(call);
-    Log(std::format("Call '{}' [Session]", methodName), request);
-    const Value response = co_await SendPacketizedValue(tper, protocol, tperSessionNumber, hostSessionNumber, request, true);
-    Log(std::format("Result '{}' [Session]", methodName), response);
+    Log(std::format("Host -> TPer >> '{}' [Session]", methodName), request);
+    try {
+        const Value response = co_await SendPacketizedValue(tper, protocol, tperSessionNumber, hostSessionNumber, request, true);
+        Log(std::format("TPer -> Host << '{}' [Session]", methodName), response);
 
-    MethodResult result = MethodResultFromValue(response);
-    MethodStatusToException(methodName, result.status);
-    co_return result;
+        MethodResult result = MethodResultFromValue(response);
+        MethodStatusToException(methodName, result.status);
+        co_return result;
+    }
+    catch (std::exception& ex) {
+        Log(std::format("TPer -> Host << '{}' [Session] --- {}", methodName, ex.what()));
+        throw;
+    }
 }
 
 
@@ -94,13 +100,19 @@ asyncpp::task<MethodResult> CallRemoteSessionMethod(std::shared_ptr<TrustedPerip
     const auto methodName = maybeMethodName.value_or(call.methodId.ToString());
 
     const auto request = MethodCallToValue(call);
-    Log(std::format("Call '{}' [Session]", methodName), request);
-    const Value response = co_await SendPacketizedValue(tper, protocol, tperSessionNumber, hostSessionNumber, request, true);
-    Log(std::format("Result '{}' [Session]", methodName), response);
+    Log(std::format("Host -> TPer >> '{}' [SessionManager]", methodName), request);
+    try {
+        const Value response = co_await SendPacketizedValue(tper, protocol, tperSessionNumber, hostSessionNumber, request, true);
+        Log(std::format("TPer -> Host << '{}' [SessionManager]", methodName), response);
 
-    MethodCall result = MethodCallFromValue(response);
-    MethodStatusToException(methodName, result.status);
-    co_return { std::move(result.args), result.status };
+        MethodCall result = MethodCallFromValue(response);
+        MethodStatusToException(methodName, result.status);
+        co_return { std::move(result.args), result.status };
+    }
+    catch (std::exception& ex) {
+        Log(std::format("TPer -> Host << '{}' [SessionManager] --- {}", methodName, ex.what()));
+        throw;
+    }
 }
 
 
