@@ -395,6 +395,7 @@ namespace mock {
                 case UID(core::eMethod::Authenticate).value: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
                 case UID(core::eMethod::GenKey).value: return CallMethod(call, session, &SessionLayerHandler::GenKey, genKeyMethod);
                 case UID(opal::eMethod::Revert).value: return CallMethod(call, session, &SessionLayerHandler::Revert, revertMethod);
+                case UID(opal::eMethod::Activate).value: return CallMethod(call, session, &SessionLayerHandler::Activate, activateMethod);
                 default: return std::nullopt;
             }
         }();
@@ -708,6 +709,32 @@ namespace mock {
         const auto& spTable = sp[UID(core::eTable::SP)];
         if (!spTable.contains(invokingId)) {
             return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        return { {}, eMethodStatus::SUCCESS };
+    }
+
+
+    auto SessionLayerHandler::Activate(Session& session, UID invokingId) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        auto& sp = *session.securityProvider;
+        if (!sp.contains(UID(core::eTable::SP))) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& spTable = sp[UID(core::eTable::SP)];
+        if (!spTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto lifeCycleState = spTable[invokingId][6];
+        if (lifeCycleState == 8) {
+            spTable[invokingId][6] = 9;
+            const auto lockingSpUid = Opal1Module::Get()->FindUid("SP::Locking").value();
+            const auto cPinSid = Opal1Module::Get()->FindUid("C_PIN::SID", sp.GetUID()).value();
+            const auto cPinAdmin1 = Opal1Module::Get()->FindUid("C_PIN::Admin1", lockingSpUid).value();
+            const auto lockingSpIt = std::ranges::find_if(m_securityProviders, [&](const auto& sp) { return sp->GetUID() == lockingSpUid; });
+            assert(lockingSpIt != m_securityProviders.end());
+            auto& cPinAdmin1Value = (**lockingSpIt)[UID(core::eTable::C_PIN)][cPinAdmin1][3];
+            const auto& cPinSidValue = sp[UID(core::eTable::C_PIN)][cPinSid][3];
+            cPinAdmin1Value = cPinSidValue;
         }
         return { {}, eMethodStatus::SUCCESS };
     }

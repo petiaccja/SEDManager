@@ -170,6 +170,9 @@ namespace mock {
         auto Revert(Session& session, UID invokingId) const
             -> std::pair<std::tuple<>, eMethodStatus>;
 
+        auto Activate(Session& session, UID invokingId) const
+            -> std::pair<std::tuple<>, eMethodStatus>;
+
     private:
         static constexpr auto propertiesMethod = Method<UID(core::eMethod::Properties), 0, 1, 1, 1>{};
         static constexpr auto startSessionMethod = Method<UID(core::eMethod::StartSession), 3, 9, 2, 6>{};

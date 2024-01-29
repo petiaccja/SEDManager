@@ -51,7 +51,7 @@ TEST_CASE_METHOD(AdminSessionFixture, "Session: Get", "Session") {
     REQUIRE(value_cast<UID>(join(session->base.Get(adminSpUid, 0))) == adminSpUid);
     const auto all = join(session->base.Get(adminSpUid, 0, 8));
     REQUIRE(value_cast<std::string>(all[1]) == "Admin");
-    REQUIRE(value_cast<int>(all[6]) == 0);
+    REQUIRE(value_cast<int>(all[6]) == 9);
     REQUIRE(value_cast<bool>(all[7]) == false);
 }
 
@@ -89,4 +89,8 @@ TEST_CASE_METHOD(AdminSessionFixture, "Session: Revert", "Session") {
     SECTION("Locking SP") {
         REQUIRE_NOTHROW(join(session->opal.Revert(lockingSpUid)));
     }
+}
+
+TEST_CASE_METHOD(AdminSessionFixture, "Session: Activate", "Session") {
+    REQUIRE_NOTHROW(join(session->opal.Activate(lockingSpUid)));
 }

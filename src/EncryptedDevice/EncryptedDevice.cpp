@@ -69,7 +69,7 @@ asyncpp::task<void> EncryptedDevice::Login(UID securityProvider) {
 
 asyncpp::task<void> EncryptedDevice::Authenticate(UID authority, std::optional<std::vector<std::byte>> password) {
     EnsureSession();
-    return m_session->base.Authenticate(authority, password);
+    co_return co_await m_session->base.Authenticate(authority, password);
 }
 
 
