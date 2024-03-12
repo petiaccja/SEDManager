@@ -11,8 +11,8 @@
 std::vector<std::byte> GetPassword(std::string_view prompt);
 std::string GetMultiline(std::string_view terminator);
 
-std::optional<sedmgr::UID> ParseObjectRef(sedmgr::EncryptedDevice& app, std::string_view nameOrUid, std::optional<sedmgr::UID> sp = {});
-std::string FormatObjectRef(sedmgr::EncryptedDevice& app, sedmgr::UID uid, std::optional<sedmgr::UID> sp = {});
+std::optional<sedmgr::UID> ParseObjectRef(const sedmgr::ModuleCollection& app, std::string_view nameOrUid, std::optional<sedmgr::UID> sp = {});
+std::string FormatObjectRef(const sedmgr::ModuleCollection& app, sedmgr::UID uid, std::optional<sedmgr::UID> sp = {});
 std::string FormatTable(std::span<const std::string> columns, std::span<const std::vector<std::string>> rows);
 
 std::vector<std::string_view> SplitName(std::string_view name);

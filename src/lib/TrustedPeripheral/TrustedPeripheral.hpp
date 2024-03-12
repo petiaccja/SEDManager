@@ -73,6 +73,8 @@ template <class Reply, class Request>
 asyncpp::task<Reply> TrustedPeripheral::ExchangeStructure(uint8_t protocol, Request request) {
     using namespace std::chrono_literals;
 
+    asyncpp::unique_lock lk = co_await *m_sendRecvMutex;
+
     const auto sendBuffer = Serialize(request);
     m_storageDevice->SecuritySend(protocol, SerializeComId(m_comId), sendBuffer);
 

@@ -1,3 +1,5 @@
+#include <async++/thread_pool.hpp>
+
 #include <Messaging/Value.hpp>
 #include <MockDevice/MockDevice.hpp>
 
@@ -13,6 +15,9 @@
 
 
 using namespace sedmgr;
+
+
+static asyncpp::thread_pool threadPool(1);
 
 
 //------------------------------------------------------------------------------
@@ -67,6 +72,12 @@ struct CEncryptedDevice {
 };
 
 
+struct CSession {
+    CSession(SimpleSession object) : object(std::make_shared<SimpleSession>(std::move(object))) {}
+    std::shared_ptr<SimpleSession> object;
+};
+
+
 template <class T>
 struct CFuture {
     asyncpp::task<T> object;
@@ -81,6 +92,7 @@ struct CStream {
 
 using CFutureVoid = CFuture<void>;
 using CFutureEncryptedDevice = CFuture<EncryptedDevice>;
+using CFutureSession = CFuture<SimpleSession>;
 using CFutureValue = CFuture<Value>;
 using CFutureString = CFuture<std::string>;
 using CFutureUID = CFuture<UID>;
@@ -250,9 +262,13 @@ extern "C"
 
     SEDMANAGER_EXPORT void CValue_SetInteger(CValue* self, int64_t value, uint8_t width, bool signedness) {
         switch (width) {
-            case 8: signedness ? self->object = int8_t(value) : self->object = uint8_t(value);
-            case 16: signedness ? self->object = int16_t(value) : self->object = uint16_t(value);
-            case 32: signedness ? self->object = int32_t(value) : self->object = uint32_t(value);
+            case 1: signedness ? self->object = int8_t(value) : self->object = uint8_t(value);
+            case 2: signedness ? self->object = int16_t(value) : self->object = uint16_t(value);
+            case 3: [[fallthrough]];
+            case 4: signedness ? self->object = int32_t(value) : self->object = uint32_t(value);
+            case 5: [[fallthrough]];
+            case 6: [[fallthrough]];
+            case 7: [[fallthrough]];
             default: signedness ? self->object = int64_t(value) : self->object = uint64_t(value);
         }
     }
@@ -421,14 +437,8 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Login(CEncryptedDevice* self, CUID securityProvider) {
-        return new CFutureVoid{ self->object->Login(UID(securityProvider)) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Authenticate(CEncryptedDevice* self, CUID authority, std::byte* password, size_t passwordLength) {
-        const auto _password = password ? std::optional(std::vector(password, password + passwordLength)) : std::nullopt;
-        return new CFutureVoid{ self->object->Authenticate(UID(authority), std::move(_password)) };
+    SEDMANAGER_EXPORT CFutureSession* CEncryptedDevice_Login(CEncryptedDevice* self, CUID securityProvider) {
+        return new CFutureSession{ self->object->Login(UID(securityProvider)) };
     }
 
 
@@ -439,11 +449,6 @@ extern "C"
 
     SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Reset(CEncryptedDevice* self) {
         return new CFutureVoid{ self->object->Reset() };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_End(CEncryptedDevice* self) {
-        return new CFutureVoid{ self->object->End() };
     }
 
 
@@ -477,68 +482,6 @@ extern "C"
     }
 
 
-    SEDMANAGER_EXPORT CStreamUID* CEncryptedDevice_GetTableRows(CEncryptedDevice* self, CUID table) {
-        return new CStreamUID{ self->object->GetTableRows(UID(table)) };
-    }
-
-
-    SEDMANAGER_EXPORT size_t CEncryptedDevice_GetColumnCount(CEncryptedDevice* self, CUID table) {
-        const auto& modules = self->object->GetModules();
-        const auto maybeDesc = modules.FindTable(UID(table));
-        return maybeDesc ? maybeDesc->columns.size() : 0;
-    }
-
-
-    SEDMANAGER_EXPORT CString* CEncryptedDevice_GetColumnName(CEncryptedDevice* self, CUID table, uint32_t column) {
-        const auto& modules = self->object->GetModules();
-        const auto maybeDesc = modules.FindTable(UID(table));
-        if (maybeDesc && column < maybeDesc->columns.size()) {
-            return new CString(maybeDesc->columns[column].name);
-        }
-        return nullptr;
-    }
-
-
-    SEDMANAGER_EXPORT CType* CEncryptedDevice_GetColumnType(CEncryptedDevice* self, CUID table, uint32_t column) {
-        const auto& modules = self->object->GetModules();
-        const auto maybeDesc = modules.FindTable(UID(table));
-        if (maybeDesc && column < maybeDesc->columns.size()) {
-            return new CType(maybeDesc->columns[column].type);
-        }
-        return nullptr;
-    }
-
-
-    SEDMANAGER_EXPORT CFutureValue* CEncryptedDevice_GetValue(CEncryptedDevice* self, CUID object, uint32_t column) {
-        return new CFutureValue{ self->object->GetValue(UID(object), column) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_SetValue(CEncryptedDevice* self, CUID object, uint32_t column, CValue* value) {
-        return new CFutureVoid{ self->object->SetValue(UID(object), column, value->object) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenMEK(CEncryptedDevice* self, CUID lockingRange) {
-        return new CFutureVoid{ self->object->GenMEK(UID(lockingRange)) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_GenPIN(CEncryptedDevice* self, CUID credentialObject, uint32_t length) {
-        return new CFutureVoid{ self->object->GenPIN(UID(credentialObject), length) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Revert(CEncryptedDevice* self, CUID securityProvider) {
-        return new CFutureVoid{ self->object->Revert(UID(securityProvider)) };
-    }
-
-
-    SEDMANAGER_EXPORT CFutureVoid* CEncryptedDevice_Activate(CEncryptedDevice* self, CUID securityProvider) {
-        return new CFutureVoid{ self->object->Activate(UID(securityProvider)) };
-    }
-
-
     SEDMANAGER_EXPORT CString* CEncryptedDevice_RenderValue(CEncryptedDevice* self, CValue* value, CType* type, CUID securityProvider) {
         try {
             const auto maybeSecurityProvider = securityProvider != 0 ? std::optional(UID(securityProvider)) : std::nullopt;
@@ -566,6 +509,97 @@ extern "C"
         }
     }
 }
+
+//------------------------------------------------------------------------------
+// CSession
+//------------------------------------------------------------------------------
+
+
+extern "C"
+{
+    SEDMANAGER_EXPORT void CSession_Destroy(CSession* self) {
+        delete self;
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_End(CSession* self) {
+        return new CFutureVoid{ self->object->End() };
+    }
+
+
+    SEDMANAGER_EXPORT CUID CSession_GetSecurityProvider(CSession* self) {
+        return self->object->GetSecurityProvider().value;
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_Authenticate(CSession* self, CUID authority, std::byte* password, size_t passwordLength) {
+        const auto _password = password ? std::optional(std::vector(password, password + passwordLength)) : std::nullopt;
+        return new CFutureVoid{ self->object->Authenticate(UID(authority), std::move(_password)) };
+    }
+
+
+    SEDMANAGER_EXPORT CStreamUID* CSession_GetTableRows(CSession* self, CUID table) {
+        return new CStreamUID{ self->object->GetTableRows(UID(table)) };
+    }
+
+
+    SEDMANAGER_EXPORT size_t CSession_GetColumnCount(CSession* self, CUID table) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeDesc = modules.FindTable(UID(table));
+        return maybeDesc ? maybeDesc->columns.size() : 0;
+    }
+
+
+    SEDMANAGER_EXPORT CString* CSession_GetColumnName(CSession* self, CUID table, uint32_t column) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeDesc = modules.FindTable(UID(table));
+        if (maybeDesc && column < maybeDesc->columns.size()) {
+            return new CString(maybeDesc->columns[column].name);
+        }
+        return nullptr;
+    }
+
+
+    SEDMANAGER_EXPORT CType* CSession_GetColumnType(CSession* self, CUID table, uint32_t column) {
+        const auto& modules = self->object->GetModules();
+        const auto maybeDesc = modules.FindTable(UID(table));
+        if (maybeDesc && column < maybeDesc->columns.size()) {
+            return new CType(maybeDesc->columns[column].type);
+        }
+        return nullptr;
+    }
+
+
+    SEDMANAGER_EXPORT CFutureValue* CSession_GetValue(CSession* self, CUID object, uint32_t column) {
+        return new CFutureValue{ self->object->GetValue(UID(object), column) };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_SetValue(CSession* self, CUID object, uint32_t column, CValue* value) {
+        return new CFutureVoid{ self->object->SetValue(UID(object), column, value->object) };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_GenMEK(CSession* self, CUID lockingRange) {
+        return new CFutureVoid{ self->object->GenMEK(UID(lockingRange)) };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_GenPIN(CSession* self, CUID credentialObject, uint32_t length) {
+        return new CFutureVoid{ self->object->GenPIN(UID(credentialObject), length) };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_Revert(CSession* self, CUID securityProvider) {
+        return new CFutureVoid{ self->object->Revert(UID(securityProvider)) };
+    }
+
+
+    SEDMANAGER_EXPORT CFutureVoid* CSession_Activate(CSession* self, CUID securityProvider) {
+        return new CFutureVoid{ self->object->Activate(UID(securityProvider)) };
+    }
+}
+
 
 //------------------------------------------------------------------------------
 // Futures
@@ -600,7 +634,8 @@ void CFuture_Start(CFuture<Ty>* self, void (*callback)(bool, Wrapper)) {
             SetLastException();
             callback(false, Wrapper{});
         }
-    }(std::move(self->object), callback));
+    }(std::move(self->object), callback),
+           threadPool);
 }
 
 
@@ -632,7 +667,8 @@ void CStream_Advance(CStream<Ty>* self, void (*callback)(bool, bool, Wrapper)) {
             SetLastException();
             callback(true, false, Wrapper{});
         }
-    }(self->object, callback));
+    }(self->object, callback),
+           threadPool);
 }
 
 
@@ -684,6 +720,16 @@ extern "C"
 
 
     SEDMANAGER_EXPORT void CFutureEncryptedDevice_Start(CFutureEncryptedDevice* self, void (*callback)(bool, CEncryptedDevice*)) {
+        CFuture_Start(self, callback);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureSession_Destroy(CFutureSession* self) {
+        CFuture_Destroy(self);
+    }
+
+
+    SEDMANAGER_EXPORT void CFutureSession_Start(CFutureSession* self, void (*callback)(bool, CSession*)) {
         CFuture_Start(self, callback);
     }
 

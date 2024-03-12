@@ -10,29 +10,21 @@
 
 namespace sedmgr {
 
-struct NamedObject {
-    UID uid = 0_uid;
-    std::optional<std::string> name = std::nullopt;
-};
-
-
-class EncryptedDevice {
+class SimpleSession {
 public:
-    EncryptedDevice(std::shared_ptr<StorageDevice> device);
-    EncryptedDevice(const EncryptedDevice&) = delete;
-    EncryptedDevice& operator=(const EncryptedDevice&) = delete;
-    EncryptedDevice(EncryptedDevice&&) = default;
-    EncryptedDevice& operator=(EncryptedDevice&&) = default;
-    ~EncryptedDevice();
+    SimpleSession(std::shared_ptr<TrustedPeripheral> tper,
+                  std::shared_ptr<Session> session,
+                  UID securityProvider);
 
-    static asyncpp::task<EncryptedDevice> Start(std::shared_ptr<StorageDevice> device);
-    const TPerDesc& GetDesc() const;
+    SimpleSession(const SimpleSession&) = delete;
+    SimpleSession& operator=(const SimpleSession&) = delete;
+    SimpleSession(SimpleSession&&) = default;
+    SimpleSession& operator=(SimpleSession&&) = default;
+    ~SimpleSession();
+
     const ModuleCollection& GetModules() const;
-
-    asyncpp::task<void> Login(UID securityProvider);
+    UID GetSecurityProvider() const;
     asyncpp::task<void> Authenticate(UID authority, std::optional<std::vector<std::byte>> password = {});
-    asyncpp::task<void> StackReset();
-    asyncpp::task<void> Reset();
     asyncpp::task<void> End();
 
     asyncpp::stream<UID> GetTableRows(UID table);
@@ -46,17 +38,37 @@ public:
     asyncpp::task<void> Activate(UID securityProvider);
 
 private:
+    std::shared_ptr<TrustedPeripheral> m_tper;
+    std::shared_ptr<Session> m_session;
+    UID m_securityProvider;
+};
+
+
+class EncryptedDevice {
+public:
+    EncryptedDevice(std::shared_ptr<StorageDevice> device);
+    EncryptedDevice(const EncryptedDevice&) = delete;
+    EncryptedDevice& operator=(const EncryptedDevice&) = delete;
+    EncryptedDevice(EncryptedDevice&&) = default;
+    EncryptedDevice& operator=(EncryptedDevice&&) = default;
+
+    static asyncpp::task<EncryptedDevice> Start(std::shared_ptr<StorageDevice> device);
+    const TPerDesc& GetDesc() const;
+    const ModuleCollection& GetModules() const;
+
+    asyncpp::task<SimpleSession> Login(UID securityProvider);
+    asyncpp::task<void> StackReset();
+    asyncpp::task<void> Reset();
+
+private:
     EncryptedDevice(std::shared_ptr<StorageDevice> device,
                     std::shared_ptr<TrustedPeripheral> tper,
                     std::shared_ptr<SessionManager> sessionManager);
-
-    void EnsureSession();
 
 private:
     std::shared_ptr<StorageDevice> m_device;
     std::shared_ptr<TrustedPeripheral> m_tper;
     std::shared_ptr<SessionManager> m_sessionManager;
-    std::shared_ptr<Session> m_session;
 };
 
 } // namespace sedmgr

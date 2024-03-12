@@ -70,16 +70,16 @@ std::string GetDeviceName(std::shared_ptr<StorageDevice> device) {
 }
 
 
-void StartLockingSession(EncryptedDevice& manager) {
+SimpleSession StartLockingSession(EncryptedDevice& manager) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
 
     try {
-        join(manager.Login(lockingSpUid));
+        return join(manager.Login(lockingSpUid));
     }
     catch (SecurityProviderBusyError& ex) {
         // Do a stack reset and retry, maybe a previous session was not terminated properly.
         join(manager.StackReset());
-        join(manager.Login(lockingSpUid));
+        return join(manager.Login(lockingSpUid));
     }
 }
 
@@ -99,9 +99,9 @@ std::string FormatName(std::string_view name, const std::optional<std::string> c
 }
 
 
-std::optional<UID> FindAuthority(EncryptedDevice& manager, std::string_view name) {
+std::optional<UID> FindAuthority(SimpleSession& manager, std::string_view name) {
     const auto lockingSpUid = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
-    const auto maybeUid = ParseObjectRef(manager, std::format("Authority::{}", name), lockingSpUid);
+    const auto maybeUid = ParseObjectRef(manager.GetModules(), std::format("Authority::{}", name), lockingSpUid);
     if (maybeUid) {
         return maybeUid;
     }
@@ -122,7 +122,7 @@ std::optional<UID> FindAuthority(EncryptedDevice& manager, std::string_view name
 }
 
 
-std::optional<UID> TryGetUser(EncryptedDevice& manager) {
+std::optional<UID> TryGetUser(SimpleSession& session) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {
@@ -134,7 +134,7 @@ std::optional<UID> TryGetUser(EncryptedDevice& manager) {
             std::cout << "Cancelled." << std::endl;
             return std::nullopt;
         }
-        const auto authority = FindAuthority(manager, userName);
+        const auto authority = FindAuthority(session, userName);
         if (authority) {
             return authority;
         }
@@ -144,7 +144,7 @@ std::optional<UID> TryGetUser(EncryptedDevice& manager) {
 }
 
 
-bool TryLoginUser(EncryptedDevice& manager, UID authority) {
+bool TryLoginUser(SimpleSession& session, UID authority) {
     constexpr auto maxTries = 5;
 
     for (auto i = 0; i < maxTries; ++i) {
@@ -155,7 +155,7 @@ bool TryLoginUser(EncryptedDevice& manager, UID authority) {
                 std::cout << "Cancelled." << std::endl;
                 return false;
             }
-            join(manager.Authenticate(authority, password));
+            join(session.Authenticate(authority, password));
             return true;
         }
         catch (PasswordError&) {
@@ -166,13 +166,13 @@ bool TryLoginUser(EncryptedDevice& manager, UID authority) {
 }
 
 
-void TryUnlockRanges(EncryptedDevice& manager) {
+void TryUnlockRanges(SimpleSession& manager) {
     const auto lockingSp = Unwrap(manager.GetModules().FindUid("SP::Locking"), "could not find Locking SP");
     const auto lockingTableUid = Unwrap(manager.GetModules().FindUid("Locking"), "could not find Locking table");
     auto lockingRangeUids = manager.GetTableRows(lockingTableUid);
 
     while (const auto lockingRange = join(lockingRangeUids)) {
-        const auto name = FormatObjectRef(manager, *lockingRange, lockingSp);
+        const auto name = FormatObjectRef(manager.GetModules(), *lockingRange, lockingSp);
         const auto commonName = UnwrapCommonName(join(manager.GetValue(*lockingRange, 2)));
 
         bool rdUnlocked = false;
@@ -199,10 +199,10 @@ void TryUnlockRanges(EncryptedDevice& manager) {
 }
 
 
-void TryDoMBR(EncryptedDevice& manager) {
-    const auto mbrControlTableUid = Unwrap(manager.GetModules().FindUid("MBRControl"), "could not find MBRControl table");
+void TryDoMBR(SimpleSession& session) {
+    const auto mbrControlTableUid = Unwrap(session.GetModules().FindUid("MBRControl"), "could not find MBRControl table");
     try {
-        join(manager.SetValue(mbrControlTableUid, 2, 1));
+        join(session.SetValue(mbrControlTableUid, 2, 1));
         std::cout << "MBR Done!" << std::endl;
     }
     catch (std::exception&) {
@@ -213,15 +213,15 @@ void TryDoMBR(EncryptedDevice& manager) {
 
 
 void UnlockDevice(std::shared_ptr<StorageDevice> device) {
-    std::optional<EncryptedDevice> maybeManager = ConnectDevice(device);
-    if (!maybeManager) {
+    std::optional<EncryptedDevice> maybeEncryptedDevice = ConnectDevice(device);
+    if (!maybeEncryptedDevice) {
         // Device does not support TCG specifications.
         // Ignore device.
         return;
     }
-    auto& manager = *maybeManager;
+    auto& encryptedDevice = *maybeEncryptedDevice;
 
-    if (!IsLockingEnabled(manager)) {
+    if (!IsLockingEnabled(encryptedDevice)) {
         // Device does not have locking enabled.
         // Ignore device.
         return;
@@ -230,17 +230,17 @@ void UnlockDevice(std::shared_ptr<StorageDevice> device) {
     std::cout << std::format("Unlock '{}':", GetDeviceName(device)) << std::endl;
 
     try {
-        StartLockingSession(manager);
-        const auto user = TryGetUser(manager);
+        auto session = StartLockingSession(encryptedDevice);
+        const auto user = TryGetUser(session);
         if (!user) {
             return;
         }
-        const auto success = TryLoginUser(manager, *user);
+        const auto success = TryLoginUser(session, *user);
         if (!success) {
             return;
         }
-        TryUnlockRanges(manager);
-        TryDoMBR(manager);
+        TryUnlockRanges(session);
+        TryDoMBR(session);
     }
     catch (std::exception& ex) {
         std::cout << "Error: " << ex.what() << std::endl;

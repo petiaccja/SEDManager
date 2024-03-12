@@ -50,7 +50,7 @@ private:
 private:
     sedmgr::EncryptedDevice& m_manager;
     CLI::App m_cli;
-    std::optional<sedmgr::UID> m_currentSecurityProvider;
+    std::optional<sedmgr::SimpleSession> m_session;
     std::unordered_set<sedmgr::UID> m_currentAuthorities;
     bool m_finished = false;
 };
