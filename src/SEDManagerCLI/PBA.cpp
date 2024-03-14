@@ -1,7 +1,7 @@
 #include "PBA.hpp"
 
 #include "Utility.hpp"
-#include <async++/join.hpp>
+#include <asyncpp/join.hpp>
 
 #include <Messaging/Native.hpp>
 #include <StorageDevice/StorageDevice.hpp>
@@ -111,7 +111,7 @@ std::optional<UID> FindAuthority(SimpleSession& manager, std::string_view name) 
         try {
             const auto commonName = UnwrapCommonName(join(manager.GetValue(*authority, 2)));
             if (commonName && *commonName == name) {
-                return authority;
+                return *authority;
             }
         }
         catch (std::exception&) {

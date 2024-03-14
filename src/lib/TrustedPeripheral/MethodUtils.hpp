@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TrustedPeripheral.hpp"
-#include <async++/task.hpp>
+#include <asyncpp/task.hpp>
 
 #include <Messaging/Method.hpp>
 #include <Messaging/Native.hpp>

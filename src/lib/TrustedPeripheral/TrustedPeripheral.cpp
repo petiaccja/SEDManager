@@ -2,8 +2,8 @@
 
 #include "Logging.hpp"
 #include "MethodUtils.hpp"
-#include <async++/join.hpp>
-#include <async++/sleep.hpp>
+#include <asyncpp/join.hpp>
+#include <asyncpp/sleep.hpp>
 
 #include <Archive/Serialization.hpp>
 #include <Error/Exception.hpp>
@@ -180,8 +180,6 @@ asyncpp::task<ComPacket> TrustedPeripheral::ExchangePacket(uint8_t protocol, Com
     std::vector<std::byte> receiveBuffer(2048);
     impl::ExponentialDelay delay{ 1us, 2000ms };
     do {
-        co_await asyncpp::sleep_for(50ms); // TODO: remove, only for testing.
-
         SecurityReceive(*m_storageDevice, protocol, packet.comId, receiveBuffer);
         auto receivedPacket = DeSerialize(Serialized<ComPacket>(receiveBuffer));
 

@@ -1,6 +1,6 @@
 #include "EncryptedDevice.hpp"
 
-#include <async++/join.hpp>
+#include <asyncpp/join.hpp>
 
 #include <Specification/Core/CoreModule.hpp>
 
