@@ -30,7 +30,7 @@ jobs:
       - name: Install native compilers
         if: ${{ env.os == 'ubuntu-latest' }}
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt update
 
