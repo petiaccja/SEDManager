@@ -1,10 +1,10 @@
 #include "Interactive.hpp"
 
 #include "Utility.hpp"
-#include <asyncpp/join.hpp>
 
 #include <CLI/App.hpp>
 #include <EncryptedDevice/ValueToJSON.hpp>
+#include <asyncpp/join.hpp>
 
 #include <iostream>
 #include <ostream>

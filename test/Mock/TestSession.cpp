@@ -1,9 +1,9 @@
-#include <asyncpp/join.hpp>
-
 #include <MockDevice/MockDevice.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
 #include <TrustedPeripheral/Session.hpp>
+
+#include <asyncpp/join.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -11,9 +11,9 @@ using namespace sedmgr;
 using namespace std::string_view_literals;
 
 
-const auto adminSpUid = Opal1Module::Get() -> FindUid("SP::Admin").value();
-const auto lockingSpUid = Opal1Module::Get() -> FindUid("SP::Locking").value();
-const auto tableTableUid = CoreModule::Get() -> FindUid("Table").value();
+const auto adminSpUid = Opal1Module::Get()->FindUid("SP::Admin").value();
+const auto lockingSpUid = Opal1Module::Get()->FindUid("SP::Locking").value();
+const auto tableTableUid = CoreModule::Get()->FindUid("Table").value();
 
 
 struct SessionFixture {

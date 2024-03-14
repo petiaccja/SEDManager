@@ -1,8 +1,8 @@
-#include <asyncpp/join.hpp>
-
 #include <MockDevice/MockDevice.hpp>
 #include <Specification/Opal/OpalModule.hpp>
 #include <TrustedPeripheral/SessionManager.hpp>
+
+#include <asyncpp/join.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

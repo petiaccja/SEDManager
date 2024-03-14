@@ -1,8 +1,8 @@
 #include "EncryptedDevice.hpp"
 
-#include <asyncpp/join.hpp>
-
 #include <Specification/Core/CoreModule.hpp>
+
+#include <asyncpp/join.hpp>
 
 #include <stdexcept>
 

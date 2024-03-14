@@ -2,8 +2,6 @@
 
 #include "Logging.hpp"
 #include "MethodUtils.hpp"
-#include <asyncpp/join.hpp>
-#include <asyncpp/sleep.hpp>
 
 #include <Archive/Serialization.hpp>
 #include <Error/Exception.hpp>
@@ -11,6 +9,9 @@
 #include <Messaging/SetupPackets.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
+
+#include <asyncpp/join.hpp>
+#include <asyncpp/sleep.hpp>
 
 #include <array>
 #include <stdexcept>

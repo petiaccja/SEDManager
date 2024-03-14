@@ -2,9 +2,10 @@
 
 #include "MethodUtils.hpp"
 #include "TrustedPeripheral.hpp"
-#include <asyncpp/task.hpp>
 
 #include <Specification/Core/Defs/UIDs.hpp>
+
+#include <asyncpp/task.hpp>
 
 #include <vector>
 

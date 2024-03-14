@@ -1,7 +1,6 @@
 #include "Session.hpp"
 
 #include "Logging.hpp"
-#include <asyncpp/join.hpp>
 
 #include <Archive/Serialization.hpp>
 #include <Error/Exception.hpp>
@@ -9,6 +8,8 @@
 #include <Messaging/TokenStream.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
+
+#include <asyncpp/join.hpp>
 
 #include <atomic>
 

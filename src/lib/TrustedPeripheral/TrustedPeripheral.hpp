@@ -2,11 +2,12 @@
 
 #include "Discovery.hpp"
 #include "ModuleCollection.hpp"
-#include <asyncpp/mutex.hpp>
-#include <asyncpp/task.hpp>
 
 #include <Messaging/SetupPackets.hpp>
 #include <StorageDevice/NvmeDevice.hpp>
+
+#include <asyncpp/mutex.hpp>
+#include <asyncpp/task.hpp>
 
 #include <chrono>
 #include <memory>
@@ -43,8 +44,8 @@ private:
     asyncpp::task<Reply> ExchangeStructure(uint8_t protocol, Request request);
 
     static std::array<std::byte, 2> SerializeComId(uint16_t comId);
-    static void SecuritySend(StorageDevice& storageDevice, uint8_t protocol ,uint16_t comId, std::span<const std::byte> payload);
-    static void SecurityReceive(StorageDevice& storageDevice, uint8_t protocol ,uint16_t comId, std::span<std::byte> payload);
+    static void SecuritySend(StorageDevice& storageDevice, uint8_t protocol, uint16_t comId, std::span<const std::byte> payload);
+    static void SecurityReceive(StorageDevice& storageDevice, uint8_t protocol, uint16_t comId, std::span<std::byte> payload);
 
 private:
     std::shared_ptr<StorageDevice> m_storageDevice;

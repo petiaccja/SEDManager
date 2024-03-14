@@ -1,11 +1,11 @@
 #pragma once
 
-#include <asyncpp/stream.hpp>
-
 #include <StorageDevice/NvmeDevice.hpp>
 #include <TrustedPeripheral/Session.hpp>
 #include <TrustedPeripheral/SessionManager.hpp>
 #include <TrustedPeripheral/TrustedPeripheral.hpp>
+
+#include <asyncpp/stream.hpp>
 
 
 namespace sedmgr {

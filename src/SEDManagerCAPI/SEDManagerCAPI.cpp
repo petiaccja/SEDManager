@@ -1,10 +1,9 @@
-#include <asyncpp/thread_pool.hpp>
-
 #include <Messaging/Value.hpp>
 #include <MockDevice/MockDevice.hpp>
 
 #include <EncryptedDevice/EncryptedDevice.hpp>
 #include <EncryptedDevice/ValueToJSON.hpp>
+#include <asyncpp/thread_pool.hpp>
 
 
 #ifdef _WIN32

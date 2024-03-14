@@ -1,12 +1,12 @@
 #include "PBA.hpp"
 
 #include "Utility.hpp"
-#include <asyncpp/join.hpp>
 
 #include <Messaging/Native.hpp>
 #include <StorageDevice/StorageDevice.hpp>
 
 #include <EncryptedDevice/EncryptedDevice.hpp>
+#include <asyncpp/join.hpp>
 
 
 using namespace sedmgr;
