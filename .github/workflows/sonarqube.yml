@@ -64,7 +64,7 @@ jobs:
           git clone https://github.com/petiaccja/asyncpp-conan.git
           conan create ./asyncpp-conan -pr:h $PR -pr:b $PR --version 0.2.2
           cmake -E make_directory "${{github.workspace}}/build"
-          conan install "${{github.workspace}}" --build=missing -pr $PR -pr:b $PR
+          conan install "${{github.workspace}}" --build="*" -pr $PR -pr:b $PR
           conan cache clean
           cmake -S "${{github.workspace}}" --preset conan-${{ env.conan_preset }} -DENABLE_LLVM_COV:BOOL=ON
   
