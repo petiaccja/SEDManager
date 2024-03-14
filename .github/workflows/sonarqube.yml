@@ -12,73 +12,73 @@ jobs:
       SONAR_SCANNER_VERSION: 4.4.0.2170
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+      os: "ubuntu-latest"
+      build_profile: "clang20d"
+      conan_preset: "clang-20-debug"
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: seanmiddleditch/gha-setup-ninja@v4
-      - uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "17.0"
-          directory: ${{ runner.temp }}/llvm
+      - uses: seanmiddleditch/gha-setup-vsdevenv@master
+      - run: pip install conan
 
-      - name: Install GCC
-        shell: bash
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v2
+  
+      - name: Install native compilers
+        if: ${{ env.os == 'ubuntu-latest' }}
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt update
+
           sudo apt install gcc-13 g++-13
           sudo update-alternatives --remove-all gcc || true
           sudo update-alternatives --remove-all g++ || true
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 
-      - name: Install conan
-        shell: bash
-        env:
-          CC: clang
-          CXX: clang++
-        run: |
-          pip install conan
-          conan profile detect --name ci --force
-          python $GITHUB_WORKSPACE/support/update-conan-profile.py $(conan profile path ci) Debug $CC $CXX 20
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 17 clang llvm-17
 
+          sudo update-alternatives --remove-all clang || true
+          sudo update-alternatives --remove-all clang++ || true
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 10 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-17
+  
       - name: Cache conan packages
         id: cache-conan
         uses: actions/cache@v3
         with:
           path: ~/.conan2/p
-          key: conan-cache-packages-sonarqube
-
-      - name: Install sonar-scanner and build-wrapper
-        uses: SonarSource/sonarcloud-github-c-cpp@v2
-
+          key: conan-cache-packages-${{ env.build_profile }}
+  
       - name: Create Build Environment
-        run: cmake -E make_directory ${{runner.workspace}}/build   
-        
+        run: cmake -E make_directory ${{github.workspace}}/build
+  
       - name: Configure CMake
         shell: bash
-        working-directory: ${{runner.workspace}}/build
         env:
-          CC: clang
-          CXX: clang++
+          PR: "${{github.workspace}}/.github/build_profiles/${{env.build_profile}}"
         run: |
           git clone https://github.com/petiaccja/asyncpp-conan.git
-          conan create ./asyncpp-conan -pr ci -pr:b ci --version 0.2.2
-          conan install $GITHUB_WORKSPACE --output-folder=. --build="*" -pr ci -pr:b ci -s build_type=Debug
+          conan create ./asyncpp-conan -pr:h $PR -pr:b $PR --version 0.2.2
+          cmake -E make_directory "${{github.workspace}}/build"
+          conan install "${{github.workspace}}" --build="*" -pr $PR -pr:b $PR
           conan cache clean
-          cmake $GITHUB_WORKSPACE --preset conan-debug -DENABLE_LLVM_COV:BOOL=ON
-
-      - name: Run build-wrapper
+          cmake -S "${{github.workspace}}" --preset conan-${{ env.conan_preset }} -DENABLE_LLVM_COV:BOOL=ON
+  
+      - name: Build using Sonar wrapper
         run: |
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{runner.workspace}}/build/build/Debug --clean-first
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build --preset conan-${{ env.conan_preset }}
 
-      - name: Generate Test and Code Coverage
-        working-directory: ${{runner.workspace}}/build
+      - name: Test & code coverage
+        working-directory: ${{github.workspace}}/build/${{ env.conan_preset }}/bin
         shell: bash
         run: |
-          ./build/Debug/bin/Test --reporter junit --out ${{runner.workspace}}/build/tests.xml
-          llvm-profdata merge -sparse default.profraw -o coverage.profdata
-          llvm-cov show ./build/Debug/bin/Test -instr-profile=coverage.profdata > ${{runner.workspace}}/build/coverage.txt
+          ./Test --reporter junit --out ${{github.workspace}}/tests.xml
+          llvm-profdata-17 merge -sparse default.profraw -o coverage.profdata
+          llvm-cov-17 show ./Test -instr-profile=coverage.profdata > ${{github.workspace}}/coverage.txt
   
       - name: Run sonar-scanner
         env:
