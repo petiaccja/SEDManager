@@ -40,7 +40,7 @@ jobs:
 
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 17 clang llvm-17
+          sudo ./llvm.sh 17 clang llvm-17 llvm-17-runtime
 
           sudo update-alternatives --remove-all clang || true
           sudo update-alternatives --remove-all clang++ || true
