@@ -81,7 +81,7 @@ jobs:
         PR: "${{github.workspace}}/.github/build_profiles/${{matrix.build_profile}}"
       run: |
         git clone https://github.com/petiaccja/asyncpp-conan.git
-        conan create ./asyncpp-conan -pr ${{matrix.build_profile}} -pr:b ${{matrix.build_profile}} --version 0.2.2
+        conan create ./asyncpp-conan -pr $PR -pr:b $PR --version 0.2.2
         cmake -E make_directory "${{github.workspace}}/build"
         conan install "${{github.workspace}}" --build=missing -pr $PR -pr:b $PR
         conan cache clean
