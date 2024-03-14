@@ -13,10 +13,24 @@ namespace opal {
 
 
     constexpr std::initializer_list<std::pair<UID, std::string_view>> methods = {
-        {UID(opal::eMethod::Activate), "MethodID::Activate"},
-        { UID(opal::eMethod::Revert),  "MethodID::Revert"  },
+        {UID(eMethod::Activate),  "MethodID::Activate"},
+        { UID(eMethod::Revert),   "MethodID::Revert"  },
+        { UID(eMethod::RevertSP), "MethodID::RevertSP"},
     };
 
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> tables = {
+        {UID(eTable::DataStore),             "DataStore"           },
+        { UID(eTable::DataRemovalMechanism), "DataRemovalMechanism"},
+    };
+
+    constexpr std::initializer_list<std::pair<UID, std::string_view>> tableDescriptors = {
+        {UID(eTable::DataStore).ToDescriptor(),             "Table::DataStore"           },
+        { UID(eTable::DataRemovalMechanism).ToDescriptor(), "Table::DataRemovalMechanism"},
+    };
+
+    static const std::initializer_list<std::pair<UID, TableDescStatic>> tableDescs = {
+        {UID(eTable::DataStore), TableDescStatic{ "DataStore", eTableKind::BYTE }},
+    };
 
     namespace preconf {
 
@@ -167,6 +181,8 @@ namespace opal {
     const SPNameAndUidFinder& GetFinder() {
         static const auto globalPairs = {
             methods,
+            tables,
+            tableDescriptors,
             preconf::admin::sp
         };
 
@@ -197,7 +213,6 @@ namespace opal {
             preconf::admin::authority,
             preconf::admin::cPin,
             preconf::admin::template_,
-            preconf::admin::sp,
         };
 
         static const auto adminSequences = {
@@ -206,9 +221,9 @@ namespace opal {
         };
 
         static SPNameAndUidFinder finder({
-            {UID(0),                      NameAndUidFinder(globalPairs,  {})                                 },
-            { UID(preconf::eSP::Admin),   NameAndUidFinder(adminPairs,   adminSequences | std::views::join)  },
-            { UID(preconf::eSP::Locking), NameAndUidFinder(lockingPairs, lockingSequences | std::views::join)},
+            {UID(0),                      NameAndUidFinder(globalPairs,                                                {})                                 },
+            { UID(preconf::eSP::Admin),   NameAndUidFinder(std::array{ adminPairs, globalPairs } | std::views::join,   adminSequences | std::views::join)  },
+            { UID(preconf::eSP::Locking), NameAndUidFinder(std::array{ lockingPairs, globalPairs } | std::views::join, lockingSequences | std::views::join)},
         });
         return finder;
     }
@@ -266,6 +281,12 @@ std::optional<TableDesc> OpalModule::FindTable(UID table) const {
     if (table == UID(core::eTable::TPerInfo)) {
         auto desc = CoreModule::Get()->FindTable(table);
         desc->columns.push_back({ "ProgrammaticResetEnable", false, CoreModule::Get()->FindType(UID(core::eType::boolean)).value() });
+        return desc;
+    }
+    if (table == UID(core::eTable::Table)) {
+        auto desc = CoreModule::Get()->FindTable(table);
+        desc->columns.push_back({ "MandatoryWriteGranularity", false, CoreModule::Get()->FindType(UID(core::eType::uinteger_4)).value() });
+        desc->columns.push_back({ "RecommendedAccessGranularity", false, CoreModule::Get()->FindType(UID(core::eType::uinteger_4)).value() });
         return desc;
     }
     return std::nullopt;

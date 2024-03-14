@@ -8,6 +8,8 @@
 #include <Messaging/Value.hpp>
 #include <Specification/Core/CoreModule.hpp>
 
+#include <random>
+
 
 namespace sedmgr {
 
@@ -386,11 +388,14 @@ namespace mock {
         }
         auto& session = sessionIt->second;
         const auto reply = [&]() -> std::optional<MethodResult> {
-            switch (core::eMethod(call.methodId)) {
-                case core::eMethod::Get: return CallMethod(call, session, &SessionLayerHandler::Get, getMethod);
-                case core::eMethod::Set: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
-                case core::eMethod::Next: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
-                case core::eMethod::Authenticate: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
+            switch (call.methodId.value) {
+                case UID(core::eMethod::Get).value: return CallMethod(call, session, &SessionLayerHandler::Get, getMethod);
+                case UID(core::eMethod::Set).value: return CallMethod(call, session, &SessionLayerHandler::Set, setMethod);
+                case UID(core::eMethod::Next).value: return CallMethod(call, session, &SessionLayerHandler::Next, nextMethod);
+                case UID(core::eMethod::Authenticate).value: return CallMethod(call, session, &SessionLayerHandler::Authenticate, authenticateMethod);
+                case UID(core::eMethod::GenKey).value: return CallMethod(call, session, &SessionLayerHandler::GenKey, genKeyMethod);
+                case UID(opal::eMethod::Revert).value: return CallMethod(call, session, &SessionLayerHandler::Revert, revertMethod);
+                case UID(opal::eMethod::Activate).value: return CallMethod(call, session, &SessionLayerHandler::Activate, activateMethod);
                 default: return std::nullopt;
             }
         }();
@@ -520,6 +525,14 @@ namespace mock {
             };
         }
 
+        const auto hasSession = m_sessions.end() != std::ranges::find_if(m_sessions, [&](const auto& session) { return session.second.securityProvider == *spIt; });
+        if (hasSession) {
+            return {
+                std::tuple(hostSessionID, 0, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt),
+                eMethodStatus::SP_BUSY,
+            };
+        }
+
         const uint32_t tsn = m_nextTsn++;
         m_sessions.insert_or_assign(SessionId{ tsn, hostSessionID }, Session{ *spIt });
         return {
@@ -630,6 +643,7 @@ namespace mock {
         return { { next }, eMethodStatus::SUCCESS };
     }
 
+
     auto SessionLayerHandler::Authenticate(Session& session, UID invokingId, UID authority, std::optional<Bytes> proof) const
         -> std::pair<std::tuple<bool>, eMethodStatus> {
         const auto& securityProvider = *session.securityProvider;
@@ -647,6 +661,90 @@ namespace mock {
         const auto& pin = credentialObject[3];
         const auto success = pin.Get<Bytes>() == proof;
         return { { success }, eMethodStatus::SUCCESS };
+    }
+
+
+    auto SessionLayerHandler::GenKey(Session& session, UID invokingId, std::optional<uint32_t> publicExponent, std::optional<uint32_t> pinLength) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        static constexpr auto characterSet = std::string_view("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+        thread_local std::mt19937_64 rne(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+        const auto randomKey = [](size_t length) {
+            Bytes bytes;
+            auto rng = std::uniform_int_distribution<size_t>(0, characterSet.size() - 1);
+            for (int i = 0; i < length; ++i) {
+                bytes.push_back(std::byte(characterSet[rng(rne)]));
+            }
+            return bytes;
+        };
+
+        auto& sp = *session.securityProvider;
+        if (!invokingId.IsObject()) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto containingTableUid = invokingId.ContainingTable();
+        if (!sp.contains(containingTableUid)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& containingTable = sp[containingTableUid];
+        if (!containingTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& object = containingTable[invokingId];
+
+        if (containingTableUid == UID(core::eTable::K_AES_256)) {
+            object[3] = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x06_b }, randomKey(64));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        if (containingTableUid == UID(core::eTable::K_AES_128)) {
+            object[3] = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x05_b }, randomKey(32));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        if (containingTableUid == UID(core::eTable::C_PIN)) {
+            object[3] = Value(randomKey(pinLength.value_or(32)));
+            return { {}, eMethodStatus::SUCCESS };
+        }
+        return { {}, eMethodStatus::INVALID_PARAMETER };
+    }
+
+
+    auto SessionLayerHandler::Revert(Session& session, UID invokingId) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        auto& sp = *session.securityProvider;
+        if (!sp.contains(UID(core::eTable::SP))) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto& spTable = sp[UID(core::eTable::SP)];
+        if (!spTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        return { {}, eMethodStatus::SUCCESS };
+    }
+
+
+    auto SessionLayerHandler::Activate(Session& session, UID invokingId) const
+        -> std::pair<std::tuple<>, eMethodStatus> {
+        auto& sp = *session.securityProvider;
+        if (!sp.contains(UID(core::eTable::SP))) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        auto& spTable = sp[UID(core::eTable::SP)];
+        if (!spTable.contains(invokingId)) {
+            return { {}, eMethodStatus::INVALID_PARAMETER };
+        }
+        const auto lifeCycleState = spTable[invokingId][6];
+        if (lifeCycleState == 8) {
+            spTable[invokingId][6] = 9;
+            const auto lockingSpUid = Opal1Module::Get()->FindUid("SP::Locking").value();
+            const auto cPinSid = Opal1Module::Get()->FindUid("C_PIN::SID", sp.GetUID()).value();
+            const auto cPinAdmin1 = Opal1Module::Get()->FindUid("C_PIN::Admin1", lockingSpUid).value();
+            const auto lockingSpIt = std::ranges::find_if(m_securityProviders, [&](const auto& sp) { return sp->GetUID() == lockingSpUid; });
+            assert(lockingSpIt != m_securityProviders.end());
+            auto& cPinAdmin1Value = (**lockingSpIt)[UID(core::eTable::C_PIN)][cPinAdmin1][3];
+            const auto& cPinSidValue = sp[UID(core::eTable::C_PIN)][cPinSid][3];
+            cPinAdmin1Value = cPinSidValue;
+        }
+        return { {}, eMethodStatus::SUCCESS };
     }
 
 } // namespace mock

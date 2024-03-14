@@ -30,10 +30,11 @@ void SetLogging(bool enabled) {
 void Log(std::string_view event, const ComPacket& request) {
     if (logging) {
         auto& file = GetLogFile();
-        file << "#--------------------------------------------------------------" << std::endl;
-        file << "# " << event << std::endl;
-        file << "# Logging packet is not supported yet." << std::endl;
-        file << "#--------------------------------------------------------------" << std::endl;
+        file << "+--------------------------------------------------------------" << std::endl;
+        file << "| " << event << std::endl;
+        file << "| Logging packet is not supported yet." << std::endl;
+        file << "+--------------------------------------------------------------" << std::endl;
+        file.flush();
     }
 }
 
@@ -41,15 +42,28 @@ void Log(std::string_view event, const Value& request) {
     if (logging) {
         auto& file = GetLogFile();
 
-        file << "#--------------------------------------------------------------" << std::endl;
-        file << "# " << event << std::endl;
-        file << "#--------------------------------------------------------------" << std::endl;
+        file << "+--------------------------------------------------------------" << std::endl;
+        file << "| " << event << std::endl;
+        file << "+--------------------------------------------------------------" << std::endl;
         file << "\n";
 
-        file << "TODO: write a Value.hpp: std::string DebugDump(Value) method to replace the TokenDebugArchive";
+        file << Dump(request);
 
         file << "\n";
         file << "\n";
+        file.flush();
+    }
+}
+
+void Log(std::string_view event) {
+    if (logging) {
+        auto& file = GetLogFile();
+
+        file << "+--------------------------------------------------------------" << std::endl;
+        file << "| " << event << std::endl;
+        file << "+--------------------------------------------------------------" << std::endl;
+        file << "\n";
+        file.flush();
     }
 }
 

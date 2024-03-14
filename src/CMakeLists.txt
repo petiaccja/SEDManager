@@ -1,3 +1,4 @@
 add_subdirectory(lib)
 add_subdirectory(EncryptedDevice)
+add_subdirectory(SEDManagerCAPI)
 add_subdirectory(SEDManagerCLI)

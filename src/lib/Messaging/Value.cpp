@@ -1,5 +1,7 @@
 #include "Value.hpp"
 
+#include <regex>
+
 
 namespace sedmgr {
 
@@ -258,5 +260,56 @@ std::pair<Value, std::span<const Token>> DeTokenize(Tokenized<Value> tokens) {
     }
 }
 
+
+std::string Dump(const Value& value) {
+    static constexpr auto indent = [](std::string_view str) {
+        const auto re = std::regex(R"(\n)");
+        std::string out = "  ";
+        std::regex_replace(std::back_inserter(out), str.begin(), str.end(), re, "\n  ");
+        return out;
+    };
+
+    if (value.Is<Bytes>()) {
+        std::string str;
+        str += "[ ";
+        for (auto byte : value.Get<Bytes>()) {
+            str += std::format("{:02x}", uint8_t(byte)) += " ";
+        }
+        str += "]";
+        return str;
+    }
+    else if (value.Is<eCommand>()) {
+        switch (value.Get<eCommand>()) {
+            case eCommand::CALL: return "CALL";
+            case eCommand::END_OF_DATA: return "END_OF_DATA";
+            case eCommand::END_OF_SESSION: return "END_OF_SESSION";
+            case eCommand::START_TRANSACTION: return "START_TRANSACTION";
+            case eCommand::END_TRANSACTION: return "END_TRANSACTION";
+            case eCommand::EMPTY: return "EMPTY";
+        }
+        return "ERROR:UNKNOWN_COMMAND";
+    }
+    else if (value.IsInteger()) {
+        return std::to_string(value.Get<int64_t>());
+    }
+    else if (value.Is<List>()) {
+        std::string str;
+        str += "START_LIST {\n";
+        for (const auto& item : value.Get<List>()) {
+            str += indent(Dump(item)) += "\n";
+        }
+        str += "} END_LIST";
+        return str;
+    }
+    else if (value.Is<Named>()) {
+        std::string str;
+        str += "START_NAME {\n";
+        str += indent(Dump(value.Get<Named>().name)) += "\n";
+        str += indent(Dump(value.Get<Named>().value)) += "\n";
+        str += "} END_NAME";
+        return str;
+    }
+    return "EMPTY";
+}
 
 } // namespace sedmgr

@@ -337,4 +337,8 @@ std::pair<Named, std::span<const Token>> DeTokenize(Tokenized<Named> tokens);
 std::vector<Token> Tokenize(const Value& value);
 std::pair<Value, std::span<const Token>> DeTokenize(Tokenized<Value> tokens);
 
+
+std::string Dump(const Value& value);
+
+
 } // namespace sedmgr

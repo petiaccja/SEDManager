@@ -36,15 +36,16 @@ namespace mock {
             Table(
                 UID(core::eTable::Table),
                 {
-                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::SP).ToDescriptor(), { value_cast("SP"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::C_PIN).ToDescriptor(), { value_cast("C_PIN"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
                 }),
             Table(
                 UID(core::eTable::SP),
                 {
-                    Object(adminSpUid, { value_cast("Admin"sv), {}, {}, {}, {}, 0, false }),
-                    Object(lockingSpUid, { value_cast("Locking"sv), {}, {}, {}, {}, 0, false }),
+                    Object(adminSpUid, { value_cast("Admin"sv), {}, {}, {}, {}, 9, false }),
+                    Object(lockingSpUid, { value_cast("Locking"sv), {}, {}, {}, {}, 8, false }),
                 }),
             Table(
                 UID(core::eTable::Authority),
@@ -68,6 +69,7 @@ namespace mock {
 
     std::shared_ptr<SecurityProvider> LockingPreconfig() {
         ModuleCollection modules;
+        modules.Load(CoreModule::Get());
         modules.Load(Opal1Module::Get());
 
         const auto lockingSpUid = modules.FindUid("SP::Locking").value();
@@ -77,15 +79,29 @@ namespace mock {
 
         const auto cPinAdmin1Uid = modules.FindUid("C_PIN::Admin1", lockingSpUid).value();
         const auto cPinUser1Uid = modules.FindUid("C_PIN::User1", lockingSpUid).value();
-
         const auto lockingPin = value_cast(std::as_bytes(std::span(std::string_view("4567"))));
+
+        const auto globalRangeUid = modules.FindUid("Locking::GlobalRange", lockingSpUid).value();
+        const auto globalKeyUid = modules.FindUid("K_AES_256::GlobalRange", lockingSpUid).value();
+        const auto globalKeyValue = Named(Bytes{ 0x00_b, 0x00_b, 0x02_b, 0x06_b }, value_cast("00007IFTW5NW3BT583N5TBV35TV34C5N4V56B7534BV872NV325N6B34B6H4UIVB"sv));
+
+        const auto mbrControlUid = modules.FindUid("MBRControl::MBRControl", lockingSpUid).value();
+
+        const auto aceSetRdLockedUid = modules.FindUid("ACE::Locking_GlobalRange_Set_RdLocked", lockingSpUid).value();
+        const auto aceSetWrLockedUid = modules.FindUid("ACE::Locking_GlobalRange_Set_WrLocked", lockingSpUid).value();
+        const auto aceMbrControlUid = modules.FindUid("ACE::MBRControl_Set_DoneToDOR", lockingSpUid).value();
 
         const auto tables = {
             Table(
                 UID(core::eTable::Table),
                 {
-                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
-                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {} }),
+                    Object(UID(core::eTable::Table).ToDescriptor(), { value_cast("Table"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Authority).ToDescriptor(), { value_cast("Authority"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::C_PIN).ToDescriptor(), { value_cast("C_PIN"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::Locking).ToDescriptor(), { value_cast("Locking"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::K_AES_256).ToDescriptor(), { value_cast("K_AES_256"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::MBRControl).ToDescriptor(), { value_cast("MBRControl"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
+                    Object(UID(core::eTable::ACE).ToDescriptor(), { value_cast("ACE"sv), {}, {}, 1, {}, {}, {}, {}, {}, {}, {}, {}, 0, 0 }),
                 }),
             Table(
                 UID(core::eTable::Authority),
@@ -99,6 +115,24 @@ namespace mock {
                     Object(cPinAdmin1Uid, { {}, {}, lockingPin, {}, {}, {}, {} }),
                     Object(cPinUser1Uid, { {}, {}, lockingPin, {}, {}, {}, {} }),
                 }),
+            Table(UID(core::eTable::Locking),
+                  {
+                      Object(globalRangeUid, { value_cast("GlobalRange"sv), {}, 0, 16384, 0, 0, 0, 0, {}, value_cast(globalKeyUid), value_cast(UID(0)), {}, {}, {}, {}, {}, {}, {}, {} }),
+                  }),
+            Table(UID(core::eTable::K_AES_256),
+                  {
+                      Object(globalKeyUid, { value_cast("GlobalRange"sv), {}, globalKeyValue, {} }),
+                  }),
+            Table(UID(core::eTable::MBRControl),
+                  {
+                      Object(mbrControlUid, { 0, 0, List{ 0 } }),
+                  }),
+            Table(UID(core::eTable::ACE),
+                  {
+                      Object(aceSetRdLockedUid, { {}, {}, List{}, {} }),
+                      Object(aceSetWrLockedUid, { {}, {}, List{}, {} }),
+                      Object(aceMbrControlUid, { {}, {}, List{}, {} }),
+                  }),
         };
 
         return std::make_shared<SecurityProvider>(lockingSpUid, tables);

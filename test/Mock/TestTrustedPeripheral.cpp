@@ -1,7 +1,7 @@
-#include <async++/join.hpp>
-
 #include <MockDevice/MockDevice.hpp>
 #include <TrustedPeripheral/TrustedPeripheral.hpp>
+
+#include <asyncpp/join.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

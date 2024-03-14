@@ -9,5 +9,6 @@ namespace sedmgr {
 void SetLogging(bool enabled);
 void Log(std::string_view event, const ComPacket& request);
 void Log(std::string_view event, const Value& request);
+void Log(std::string_view event);
 
 } // namespace sedmgr

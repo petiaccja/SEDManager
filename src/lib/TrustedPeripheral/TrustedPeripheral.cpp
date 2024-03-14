@@ -1,8 +1,7 @@
 #include "TrustedPeripheral.hpp"
 
+#include "Logging.hpp"
 #include "MethodUtils.hpp"
-#include <async++/join.hpp>
-#include <async++/sleep.hpp>
 
 #include <Archive/Serialization.hpp>
 #include <Error/Exception.hpp>
@@ -10,6 +9,9 @@
 #include <Messaging/SetupPackets.hpp>
 #include <Specification/Core/CoreModule.hpp>
 #include <Specification/Opal/OpalModule.hpp>
+
+#include <asyncpp/join.hpp>
+#include <asyncpp/sleep.hpp>
 
 #include <array>
 #include <stdexcept>
@@ -32,12 +34,14 @@ void LoadModules(const TPerDesc& desc, ModuleCollection& modules) {
 }
 
 
-TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice) : m_storageDevice(std::move(storageDevice)) {
-    m_desc = Discovery();
+TrustedPeripheral::TrustedPeripheral(std::shared_ptr<StorageDevice> storageDevice)
+    : m_storageDevice(storageDevice), m_sendRecvMutex(std::make_unique<asyncpp::mutex>()) {
+    m_desc = Discovery(storageDevice);
+
     if (m_desc.tperDesc) {
         if (m_desc.tperDesc->comIdMgmtSupported) {
             try {
-                std::tie(m_comId, m_comIdExtension) = RequestComId();
+                std::tie(m_comId, m_comIdExtension) = RequestComId(storageDevice);
             }
             catch (std::exception& ex) {
                 throw std::runtime_error(std::format("dynamically allocating ComID failed: {}", ex.what()));
@@ -92,161 +96,156 @@ const ModuleCollection& TrustedPeripheral::GetModules() const {
 
 
 asyncpp::task<eComIdState> TrustedPeripheral::VerifyComId() {
-    // Send VERIFY_COMID_VALID command.
-    VerifyComIdValidRequest payload{
+    const VerifyComIdValidRequest request{
         .comId = m_comId,
-        .comIdExtension = m_comIdExtension,
+        .comIdExtension = m_comIdExtension
     };
-    const auto payloadBytes = Serialize(payload);
-    SecuritySend(0x02, m_comId, payloadBytes);
 
-    // Get VERIFY_COMID_VALID response.
-    VerifyComIdValidResponse response;
-    do {
-        std::array<std::byte, 46> responseBytes;
-        std::ranges::fill(responseBytes, 0_b);
-        SecurityReceive(0x02, m_comId, responseBytes);
-        response = DeSerialize(Serialized<VerifyComIdValidResponse>{ responseBytes });
+    const auto reply = co_await ExchangeStructure<VerifyComIdValidResponse>(0x02, request);
 
-        if (response.requestCode == 0) {
-            throw NoResponseError("VERIFY_COMID_VALID");
-        }
-        if (response.availableDataLength == 0) {
-            co_await asyncpp::sleep_for(std::chrono::milliseconds(16));
-        }
-    } while (response.availableDataLength == 0);
-
-    co_return response.comIdState;
+    co_return reply.comIdState;
 }
 
 
-void TrustedPeripheral::Reset() {
+asyncpp::task<void> TrustedPeripheral::StackReset() {
+    const StackResetRequest request{
+        .comId = m_comId,
+        .comIdExtension = m_comIdExtension
+    };
+
+    const auto reply = co_await ExchangeStructure<StackResetResponse>(0x02, request);
+
+    if (reply.success != eStackResetStatus::SUCCESS) {
+        throw InvocationError("STACK_RESET", "failed");
+    }
+}
+
+
+asyncpp::task<void> TrustedPeripheral::Reset() {
     std::array payload{ std::byte(0) };
-    SecuritySend(0x02, 0x0004, payload);
-}
-
-
-template <typename Rep, typename Period>
-static asyncpp::task<void> Sleep(std::chrono::duration<Rep, Period> time) {
-    using namespace std::chrono;
-
-    if (time < milliseconds(1)) {
-        const auto start = high_resolution_clock::now();
-        while (high_resolution_clock::now() - start < time) {
-            // Busy wait loop.
-        }
-    }
-    else {
-        co_await asyncpp::sleep_for(time);
-    }
+    co_await Send(0x02, 0x0004, payload);
 }
 
 
 asyncpp::task<ComPacket> TrustedPeripheral::SendPacket(uint8_t protocol, ComPacket packet) {
-    const auto request = Serialize(packet);
-
-    SecuritySend(protocol, GetComId(), request);
-    auto packets = co_await FlushResponses(protocol);
-    if (packets.empty()) {
-        throw ProtocolError("no response to IF-SEND");
-    }
-    co_return packets.back();
+    co_return co_await ExchangePacket(protocol, std::move(packet));
 }
 
 
-asyncpp::task<std::vector<ComPacket>> TrustedPeripheral::FlushResponses(uint8_t protocol) {
-    using namespace std::chrono;
-    using namespace std::chrono_literals;
-
-    constexpr auto maxSleepTime = 20ms;
-    constexpr size_t maxPacketSize = 1048576;
-
-    bool more = true;
-    std::vector<ComPacket> packets;
-    std::vector<std::byte> bytes(2048, 0_b);
-    auto currentSleepTime = 50us;
-    do {
-        SecurityReceive(protocol, GetComId(), bytes);
-        const auto packet = DeSerialize(Serialized<ComPacket>{ bytes });
-        more = packet.outstandingData != 0;
-
-        if (packet.minTransfer > bytes.size()) {
-            size_t newSize = std::max(size_t(packet.minTransfer), size_t(maxPacketSize));
-            bytes.resize(packet.minTransfer);
-        }
-        if (more) {
-            co_await Sleep(currentSleepTime);
-            if (currentSleepTime * 2 < maxSleepTime) {
-                currentSleepTime *= 2;
-            }
-        }
-        packets.push_back(std::move(packet));
-    } while (more);
-
-    co_return packets;
-}
-
-
-void TrustedPeripheral::SecuritySend(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload) {
-    const std::array comIdBytes = { std::byte(comId >> 8), std::byte(comId & 0xFF) };
-    const std::array comIdBytesFlip = { comIdBytes[1], comIdBytes[0] };
-    m_storageDevice->SecuritySend(protocol, comIdBytesFlip, payload);
-}
-
-
-void TrustedPeripheral::SecurityReceive(uint8_t protocol, uint16_t comId, std::span<std::byte> response) {
-    const std::array comIdBytes = { std::byte(comId >> 8), std::byte(comId & 0xFF) };
-    const std::array comIdBytesFlip = { comIdBytes[1], comIdBytes[0] };
-    m_storageDevice->SecurityReceive(protocol, comIdBytesFlip, response);
-}
-
-
-TPerDesc TrustedPeripheral::Discovery() {
-    alignas(1024) std::array<std::byte, 2048> response;
+TPerDesc TrustedPeripheral::Discovery(std::shared_ptr<StorageDevice> storageDevice) {
+    std::array<std::byte, 4096> response;
     std::ranges::fill(response, 0_b);
-    SecurityReceive(0x01, 0x0001, response);
+    SecurityReceive(*storageDevice, 0x01, 0x0001, response);
     TPerDesc desc = ParseTPerDesc(response);
     return desc;
 }
 
 
-std::pair<uint16_t, uint16_t> TrustedPeripheral::RequestComId() {
+std::pair<uint16_t, uint16_t> TrustedPeripheral::RequestComId(std::shared_ptr<StorageDevice> storageDevice) {
     std::array<std::byte, 4> response;
     std::ranges::fill(response, 0xFF_b);
-    SecurityReceive(0x02, 0x0000, response);
+    SecurityReceive(*storageDevice, 0x02, 0x0000, response);
     const auto comId = DeSerialize(Serialized<uint16_t>{ response });
     const auto comIdExtension = DeSerialize(Serialized<uint16_t>{ std::span{ response }.subspan(2) });
     return { comId, comIdExtension };
 }
 
 
-asyncpp::task<void> TrustedPeripheral::StackReset() {
-    // Send STACK_RESET command.
-    StackResetRequest payload{
-        .comId = m_comId,
-        .comIdExtension = m_comIdExtension
-    };
-    const auto payloadBytes = Serialize(payload);
-    SecuritySend(0x02, m_comId, payloadBytes);
+asyncpp::task<void> TrustedPeripheral::Send(uint8_t protocol, uint16_t comId, std::span<const std::byte> payload) {
+    asyncpp::unique_lock lk = co_await *m_sendRecvMutex;
+    SecuritySend(*m_storageDevice, protocol, comId, payload);
+}
 
-    // Get STACK_RESET response.
-    StackResetResponse response;
+
+asyncpp::task<void> impl::ExponentialDelay::Delay() {
+    using namespace std::chrono_literals;
+
+    if (maxDelay != 0ns && totalDelay > maxDelay) {
+        throw NoResponseError("timed out");
+    }
+    co_await asyncpp::sleep_for(delay);
+    totalDelay += delay;
+    delay *= 2;
+}
+
+
+asyncpp::task<ComPacket> TrustedPeripheral::ExchangePacket(uint8_t protocol, ComPacket packet) {
+    using namespace std::chrono_literals;
+
+    const asyncpp::unique_lock lk = co_await *m_sendRecvMutex;
+
+    const auto sendBuffer = Serialize(packet);
+    SecuritySend(*m_storageDevice, protocol, packet.comId, sendBuffer);
+
+    std::vector<ComPacket> receivedPackets;
+    std::vector<std::byte> receiveBuffer(2048);
+    impl::ExponentialDelay delay{ 1us, 2000ms };
     do {
-        std::array<std::byte, 20> responseBytes;
-        std::ranges::fill(responseBytes, 0_b);
-        SecurityReceive(0x02, m_comId, responseBytes);
-        response = DeSerialize(Serialized<StackResetResponse>{ responseBytes });
+        SecurityReceive(*m_storageDevice, protocol, packet.comId, receiveBuffer);
+        auto receivedPacket = DeSerialize(Serialized<ComPacket>(receiveBuffer));
 
-        if (response.requestCode == 0) {
-            throw NoResponseError("STACK_RESET");
+        // Device wants to send data larger than the receive buffer.
+        if (receivedPacket.minTransfer > receiveBuffer.size()) {
+            if (receivedPacket.minTransfer < 1048576) {
+                receiveBuffer.resize(receivedPacket.minTransfer);
+                continue;
+            }
+            throw ProtocolError("response too large");
         }
-        if (response.availableDataLength == 0) {
-            co_await asyncpp::sleep_for(std::chrono::milliseconds(4));
-        }
-    } while (response.availableDataLength == 0);
 
-    if (response.success != eStackResetStatus::SUCCESS) {
-        throw InvocationError("STACK_RESET", "failed");
+        const bool receivedData = !receivedPacket.payload.empty();
+        const auto outstandingData = receivedPacket.outstandingData;
+
+        // Current packet contains useful data.
+        if (receivedData) {
+            receivedPackets.push_back(std::move(receivedPacket));
+        }
+
+        // If device does not intend to send more data, exit loop.
+        if (outstandingData == 0) {
+            break;
+        }
+        // If device intends to send more data, but it's not ready yet, wait a bit.
+        if (outstandingData == 1) {
+            co_await delay.Delay();
+        }
+    } while (true);
+
+    if (receivedPackets.empty()) {
+        throw NoResponseError("empty packet received");
+    }
+    if (receivedPackets.size() > 1) {
+        throw ProtocolError("multiple packets sent by the device, expected only one");
+    }
+    co_return std::move(receivedPackets.back());
+}
+
+
+std::array<std::byte, 2> TrustedPeripheral::SerializeComId(uint16_t comId) {
+    return { std::byte(comId & 0xFF), std::byte(comId >> 8) };
+}
+
+
+void TrustedPeripheral::SecuritySend(StorageDevice& storageDevice, uint8_t protocol, uint16_t comId, std::span<const std::byte> payload) {
+    try {
+        storageDevice.SecuritySend(protocol, SerializeComId(comId), payload);
+        Log(std::format("IF-SEND: Protocol={}, ComID={}, payload: {} bytes", protocol, comId, payload.size()));
+    }
+    catch (std::exception& ex) {
+        Log(std::format("IF-SEND FAILED: Protocol={}, ComID={}, payload: {} bytes --- {}", protocol, comId, payload.size(), ex.what()));
+        throw;
+    }
+}
+
+
+void TrustedPeripheral::SecurityReceive(StorageDevice& storageDevice, uint8_t protocol, uint16_t comId, std::span<std::byte> payload) {
+    try {
+        storageDevice.SecurityReceive(protocol, SerializeComId(comId), payload);
+        Log(std::format("IF-RECV: Protocol={}, ComID={}, payload: {} bytes", protocol, comId, payload.size()));
+    }
+    catch (std::exception& ex) {
+        Log(std::format("IF-RECV FAILED: Protocol={}, ComID={}, payload: {} bytes --- {}", protocol, comId, payload.size(), ex.what()));
+        throw;
     }
 }
 

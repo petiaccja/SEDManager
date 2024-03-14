@@ -1,10 +1,11 @@
 #pragma once
 
 #include "TrustedPeripheral.hpp"
-#include <async++/task.hpp>
 
 #include <Messaging/Method.hpp>
 #include <Messaging/Native.hpp>
+
+#include <asyncpp/task.hpp>
 
 
 namespace sedmgr {

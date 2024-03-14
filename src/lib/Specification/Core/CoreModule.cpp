@@ -309,22 +309,8 @@ std::optional<UID> CoreModule::FindUid(std::string_view name, std::optional<UID>
 
 std::optional<TableDesc> CoreModule::FindTable(UID table) const {
     using namespace core;
-    static const auto lut = [] {
-        std::unordered_map<UID, TableDescStatic> lut;
-        for (auto& [uid, desc] : TableDescs()) {
-            lut.insert({ uid, desc });
-        }
-        return lut;
-    }();
-    const auto it = lut.find(table);
-    if (it != lut.end()) {
-        std::vector<ColumnDesc> columns;
-        for (const auto& column : it->second.columns) {
-            columns.emplace_back(std::string(column.name), column.isUnique, *FindType(column.type));
-        }
-        return TableDesc{ std::string(it->second.name), it->second.kind, std::move(columns), it->second.singleRow };
-    }
-    return std::nullopt;
+    static const auto tableFinder = TableFinder(TableDescs());
+    return tableFinder.Find(table, [this](UID type) { return FindType(type); });
 }
 
 
@@ -332,7 +318,7 @@ std::optional<Type> CoreModule::FindType(UID lookupUid) const {
     using namespace core;
     static const auto lut = [] {
         std::unordered_map<UID, Type> lut;
-        for (auto& [uid, def] : core::TypeDefs()) {
+        for (auto& [uid, def] : TypeDefs()) {
             lut.insert_or_assign(uid, def);
         }
         return lut;

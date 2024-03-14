@@ -513,7 +513,7 @@ namespace impl {
                 return Format(type_cast<BytesType>(type));
             }
             else if (type_isa<AlternativeType>(type)) {
-                Format(type_cast<AlternativeType>(type));
+                return Format(type_cast<AlternativeType>(type));
             }
             else if (type_isa<ListType>(type)) {
                 return Format(type_cast<ListType>(type));

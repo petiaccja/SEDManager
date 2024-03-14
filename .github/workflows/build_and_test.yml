@@ -94,7 +94,7 @@ jobs:
         CXX: ${{matrix.cxx_compiler}}
       run: |
         git clone https://github.com/petiaccja/asyncpp-conan.git
-        conan create ./asyncpp-conan -pr ci -pr:b ci --version 0.1.2
+        conan create ./asyncpp-conan -pr ci -pr:b ci --version 0.2.2
         conan install $GITHUB_WORKSPACE --output-folder=. --build="*" -pr ci -pr:b ci -s build_type=${{ matrix.build_type }}
         conan cache clean
         cmake $GITHUB_WORKSPACE --preset ${{ matrix.conan_preset }}
