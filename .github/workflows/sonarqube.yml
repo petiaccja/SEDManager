@@ -30,7 +30,6 @@ jobs:
       - name: Install native compilers
         if: ${{ env.os == 'ubuntu-latest' }}
         run: |
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt update
 
@@ -39,7 +38,10 @@ jobs:
           sudo update-alternatives --remove-all g++ || true
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 
-          sudo apt install clang-17
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 17 clang
+
           sudo update-alternatives --remove-all clang || true
           sudo update-alternatives --remove-all clang++ || true
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 10 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-13
