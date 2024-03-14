@@ -44,21 +44,24 @@ jobs:
     - uses: actions/checkout@v4
     - uses: seanmiddleditch/gha-setup-ninja@v4
     - uses: seanmiddleditch/gha-setup-vsdevenv@master
-    - uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: "17.0"
-        directory: ${{ runner.temp }}/llvm
     - run: pip install conan
 
-    - name: Install GCC
+    - name: Install native compilers
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt update
-        sudo apt install gcc-13 g++-13
-        sudo update-alternatives --remove-all gcc || true
-        sudo update-alternatives --remove-all g++ || true
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt update
+
+          sudo apt install gcc-13 g++-13
+          sudo update-alternatives --remove-all gcc || true
+          sudo update-alternatives --remove-all g++ || true
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+
+          sudo apt install clang-17
+          sudo update-alternatives --remove-all clang || true
+          sudo update-alternatives --remove-all clang++ || true
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 10 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-13
 
     - name: Cache conan packages
       id: cache-conan
@@ -76,7 +79,7 @@ jobs:
         PR: "${{github.workspace}}/.github/build_profiles/${{matrix.build_profile}}"
       run: |
         git clone https://github.com/petiaccja/asyncpp-conan.git
-        conan create ./asyncpp-conan -pr ci -pr:b ci --version 0.2.2
+        conan create ./asyncpp-conan -pr ${{matrix.build_profile}} -pr:b ${{matrix.build_profile}} --version 0.2.2
         cmake -E make_directory "${{github.workspace}}/build"
         conan install "${{github.workspace}}" --build=missing -pr $PR -pr:b $PR
         conan cache clean
