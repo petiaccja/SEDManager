@@ -150,7 +150,7 @@ jobs:
 
       - name: "Install core"
         run: |
-          cp ${{github.workspace}}/core_binary/*SEDManagerCAPI* ${{github.workspace}}/src/SEDManagerGUI/
+          cp ${{github.workspace}}/core_binary/*SEDManagerCAPI* ${{github.workspace}}/src/SEDManagerGUI/${{matrix.binary_path}}
 
       - name: "Install GUI Dart dependencies"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
