@@ -90,8 +90,8 @@ jobs:
     - name: Build
       run: |
         cmake --build --preset conan-${{ matrix.conan_preset }}
-        cmake -E make_directory ${{runner.workspace}}/install/SEDManager
-        cmake --install ${{github.workspace}}/build/${{ matrix.conan_preset }} --prefix '${{runner.workspace}}/install/SEDManager'
+        cmake -E make_directory ${{github.workspace}}/install/SEDManager
+        cmake --install ${{github.workspace}}/build/${{ matrix.conan_preset }} --prefix '${{github.workspace}}/install/SEDManager'
 
     - name: Test
       run: ${{github.workspace}}/build/${{ matrix.conan_preset }}/bin/Test
@@ -110,8 +110,10 @@ jobs:
         include:
           - flutter_target: linux
             os: ubuntu-latest
+            binary_path: build/linux/x64/release/bundle
           - flutter_target: windows
             os: windows-latest
+            binary_path: build/windows/x64/runner/Release
       
     name: flutter-${{ matrix.flutter_target }}
     needs: [build-test-core]
@@ -149,4 +151,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: SEDManagerGUI-${{matrix.flutter_target}}
-          path: "${{github.workspace}}/src/SEDManagerGUI/build/${{matrix.flutter_target}}/x64/runner/Release"
+          path: "${{github.workspace}}/src/SEDManagerGUI/${{matrix.binary_path}}"
