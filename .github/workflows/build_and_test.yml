@@ -100,4 +100,40 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: SEDManager-${{ matrix.build_profile }}
-        path: '${{runner.workspace}}/install/SEDManager'
+        path: '${{github.workspace}}/install/SEDManager'
+
+  build-flutter:
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter_target: [windows, linux]
+        include:
+          - flutter_target: linux
+            os: ubuntu-latest
+          - flutter_target: windows
+            os: windows-latest
+      
+    name: ${{ matrix.flutter_target }}
+        
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.9'
+          channel: 'stable'
+      
+      - name: "Install Dart dependencies"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter pub get
+
+      - name: "Build GUI"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter build ${{matrix.flutter_target}} --release
+
+      - name: "Upload artifact binary"
+        uses: actions/upload-artifact@v3
+        with:
+          name: SEDManagerGUI-${{matrix.flutter_target}}
+          path: "${{github.workspace}}/src/SEDManagerGUI/build/${{matrix.flutter_target}}/x64/runner/Release"
