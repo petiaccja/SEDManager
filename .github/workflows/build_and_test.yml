@@ -97,10 +97,11 @@ jobs:
       run: ${{github.workspace}}/build/${{ matrix.conan_preset }}/bin/Test
 
     - name: Upload artifact binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: SEDManager-${{ matrix.build_profile }}
         path: '${{github.workspace}}/install/SEDManager'
+        if-no-files-found: error
 
   build-test-flutter:
     strategy:
@@ -111,9 +112,11 @@ jobs:
           - flutter_target: linux
             os: ubuntu-latest
             binary_path: build/linux/x64/release/bundle
+            core_profile: clang20d
           - flutter_target: windows
             os: windows-latest
             binary_path: build/windows/x64/runner/Release
+            core_profile: msvc20d
       
     name: flutter-${{ matrix.flutter_target }}
     needs: [build-test-core]
@@ -139,16 +142,31 @@ jobs:
             sudo update-alternatives --remove-all g++ || true
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 
-      - name: "Install Dart dependencies"
+      - name: "Download core"
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManager-${{ matrix.core_profile }}
+          path: ${{github.workspace}}/core_binary
+
+      - name: "Install core"
+        run: |
+          cp ${{github.workspace}}/core_binary/*SEDManagerCAPI* ${{github.workspace}}/src/SEDManagerGUI/
+
+      - name: "Install GUI Dart dependencies"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
         run: flutter pub get
+
+      - name: "Test GUI"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter test
 
       - name: "Build GUI"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
         run: flutter build ${{matrix.flutter_target}} --release
 
       - name: "Upload artifact binary"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SEDManagerGUI-${{matrix.flutter_target}}
           path: "${{github.workspace}}/src/SEDManagerGUI/${{matrix.binary_path}}"
+          if-no-files-found: error
