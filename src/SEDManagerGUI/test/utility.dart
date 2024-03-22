@@ -6,5 +6,5 @@ Widget standalone(Widget testee) {
 }
 
 StorageDevice mockSD() {
-  return StorageDevice("/dev/mock");
+  return StorageDevice("/dev/mock_device");
 }

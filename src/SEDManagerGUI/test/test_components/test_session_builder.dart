@@ -8,10 +8,11 @@ void testSessionBuilder() {
   group("SessionBuilder", () {
     testWidgets('with mock SD', (WidgetTester tester) async {
       final sd = mockSD();
-      final encryptedDevice = await EncryptedDevice.create(sd);
+      final maybeEncryptedDevice = await tester.runAsync(() async => await EncryptedDevice.create(sd));
+      final maybeAdminSp = await tester.runAsync(() async => await maybeEncryptedDevice!.findUid("SP::Admin"));
       await tester.pumpWidget(standalone(SessionBuilder(
-        encryptedDevice,
-        await encryptedDevice.findUid("SP::Admin"),
+        maybeEncryptedDevice!,
+        maybeAdminSp!,
         builder: (context, snapshot) => const Text("BUILT"),
       )));
       expect(find.text('BUILT'), findsOneWidget);
