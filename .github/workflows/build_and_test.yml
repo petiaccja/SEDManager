@@ -130,7 +130,7 @@ jobs:
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt update
   
-            sudo apt install ninja
+            sudo apt install ninja-build
             sudo apt install gcc-13 g++-13
             sudo update-alternatives --remove-all gcc || true
             sudo update-alternatives --remove-all g++ || true
