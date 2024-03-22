@@ -36,7 +36,7 @@ jobs:
             conan_preset: msvc-20-release
             os: windows-latest
 
-    name: ${{ matrix.build_profile }}
+    name: core-${{ matrix.build_profile }}
         
     runs-on: ${{matrix.os}}
     
@@ -113,7 +113,7 @@ jobs:
           - flutter_target: windows
             os: windows-latest
       
-    name: ${{ matrix.flutter_target }}
+    name: flutter-${{ matrix.flutter_target }}
     needs: [build-test-core]
     runs-on: ${{matrix.os}}
 
@@ -124,6 +124,18 @@ jobs:
           flutter-version: '3.16.9'
           channel: 'stable'
       
+      - name: Install native compilers
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt update
+  
+            sudo apt install ninja
+            sudo apt install gcc-13 g++-13
+            sudo update-alternatives --remove-all gcc || true
+            sudo update-alternatives --remove-all g++ || true
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+
       - name: "Install Dart dependencies"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
         run: flutter pub get
