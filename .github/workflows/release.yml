@@ -24,7 +24,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: SEDManager-msvc20r
-          path: ${{github.workspace}}/Windows_x86_64
+          path: ${{github.workspace}}/SEDManager_Windows_x86_64
           github-token: ${{github.token}}
           run-id: ${{ github.event.workflow_run.id }}
 
@@ -32,7 +32,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: SEDManagerGUI-windows
-          path: ${{github.workspace}}/Windows_x86_64
+          path: ${{github.workspace}}/SEDManager_Windows_x86_64
           github-token: ${{github.token}}
           run-id: ${{ github.event.workflow_run.id }}
 
@@ -52,7 +52,7 @@ jobs:
           github-token: ${{github.token}}
           run-id: ${{ github.event.workflow_run.id }}
 
-      - name: Download artifacts
+      - name: Zip artifacts
         shell: bash
         working-directory: ${{github.workspace}}
         run: |

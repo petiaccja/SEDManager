@@ -4,7 +4,7 @@ project(sed_manager_gui LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "sed_manager_gui")
+set(BINARY_NAME "SEDManagerGUI")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
