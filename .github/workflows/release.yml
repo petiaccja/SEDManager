@@ -20,27 +20,50 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
+      - name: Download Windows core
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManager-msvc20r
+          path: ${{github.workspace}}/Windows_x86_64
+          github-token: ${{github.token}}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Download Windows flutter
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManagerGUI-windows
+          path: ${{github.workspace}}/Windows_x86_64
+          github-token: ${{github.token}}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Download Linux core
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManager-clang20r
+          path: ${{github.workspace}}/SEDManager_Linux_x86_64
+          github-token: ${{github.token}}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Download Linux flutter
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManagerGUI-linux
+          path: ${{github.workspace}}/SEDManager_Linux_x86_64
+          github-token: ${{github.token}}
+          run-id: ${{ github.event.workflow_run.id }}
+
       - name: Download artifacts
         shell: bash
+        working-directory: ${{github.workspace}}
         run: |
-          mkdir -p ./Binaries/Windows_x86_64
-          mkdir -p ./Binaries/Linux_x86_64
-          gh run download ${{ github.event.workflow_run.id }} --dir ./Binaries/Windows_x86_64 -p *windows*cl*Release*20
-          gh run download ${{ github.event.workflow_run.id }} --dir ./Binaries/Linux_x86_64 -p *ubuntu*clang*Release*20
-          mv ./Binaries/Windows_x86_64/SEDManager* ./Binaries/Windows_x86_64/SEDManager
-          mv ./Binaries/Linux_x86_64/SEDManager* ./Binaries/Linux_x86_64/SEDManager
-          cd ./Binaries/Windows_x86_64
-          zip -r SEDManager_Windows_x86_64.zip SEDManager
-          cd ../..
-          cd ./Binaries/Linux_x86_64
-          zip -r SEDManager_Linux_x86_64.zip SEDManager
-          cd ../..
+          zip -r SEDManager_Windows_x86_64.zip SEDManager_Windows_x86_64
+          zip -r SEDManager_Linux_x86_64.zip SEDManager_Linux_x86_64
 
       - name: Create release
         shell: bash
         run: |
           gh release create ${{ github.event.workflow_run.head_branch }}
-          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Windows_x86_64/SEDManager_Windows_x86_64.zip#SEDManager_Windows_x86_64
-          gh release upload ${{ github.event.workflow_run.head_branch }} ./Binaries/Linux_x86_64/SEDManager_Linux_x86_64.zip#SEDManager_Linux_x86_64
+          gh release upload ${{ github.event.workflow_run.head_branch }} ${{github.workspace}}/SEDManager_Windows_x86_64.zip#SEDManager_Windows_x86_64
+          gh release upload ${{ github.event.workflow_run.head_branch }} ${{github.workspace}}/SEDManager_Linux_x86_64.zip#SEDManager_Linux_x86_64
 
   
