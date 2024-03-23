@@ -5,7 +5,7 @@ import 'package:path/path.dart' as path;
 
 final libraryName = Platform.isWindows ? "SEDManagerCAPI.dll" : "libSEDManagerCAPI.so";
 const libraryDirEnv = String.fromEnvironment("CAPI_LIBRARY_PATH", defaultValue: "");
-final libraryDirLocal = Platform.resolvedExecutable;
+final libraryDirLocal = path.dirname(Platform.resolvedExecutable);
 final libraryPath = path.join(libraryDirEnv.isEmpty ? libraryDirLocal : libraryDirEnv, libraryName);
 
 typedef CUID = Uint64;
