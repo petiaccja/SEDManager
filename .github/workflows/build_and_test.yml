@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  build-test:
+  build-test-core:
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +36,7 @@ jobs:
             conan_preset: msvc-20-release
             os: windows-latest
 
-    name: ${{ matrix.build_profile }}
+    name: core-${{ matrix.build_profile }}
         
     runs-on: ${{matrix.os}}
     
@@ -90,14 +90,79 @@ jobs:
     - name: Build
       run: |
         cmake --build --preset conan-${{ matrix.conan_preset }}
-        cmake -E make_directory ${{runner.workspace}}/install/SEDManager
-        cmake --install ${{github.workspace}}/build/${{ matrix.conan_preset }} --prefix '${{runner.workspace}}/install/SEDManager'
+        cmake -E make_directory ${{github.workspace}}/install/SEDManager
+        cmake --install ${{github.workspace}}/build/${{ matrix.conan_preset }} --prefix '${{github.workspace}}/install/SEDManager'
 
     - name: Test
       run: ${{github.workspace}}/build/${{ matrix.conan_preset }}/bin/Test
 
     - name: Upload artifact binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: SEDManager-${{ matrix.build_profile }}
-        path: '${{runner.workspace}}/install/SEDManager'
+        path: '${{github.workspace}}/install/SEDManager'
+        if-no-files-found: error
+
+  build-test-flutter:
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter_target: [windows, linux]
+        include:
+          - flutter_target: linux
+            os: ubuntu-latest
+            binary_path: build/linux/x64/release/bundle
+            core_profile: clang20d
+          - flutter_target: windows
+            os: windows-latest
+            binary_path: build/windows/x64/runner/Release
+            core_profile: msvc20d
+      
+    name: flutter-${{ matrix.flutter_target }}
+    needs: [build-test-core]
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.9'
+          channel: 'stable'
+      
+      - name: Install native compilers
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt update
+  
+            sudo apt install ninja-build
+            sudo apt install gcc-13 g++-13
+            sudo apt install libgtk-3-dev
+            sudo update-alternatives --remove-all gcc || true
+            sudo update-alternatives --remove-all g++ || true
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+
+      - name: "Download core"
+        uses: actions/download-artifact@v4
+        with:
+          name: SEDManager-${{ matrix.core_profile }}
+          path: ${{github.workspace}}/core
+
+      - name: "Install GUI Dart dependencies"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter pub get
+
+      - name: "Test GUI"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter test --dart-define=CAPI_LIBRARY_PATH=${{github.workspace}}/core
+
+      - name: "Build GUI"
+        working-directory: ${{github.workspace}}/src/SEDManagerGUI
+        run: flutter build ${{matrix.flutter_target}} --release
+
+      - name: "Upload artifact binary"
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEDManagerGUI-${{matrix.flutter_target}}
+          path: "${{github.workspace}}/src/SEDManagerGUI/${{matrix.binary_path}}"
+          if-no-files-found: error

@@ -33,9 +33,4 @@ add_subdirectory(test)
 
 install(
 	TARGETS SEDManagerCLI SEDManagerCAPI DESTINATION "."
-	RUNTIME_DEPENDENCIES
-		PRE_EXCLUDE_REGEXES "ext-ms-.*" "api-ms-.*" "hvsifiletrust.dll" "pdmutilities.dll"
-		DIRECTORIES ${EXTRA_RUNTIME_DEPENDENCY_DIRS}
-		POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-		DESTINATION "."
 )

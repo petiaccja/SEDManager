@@ -18,5 +18,5 @@ jobs:
           directory: ${{ runner.temp }}/llvm
       - name: Verify formatting
         run: |
-          python ./support/run-clang-format.py -r src
+          python ./support/run-clang-format.py -r src --exclude "**/SEDManagerGUI/**"
           python ./support/run-clang-format.py -r test
