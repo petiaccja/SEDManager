@@ -146,11 +146,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: SEDManager-${{ matrix.core_profile }}
-          path: ${{github.workspace}}/core_binary
-
-      - name: "Install core"
-        run: |
-          cp ${{github.workspace}}/core_binary/*SEDManagerCAPI* ${{github.workspace}}/src/SEDManagerGUI/${{matrix.binary_path}}
+          path: ${{github.workspace}}/core
 
       - name: "Install GUI Dart dependencies"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
@@ -158,7 +154,7 @@ jobs:
 
       - name: "Test GUI"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
-        run: flutter test
+        run: flutter test --dart-define=CAPI_LIBRARY_PATH=${{github.workspace}}/core
 
       - name: "Build GUI"
         working-directory: ${{github.workspace}}/src/SEDManagerGUI
